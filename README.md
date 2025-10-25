@@ -38,9 +38,9 @@ First, ensure you have the RIMAPI mod installed in your RimWorld game:
 
 #### 2.1. Using the Web Version
 
-Visit: https://yourusername.github.io/rimworld-dashboard
+Visit: [RimWorld-Dashboard](https://ilyachichkov.github.io/rimapi-dashboard/)
 
-Enter your RIMAPI server URL (usually http://localhost:8765/api/v1)
+Enter your RIMAPI server URL (default http://localhost:8765/api/v1)
 
 Click "Connect"
 
