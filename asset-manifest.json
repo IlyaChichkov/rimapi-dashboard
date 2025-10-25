@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/rimworld-dashboard/static/css/main.4c262b33.css",
+    "main.js": "/rimworld-dashboard/static/js/main.70d8cc27.js",
+    "static/js/453.a15dd84e.chunk.js": "/rimworld-dashboard/static/js/453.a15dd84e.chunk.js",
+    "static/media/bg.jpg": "/rimworld-dashboard/static/media/bg.c44fc59048124c880ec8.jpg",
+    "index.html": "/rimworld-dashboard/index.html",
+    "main.4c262b33.css.map": "/rimworld-dashboard/static/css/main.4c262b33.css.map",
+    "main.70d8cc27.js.map": "/rimworld-dashboard/static/js/main.70d8cc27.js.map",
+    "453.a15dd84e.chunk.js.map": "/rimworld-dashboard/static/js/453.a15dd84e.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.4c262b33.css",
+    "static/js/main.70d8cc27.js"
+  ]
+}
