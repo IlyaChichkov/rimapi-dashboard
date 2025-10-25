@@ -1,3 +1,4 @@
+<img src="../media/preview/dashboard.png" width="800">
 
 ![RimWorld Dashboard](https://img.shields.io/badge/RimWorld-1.5%20Compatible-blue)
 ![React](https://img.shields.io/badge/React-18.0+-61dafb)
@@ -38,9 +39,9 @@ First, ensure you have the RIMAPI mod installed in your RimWorld game:
 
 #### 2.1. Using the Web Version
 
-Visit: https://yourusername.github.io/rimworld-dashboard
+Visit: [RimWorld-Dashboard](https://ilyachichkov.github.io/rimapi-dashboard/)
 
-Enter your RIMAPI server URL (usually http://localhost:8765/api/v1)
+Enter your RIMAPI server URL (default http://localhost:8765/api/v1)
 
 Click "Connect"
 
