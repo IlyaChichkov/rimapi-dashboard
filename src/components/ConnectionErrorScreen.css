@@ -1,0 +1,295 @@
+/* src/components/ConnectionErrorScreen.css */
+.connection-error-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 20px;
+}
+
+/* Background image with dark overlay */
+.connection-error-screen::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/public/assets/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  z-index: -2;
+}
+
+.connection-error-screen::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: -1;
+}
+
+.error-content {
+  text-align: center;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 77, 77, 0.3);
+  border-radius: 20px;
+  padding: 50px 40px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+  max-width: 500px;
+  width: 90%;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.error-icon {
+  font-size: 4em;
+  margin-bottom: 20px;
+  animation: pulse 2s infinite;
+}
+
+.error-title {
+  color: #ff6b6b;
+  font-size: 2em;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+}
+
+.error-message {
+  color: #e0e0e0;
+  font-size: 1.2em;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.connection-details {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 25px;
+  border-left: 3px solid #ff6b6b;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  color: #b0b0b0;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.detail-value {
+  color: #4dabf7;
+  font-family: monospace;
+  font-size: 0.9em;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 8px;
+  border-radius: 4px;
+  max-width: 250px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.troubleshooting {
+  text-align: left;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 25px;
+  border: 1px solid rgba(255, 107, 107, 0.2);
+}
+
+.troubleshooting h4 {
+  color: #ff6b6b;
+  margin-bottom: 15px;
+  font-size: 1.1em;
+}
+
+.troubleshooting ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #e0e0e0;
+}
+
+.troubleshooting li {
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.error-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  justify-content: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.retry-btn, .change-url-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.retry-btn {
+  background: linear-gradient(45deg, #4dabf7, #339af0);
+  color: white;
+}
+
+.retry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 171, 247, 0.4);
+  background: linear-gradient(45deg, #339af0, #228be6);
+}
+
+.change-url-btn {
+  background: rgba(108, 117, 125, 0.9);
+  color: white;
+}
+
+.change-url-btn:hover {
+  transform: translateY(-2px);
+  background: rgba(108, 117, 125, 1);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+.error-tip {
+  margin-top: 20px;
+  padding: 12px 15px;
+  background: rgba(255, 107, 107, 0.1);
+  border-radius: 10px;
+  border-left: 3px solid #ff6b6b;
+  font-size: 0.9em;
+  color: #ffa8a8;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+/* RimWorld themed error screen */
+.error-content.rimworld-theme {
+  background: linear-gradient(135deg, 
+    rgba(114, 30, 30, 0.9) 0%, 
+    rgba(152, 42, 42, 0.9) 100%);
+  border: 1px solid rgba(255, 107, 53, 0.4);
+}
+
+.rimworld-theme .error-icon {
+  color: #ff6b35;
+}
+
+.rimworld-theme .troubleshooting {
+  background: rgba(255, 107, 53, 0.15);
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+.rimworld-theme .error-tip {
+  background: rgba(255, 107, 53, 0.15);
+  border-left-color: #ff6b35;
+  color: #ffa87a;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .connection-error-screen {
+    padding: 15px;
+  }
+  
+  .error-content {
+    padding: 40px 30px;
+  }
+  
+  .error-title {
+    font-size: 1.6em;
+  }
+  
+  .error-message {
+    font-size: 1.1em;
+  }
+  
+  .error-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .retry-btn, .change-url-btn {
+    width: 100%;
+    max-width: 250px;
+    justify-content: center;
+  }
+  
+  .detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .detail-value {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 480px) {
+  .error-content {
+    padding: 30px 20px;
+  }
+  
+  .error-icon {
+    font-size: 3em;
+  }
+  
+  .error-title {
+    font-size: 1.4em;
+  }
+  
+  .troubleshooting {
+    padding: 15px;
+  }
+}

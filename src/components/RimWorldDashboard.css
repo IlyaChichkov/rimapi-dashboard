@@ -1,0 +1,369 @@
+/* src/components/RimWorldDashboard.css */
+.rimworld-dashboard {
+  padding: 20px;
+  min-height: 100vh;
+  color: white;
+  position: relative;
+}
+
+/* Background image with overlay */
+.rimworld-dashboard::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('/public/assets/bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  z-index: -2;
+}
+
+/* Dark overlay for better readability */
+.rimworld-dashboard::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Adjust opacity as needed */
+  z-index: -1;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.change-url-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.change-url-btn {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+}
+
+.change-url-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.error-buttons .change-url-btn {
+  padding: 10px 20px;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.error-buttons .change-url-btn:hover {
+  background: #5a6268;
+}
+
+.header-left h1 {
+  margin: 0 0 15px 0;
+  color: white;
+  font-size: 2em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-align: left;
+}
+
+.game-info {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 0.9em;
+  color: #e0e0e0;
+}
+
+.game-info span {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.last-updated {
+  margin-top: 10px;
+  font-size: 0.8em;
+  color: #b0b0b0;
+  font-style: italic;
+}
+
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.refresh-btn, .auto-refresh-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.refresh-btn {
+  background: linear-gradient(45deg, #007bff, #0056b3);
+  color: white;
+}
+
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+}
+
+.auto-refresh-btn {
+  background: rgba(108, 117, 125, 0.8);
+  color: white;
+}
+
+.auto-refresh-btn.active {
+  background: linear-gradient(45deg, #28a745, #1e7e34);
+}
+
+.auto-refresh-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 25px;
+}
+
+.chart-card, .stats-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.chart-card:hover, .stats-card:hover {
+  transform: translateY(-5px);
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.chart-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.3em;
+}
+
+.resource-total, .power-status {
+  font-size: 0.9em;
+  color: #e0e0e0;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 5px 12px;
+  border-radius: 15px;
+}
+
+.chart-container {
+  height: 300px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chart-loading {
+  font-size: 0.8em;
+  color: #007bff;
+  font-style: italic;
+}
+
+.stats-card h3 {
+  margin: 0 0 20px 0;
+  color: white;
+  text-align: center;
+  font-size: 1.3em;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-value {
+  font-size: 2em;
+  font-weight: bold;
+  color: #4dabf7;
+  margin-bottom: 5px;
+}
+
+.stat-label {
+  font-size: 0.9em;
+  color: #e0e0e0;
+}
+
+.auto-refresh-indicator {
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 25px;
+  font-size: 0.9em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 20px rgba(40, 167, 69, 0.4);
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.refresh-pulse {
+  width: 12px;
+  height: 12px;
+  background-color: #fff;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2em;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  margin: 20px;
+}
+
+.loading {
+  color: #4dabf7;
+}
+
+.error {
+  color: #ff6b6b;
+}
+
+.error-state {
+  text-align: center;
+  padding: 50px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 20px;
+  border-radius: 15px;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.error-state h2 {
+  color: #ff6b6b;
+  margin-bottom: 20px;
+}
+
+.no-data {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  color: #b0b0b0;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Ensure charts are properly sized */
+.chart-container canvas {
+  max-height: 100%;
+  max-width: 100%;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .dashboard-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .header-controls {
+    justify-content: center;
+  }
+  
+  .game-info {
+    justify-content: center;
+  }
+  
+  .auto-refresh-indicator {
+    position: static;
+    margin-top: 25px;
+    justify-content: center;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .rimworld-dashboard {
+    padding: 10px;
+  }
+}
