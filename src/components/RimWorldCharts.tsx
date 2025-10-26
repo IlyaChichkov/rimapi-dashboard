@@ -12,8 +12,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Bar, Doughnut } from 'react-chartjs-2';
 import { Colonist, ResourceSummary, CreaturesSummary, PowerInfo } from '../types';
+
 
 ChartJS.register(
   CategoryScale,
@@ -52,13 +53,6 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
   const data = {
     labels: validColonists.map(c => c.name),
     datasets: [
-      {
-        label: 'Health',
-        data: validColonists.map(c => ((c.health || 0) * 100)),
-        backgroundColor: 'rgba(75, 192, 192, 0.8)',
-        borderColor: 'rgba(75, 192, 192, 1)',
-        borderWidth: 1,
-      },
       {
         label: 'Mood',
         data: validColonists.map(c => ((c.mood || 0) * 100)),
@@ -155,7 +149,7 @@ interface PopulationChartProps {
 
 export const PopulationChart: React.FC<PopulationChartProps> = ({ creatures }) => {
   const data = {
-    labels: ['Colonists', 'Prisoners', 'Enemies', 'Animals'],
+    labels: ['Colonists', 'Prisoners', 'Enemies'],
     datasets: [
       {
         label: 'Population',
@@ -163,13 +157,11 @@ export const PopulationChart: React.FC<PopulationChartProps> = ({ creatures }) =
           creatures?.colonists_count || 0,
           creatures?.prisoners_count || 0,
           creatures?.enemies_count || 0,
-          creatures?.animals_count || 0
         ],
         backgroundColor: [
           'rgba(75, 192, 192, 0.8)',    // Colonists - Green
           'rgba(255, 206, 86, 0.8)',    // Prisoners - Yellow
           'rgba(255, 99, 132, 0.8)',    // Enemies - Red
-          'rgba(153, 102, 255, 0.8)',   // Animals - Purple
         ],
         borderWidth: 1,
       },
@@ -183,3 +175,4 @@ export const PopulationChart: React.FC<PopulationChartProps> = ({ creatures }) =
 interface SkillsChartProps {
   colonists: Colonist[];
 }
+

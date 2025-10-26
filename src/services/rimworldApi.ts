@@ -1,7 +1,10 @@
 // src/services/rimworldApi.ts
 import {
   RimWorldData, GameState, Colonist, ResourceSummary,
-  CreaturesSummary, PowerInfo, DatetimeCategory, WeatherCategory
+  CreaturesSummary, PowerInfo, DatetimeCategory, WeatherCategory,
+  ResearchProgress,
+  ResearchFinished,
+  ResearchSummary
 } from '../types';
 
 let API_BASE_URL = 'http://localhost:8765/api/v1';
@@ -93,6 +96,73 @@ const validatePower = (data: any): PowerInfo => {
   };
 };
 
+const validateResearchSummary = (data: any): ResearchSummary => {
+  if (!data) {
+    return {
+      finished_projects_count: 0,
+      total_projects_count: 0,
+      available_projects_count: 0,
+      by_tech_level: {},
+      by_tab: {}
+    };
+  }
+  
+  return {
+    finished_projects_count: data.finished_projects_count || 0,
+    total_projects_count: data.total_projects_count || 0,
+    available_projects_count: data.available_projects_count || 0,
+    by_tech_level: data.by_tech_level || {},
+    by_tab: data.by_tab || {}
+  };
+};
+
+const validateResearchProgress = (data: any): ResearchProgress => {
+  if (!data) {
+    return {
+      name: 'None',
+      label: 'None',
+      progress: 0,
+      research_points: 0,
+      description: 'No active research',
+      is_finished: false,
+      can_start_now: false,
+      player_has_any_appropriate_research_bench: false,
+      required_analyzed_thing_count: 0,
+      analyzed_things_completed: 0,
+      tech_level: 'Unknown',
+      prerequisites: data.prerequisites || [], // Handle null
+      hidden_prerequisites: data.hidden_prerequisites || [], // Handle null
+      required_by_this: data.required_by_this || [], // Handle null
+      progress_percent: 0
+    };
+  }
+  
+  return {
+    name: data.name || 'None',
+    label: data.label || 'None',
+    progress: data.progress || 0,
+    research_points: data.research_points || 0,
+    description: data.description || 'No description available',
+    is_finished: data.is_finished || false,
+    can_start_now: data.can_start_now || false,
+    player_has_any_appropriate_research_bench: data.player_has_any_appropriate_research_bench || false,
+    required_analyzed_thing_count: data.required_analyzed_thing_count || 0,
+    analyzed_things_completed: data.analyzed_things_completed || 0,
+    tech_level: data.tech_level || 'Unknown',
+    prerequisites: data.prerequisites || [], // Handle null
+    hidden_prerequisites: data.hidden_prerequisites || [], // Handle null
+    required_by_this: data.required_by_this || [], // Handle null
+    progress_percent: data.progress_percent || 0
+  };
+};
+
+const validateResearchFinished = (data: any): ResearchFinished => {
+  if (!data) return { finished_projects: [] };
+  return {
+    finished_projects: data.finished_projects || []
+  };
+};
+
 export const fetchRimWorldData = async (): Promise<RimWorldData> => {
   const timestamp = Date.now();
 
@@ -104,6 +174,9 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     power,
     map_datetime,
     weather,
+    researchProgress,
+    researchFinished,
+    researchSummary
   ] = await Promise.all([
     fetchApi<GameState>('/game/state'),
     fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age,health,mood'),
@@ -112,6 +185,9 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     fetchApi<PowerInfo>(`/map/power/info?map_id=0&_=${timestamp}`),
     fetchApi<DatetimeCategory>('/datetime?at=current_map'),
     fetchApi<WeatherCategory>('/map/weather?map_id=0'),
+    fetchApi<ResearchProgress>('/research/progress'),
+    fetchApi<ResearchFinished>('/research/finished'),
+    fetchApi<ResearchSummary>('/research/summary')
   ]);
 
   return {
@@ -121,6 +197,9 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     creatures: validateCreatures(creatures),
     power: validatePower(power),
     map_datetime: map_datetime,
-    weather: weather
+    weather: weather,
+    researchProgress: validateResearchProgress(researchProgress),
+    researchFinished: validateResearchFinished(researchFinished),
+    researchSummary: validateResearchSummary(researchSummary),
   };
 };

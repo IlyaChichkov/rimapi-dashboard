@@ -1,0 +1,474 @@
+/* src/components/ResearchCards.css */
+.research-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+}
+
+.research-card:hover {
+  transform: translateY(-5px);
+}
+
+.research-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.research-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.3em;
+}
+
+.research-status {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: 1px solid;
+}
+
+.research-status.active {
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  border-color: rgba(77, 171, 247, 0.4);
+}
+
+.research-status.idle {
+  background: rgba(108, 117, 125, 0.2);
+  color: #b0b0b0;
+  border-color: rgba(108, 117, 125, 0.4);
+}
+
+.research-count {
+  background: rgba(255, 107, 53, 0.2);
+  color: #ff6b35;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: 1px solid rgba(255, 107, 53, 0.3);
+}
+
+.research-loading {
+  font-size: 0.8em;
+  color: #007bff;
+  font-style: italic;
+}
+
+/* Current Research Styles */
+.current-research {
+  border-left: 4px solid #4dabf7;
+}
+
+.research-project h4 {
+  margin: 0 0 15px 0;
+  color: white;
+  font-size: 1.1em;
+}
+
+.progress-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(45deg, #4dabf7, #339af0);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  box-shadow: 0 0 10px rgba(77, 171, 247, 0.5);
+}
+
+.progress-text {
+  color: #4dabf7;
+  font-weight: 600;
+  font-size: 0.9em;
+  min-width: 40px;
+}
+
+.research-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.research-detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.research-description {
+  color: #e0e0e0;
+  font-size: 0.9em;
+  line-height: 1.4;
+  margin: 0 0 15px 0;
+  font-style: italic;
+}
+
+.research-detail-item:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: #b0b0b0;
+  font-size: 0.85em;
+  flex: 1;
+}
+
+.detail-value {
+  color: white;
+  font-size: 0.9em;
+  font-weight: 600;
+  flex: 1;
+  text-align: right;
+}
+
+/* Finished Research Styles */
+.finished-research {
+  border-left: 4px solid #ff6b35;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* Scrollbar styling */
+.projects-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.projects-grid::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.projects-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 107, 53, 0.5);
+  border-radius: 3px;
+}
+
+.projects-grid::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 107, 53, 0.7);
+}
+
+.research-project-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: background 0.3s ease;
+}
+
+.research-project-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.project-icon {
+  font-size: 0.9em;
+}
+
+.project-name {
+  color: white;
+  font-size: 0.9em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* No Research States */
+.no-research {
+  text-align: center;
+  padding: 30px 20px;
+  color: #b0b0b0;
+}
+
+.no-research-icon {
+  font-size: 3em;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.no-research p {
+  margin: 0 0 8px 0;
+  font-size: 1.1em;
+}
+
+.no-research-hint {
+  font-size: 0.85em;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.loading-placeholder {
+  height: 100px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  animation: pulse 2s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .research-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .research-status,
+  .research-count {
+    align-self: flex-start;
+  }
+  
+  .projects-grid {
+    grid-template-columns: 1fr;
+    max-height: 150px;
+  }
+  
+  .progress-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  
+  .progress-text {
+    text-align: center;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+/* Add to src/components/ResearchCards.css */
+
+/* Research Summary Card */
+.research-summary {
+  border-left: 4px solid #9c27b0;
+  grid-column: span 2;
+}
+
+/* Overall Progress */
+.overall-progress {
+  width: 50%;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-label {
+  color: white;
+  font-weight: 600;
+  font-size: 1em;
+}
+
+.progress-percent {
+  color: #9c27b0;
+  font-weight: 700;
+  font-size: 1.1em;
+}
+
+.progress-bar.large {
+  height: 16px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.progress-bar.small {
+  height: 8px;
+  border-radius: 4px;
+  margin: 8px 0;
+}
+
+.progress-stats {
+  width: 50%;
+  display: flex;
+  justify-content: flex-start;
+  gap: 15px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.stat-value {
+  color: white;
+  font-size: 1.4em;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.stat-label {
+  color: #b0b0b0;
+  font-size: 0.8em;
+  font-weight: 600;
+}
+
+/* Tech Level Breakdown */
+.tech-level-breakdown {
+  margin-top: 20px;
+}
+
+.tech-level-breakdown h4 {
+  color: white;
+  margin: 0 0 15px 0;
+  font-size: 1.1em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+.tech-summary {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.tech-levels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.tech-level-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tech-level-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.tech-level-name {
+  color: white;
+  font-weight: 600;
+  font-size: 0.9em;
+  text-transform: capitalize;
+}
+
+.tech-level-percent {
+  color: #9c27b0;
+  font-weight: 700;
+  font-size: 0.9em;
+}
+
+.tech-level-stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8em;
+}
+
+.tech-level-completion {
+  color: #4dabf7;
+  font-weight: 600;
+}
+
+.tech-level-projects {
+  color: #b0b0b0;
+}
+
+/* Color variations for different tech levels */
+.tech-level-item:nth-child(1) .progress-fill {
+  background: linear-gradient(45deg, #8bc34a, #cddc39);
+}
+
+.tech-level-item:nth-child(2) .progress-fill {
+  background: linear-gradient(45deg, #ff9800, #ffc107);
+}
+
+.tech-level-item:nth-child(3) .progress-fill {
+  background: linear-gradient(45deg, #2196f3, #03a9f4);
+}
+
+.tech-level-item:nth-child(4) .progress-fill {
+  background: linear-gradient(45deg, #9c27b0, #e91e63);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .research-summary {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .progress-stats {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .stat-item {
+    flex-direction: row;
+    text-align: left;
+  }
+  
+  .tech-levels-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .tech-level-stats {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .progress-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  
+  .progress-percent {
+    align-self: flex-end;
+  }
+}

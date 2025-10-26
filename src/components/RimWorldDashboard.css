@@ -38,8 +38,10 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 30px;
   padding: 25px;
+  width: 78%;
+  margin: 0 auto;
+  margin-bottom: 30px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 15px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -156,6 +158,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
   gap: 25px;
+  width: 80%;
+  margin: 0 auto;
 }
 
 .chart-card, .stats-card {
@@ -366,4 +370,288 @@
   .rimworld-dashboard {
     padding: 10px;
   }
+}
+
+/* Add these styles to src/components/RimWorldDashboard.css */
+
+/* Dynamic chart sizing */
+.colonist-stats-card.size-1 {
+  grid-column: span 1;
+}
+
+.colonist-stats-card.size-2 {
+  grid-column: span 2;
+}
+
+.colonist-stats-card.size-3 {
+  grid-column: span 3;
+}
+
+.colonist-stats-card.size-4 {
+  grid-column: span 4;
+}
+
+/* Colonist count badge */
+.colonist-count-badge {
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+/* Enhanced chart container for larger sizes */
+.colonist-stats-card.size-2 .chart-container,
+.colonist-stats-card.size-3 .chart-container,
+.colonist-stats-card.size-4 .chart-container {
+  height: 350px; /* Taller for better visibility */
+}
+
+/* Responsive design for dynamic sizing */
+@media (max-width: 1200px) {
+  .colonist-stats-card.size-4 {
+    grid-column: span 3;
+  }
+  
+  .colonist-stats-card.size-3 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1024px) {
+  .colonist-stats-card.size-4,
+  .colonist-stats-card.size-3 {
+    grid-column: span 2;
+  }
+  
+  .colonist-stats-card.size-2 {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  /* On mobile, all charts become single column */
+  .colonist-stats-card.size-1,
+  .colonist-stats-card.size-2,
+  .colonist-stats-card.size-3,
+  .colonist-stats-card.size-4 {
+    grid-column: span 1;
+  }
+  
+  .colonist-stats-card .chart-container {
+    height: 300px; /* Consistent height on mobile */
+  }
+  
+  /* Stack header elements vertically on mobile */
+  .colonist-stats-card .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .colonist-count-badge {
+    align-self: flex-start;
+  }
+}
+
+/* For very large screens, limit maximum size */
+@media (min-width: 1920px) {
+  .colonist-stats-card.size-4 {
+    grid-column: span 3;
+  }
+}
+
+/* Animation for size changes */
+.colonist-stats-card {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Enhanced chart readability for larger datasets */
+.colonist-stats-card.size-2 .chart-container canvas,
+.colonist-stats-card.size-3 .chart-container canvas,
+.colonist-stats-card.size-4 .chart-container canvas {
+  max-height: 100%;
+  max-width: 100%;
+}
+
+/* Optional: Add a visual indicator for expanded cards */
+.colonist-stats-card.size-2,
+.colonist-stats-card.size-3,
+.colonist-stats-card.size-4 {
+  border-left: 4px solid #4dabf7;
+  position: relative;
+}
+
+.colonist-stats-card.size-2::before,
+.colonist-stats-card.size-3::before,
+.colonist-stats-card.size-4::before {
+  content: '📊 Expanded View';
+  position: absolute;
+  top: -10px;
+  right: 15px;
+  background: rgba(77, 171, 247, 0.9);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.7em;
+  font-weight: 600;
+  z-index: 1;
+}
+
+/* Mobile split styling */
+.colonist-stats-card.mobile-split {
+  grid-column: span 1;
+}
+
+/* Hide expanded indicator on mobile split cards */
+.colonist-stats-card.mobile-split::before {
+  display: none;
+}
+
+/* Ensure consistent height for split cards */
+.colonist-stats-card.mobile-split .chart-container {
+  height: 280px;
+}
+
+/* Add these styles to RimWorldDashboard.css */
+
+/* Chart header layout */
+.chart-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.header-controls-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+/* Sort controls */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sort-label {
+  color: #b0b0b0;
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sort-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  padding: 6px 10px;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 100px;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
+}
+
+.sort-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile responsive styles for sort controls */
+@media (max-width: 768px) {
+  .chart-header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .header-controls-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .sort-controls {
+    flex: 1;
+    justify-content: flex-end;
+  }
+  
+  .sort-select {
+    min-width: 80px;
+  }
+}
+
+/* For very small mobile screens */
+@media (max-width: 480px) {
+  .header-controls-right {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .sort-controls {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .sort-select {
+    flex: 1;
+    min-width: auto;
+  }
+}
+
+/* Enhanced colonist count badge to work with sort controls */
+.colonist-count-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+  white-space: nowrap;
+}
+
+/* Mobile split card header adjustments */
+.colonist-stats-card.mobile-split .chart-header-top {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.colonist-stats-card.mobile-split .header-controls-right {
+  width: 100%;
+  justify-content: space-between;
+}
+
+/* Animation for sort changes */
+.colonist-stats-card .chart-container {
+  transition: opacity 0.3s ease;
+}
+
+.colonist-stats-card.sorting .chart-container {
+  opacity: 0.7;
+}
+
+.chart-corner-container {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-option {
+  color: black;
+  background-color: #5a6268;
 }

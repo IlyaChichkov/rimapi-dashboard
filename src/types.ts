@@ -1,4 +1,18 @@
 // src/types.ts
+
+export interface RimWorldData {
+  gameState?: GameState;
+  colonists?: Colonist[];
+  resources?: ResourceSummary;
+  creatures?: CreaturesSummary;
+  power?: any;
+  map_datetime?: any;
+  weather?: any;
+  researchProgress?: ResearchProgress;
+  researchFinished?: ResearchFinished;
+  researchSummary?: ResearchSummary;
+}
+
 export interface GameState {
   game_time?: string;
   time_speed?: string;
@@ -62,12 +76,44 @@ export interface PowerInfo {
   consumption_power_on?: number;
 }
 
-export interface RimWorldData {
-  gameState?: GameState;
-  colonists?: Colonist[];
-  resources?: ResourceSummary;
-  creatures?: CreaturesSummary;
-  power?: any;
-  map_datetime?: any;
-  weather?: any;
+export interface ResearchProgress {
+  name: string;
+  label: string;
+  progress: number;
+  research_points: number;
+  description: string;
+  is_finished: boolean;
+  can_start_now: boolean;
+  player_has_any_appropriate_research_bench: boolean;
+  required_analyzed_thing_count: number;
+  analyzed_things_completed: number;
+  tech_level: string;
+  prerequisites: string[];
+  hidden_prerequisites: string[];
+  required_by_this: string[];
+  progress_percent: number;
+}
+
+
+export interface ResearchFinished {
+  finished_projects: string[];
+}
+
+export interface TechLevelSummary {
+  finished: number;
+  total: number;
+  percent_complete: number;
+  projects: string[];
+}
+
+export interface ResearchSummary {
+  finished_projects_count: number;
+  total_projects_count: number;
+  available_projects_count: number;
+  by_tech_level: {
+    [key: string]: TechLevelSummary;
+  };
+  by_tab: {
+    [key: string]: TechLevelSummary;
+  };
 }

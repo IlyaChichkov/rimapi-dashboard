@@ -9,8 +9,57 @@ import {
 import LoadingScreen from './LoadingScreen';
 import ConnectionErrorScreen from './ConnectionErrorScreen';
 import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
-import { RimWorldData } from '../types';
+import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
+import ResearchCards from './ResearchCards';
+
+const getChartSize = (colonistsCount: number): number => {
+  if (colonistsCount <= 5) return 1;    // Normal size
+  if (colonistsCount <= 10) return 2;   // 2x width
+  if (colonistsCount <= 15) return 3;   // 3x width
+  return 4;                             // 4x width for 16+ colonists
+};
+
+const renderColonistCharts = (colonists: Colonist[]) => {
+  if (colonists.length <= 10) {
+    return (
+      <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
+        {/* Single chart for <= 10 colonists */}
+        <div className="chart-header">
+          <h3>Colonist Health & Mood</h3>
+          <div className="colonist-count-badge">
+            {colonists.length} Colonists
+          </div>
+        </div>
+        <div className="chart-container">
+          <ColonistStatsChart colonists={colonists} />
+        </div>
+      </div>
+    );
+  }
+
+  // Split colonists into chunks for mobile
+  const chunkSize = 8;
+  const chunks = [];
+  for (let i = 0; i < colonists.length; i += chunkSize) {
+    chunks.push(colonists.slice(i, i + chunkSize));
+  }
+
+  return chunks.map((chunk, index) => (
+    <div key={index} className="chart-card colonist-stats-card mobile-split">
+      <div className="chart-header">
+        <h3>Colonists {index * chunkSize + 1}-{index * chunkSize + chunk.length}</h3>
+        <div className="colonist-count-badge">
+          {chunk.length} Colonists
+        </div>
+      </div>
+      <div className="chart-container">
+        <ColonistStatsChart colonists={chunk} />
+      </div>
+    </div>
+  ));
+};
+
 
 interface RimWorldDashboardProps {
   apiUrl: string;
@@ -26,6 +75,35 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
+
+  const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
+
+  // Add this function to sort colonists
+  const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'health' | 'mood') => {
+    const sorted = [...colonists];
+    switch (sortBy) {
+      case 'health':
+        return sorted.sort((a, b) => (b.health || 0) - (a.health || 0));
+      case 'mood':
+        return sorted.sort((a, b) => (b.mood || 0) - (a.mood || 0));
+      case 'name':
+      default:
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, []);
+
+  // Check screen size for responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
 
   // Set API URL when component mounts or URL changes
   useEffect(() => {
@@ -78,6 +156,20 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const gameState = data?.gameState || {};
   const map_datetime = data?.map_datetime || {};
   const weather = data?.weather || {};
+  const researchProgress = data?.researchProgress;
+  const researchFinished = data?.researchFinished || { finished_projects: [] };
+  const researchSummary = data?.researchSummary || {
+    finished_projects_count: 0,
+    total_projects_count: 0,
+    available_projects_count: 0,
+    by_tech_level: {},
+    by_tab: {}
+  };
+
+  const colonistChartSize = getChartSize(colonists.length);
+
+  // Update the sorted colonists
+  const sortedColonists = getSortedColonists(colonists, sortBy);
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -128,19 +220,40 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
       <div className="dashboard-grid">
         {/* Colonist Stats */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Colonist Health & Mood</h3>
-            {loading && <div className="chart-loading">Updating...</div>}
+        {isMobile? (
+          renderColonistCharts(colonists)
+          ) : (<div 
+          className={`chart-card colonist-stats-card size-${colonistChartSize}`}
+          data-colonist-count={colonists.length}
+          >
+            <div className="chart-header">
+              <h3>Mood</h3>
+              <div className="chart-corner-container">
+                <div className="colonist-count-badge">
+                  {colonists.length} Colonists
+                </div>
+                <div className="sort-controls">
+                  <span className="sort-label">Sort by:</span>
+                  <select 
+                    value={sortBy} 
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
+                    className="sort-select"
+                  >
+                    <option className="filter-option" value="name">Name</option>
+                    <option className="filter-option" value="mood">Mood</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="chart-container">
+              {colonists.length > 0 ? (
+                <ColonistStatsChart colonists={sortedColonists} />
+              ) : (
+                <div className="no-data">No colonist data available</div>
+              )}
+            </div>
           </div>
-          <div className="chart-container">
-            {colonists.length > 0 ? (
-              <ColonistStatsChart colonists={colonists} />
-            ) : (
-              <div className="no-data">No colonist data available</div>
-            )}
-          </div>
-        </div>
+        )}
 
         {/* Resource Distribution */}
         <div className="chart-card">
@@ -162,9 +275,18 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         {/* Power Management */}
         <div className="chart-card">
           <div className="chart-header">
-            <h3>Power Management</h3>
-            <div className="power-status">
-              Net: {(power.total_possible_power || 0) - (power.total_consumption || 0)}W
+            <div className="chart-header-top">
+              <h3>Power Management</h3>
+              <div className="power-header-controls">
+                <div className="power-status">
+                  Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
+                  {(power.total_consumption || 0) > (power.current_power || 0) && (
+                    <span className="power-warning-icon" title="Power consumption exceeds production!">
+                      ⚠️
+                    </span>
+                    )}
+                </div>
+              </div>
             </div>
           </div>
           <div className="chart-container">
@@ -176,12 +298,19 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         <div className="chart-card">
           <div className="chart-header">
             <h3>Population Overview</h3>
-            {loading && <div className="chart-loading">Updating...</div>}
           </div>
           <div className="chart-container">
             <PopulationChart creatures={creatures} />
           </div>
         </div>
+
+        {/* Research Cards */}
+        <ResearchCards 
+          researchProgress={researchProgress}
+          researchFinished={researchFinished}
+          researchSummary={researchSummary}
+          loading={loading}
+        />
 
         {/* Quick Stats */}
         <div className="stats-card">
