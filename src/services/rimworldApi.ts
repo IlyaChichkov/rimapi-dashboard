@@ -4,7 +4,9 @@ import {
   CreaturesSummary, PowerInfo, DatetimeCategory, WeatherCategory,
   ResearchProgress,
   ResearchFinished,
-  ResearchSummary
+  ResearchSummary,
+  ColonistDetailed,
+  ModInfo
 } from '../types';
 
 let API_BASE_URL = 'http://localhost:8765/api/v1';
@@ -51,6 +53,22 @@ const validateColonists = (data: any): Colonist[] => {
     return [];
   }
   return data.filter((col: any) => col && col.id && col.name);
+};
+
+const validateColonistsDetailed = (data: any): ColonistDetailed[] => {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+  
+  return data.filter((col: any) => col && col.colonist && col.colonist_medical_info);
+};
+
+const validateModsInfo = (data: any): ModInfo[] => {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+  
+  return data.filter((mod: any) => mod && mod.name && mod.package_id);
 };
 
 const validateResources = (data: any): ResourceSummary => {
@@ -169,6 +187,7 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
   const [
     gameState,
     colonistsData,
+    colonistsDetailed,
     resources,
     creatures,
     power,
@@ -176,10 +195,12 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     weather,
     researchProgress,
     researchFinished,
-    researchSummary
+    researchSummary,
+    modsInfo,
   ] = await Promise.all([
     fetchApi<GameState>('/game/state'),
     fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age,health,mood'),
+    fetchApi<ColonistDetailed[]>('/colonists/detailed'),
     fetchApi<ResourceSummary>('/resources/summary?map_id=0'),
     fetchApi<CreaturesSummary>('/map/creatures/summary?map_id=0'),
     fetchApi<PowerInfo>(`/map/power/info?map_id=0&_=${timestamp}`),
@@ -187,12 +208,14 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     fetchApi<WeatherCategory>('/map/weather?map_id=0'),
     fetchApi<ResearchProgress>('/research/progress'),
     fetchApi<ResearchFinished>('/research/finished'),
-    fetchApi<ResearchSummary>('/research/summary')
+    fetchApi<ResearchSummary>('/research/summary'),
+    fetchApi<ModInfo[]>('/mods/info')
   ]);
 
   return {
     gameState: validateGameState(gameState),
     colonists: validateColonists(colonistsData),
+    colonistsDetailed: validateColonistsDetailed(colonistsDetailed),
     resources: validateResources(resources),
     creatures: validateCreatures(creatures),
     power: validatePower(power),
@@ -201,5 +224,6 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     researchProgress: validateResearchProgress(researchProgress),
     researchFinished: validateResearchFinished(researchFinished),
     researchSummary: validateResearchSummary(researchSummary),
+    modsInfo: validateModsInfo(modsInfo),
   };
 };

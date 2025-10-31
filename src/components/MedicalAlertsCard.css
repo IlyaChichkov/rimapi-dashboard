@@ -1,0 +1,292 @@
+/* Update MedicalAlertsCard.css */
+
+/* Alert Items with Grid Layout */
+.alert-item {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  border-left: 4px solid;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+
+.alert-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.alerts-list{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 25px;
+}
+
+.alert-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Alert Info Section */
+.alert-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.severity-icon {
+  font-size: 1.2em;
+}
+
+.colonist-name {
+  color: white;
+  font-weight: 700;
+  font-size: 1em;
+  flex: 1;
+}
+
+.health-percent {
+  font-size: 0.9em;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  min-width: 50px;
+  text-align: center;
+}
+
+.alert-condition {
+  color: white;
+  font-size: 0.95em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.alert-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.body-part {
+  color: #b0b0b0;
+  font-size: 0.85em;
+  font-style: italic;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  align-self: flex-start;
+}
+
+.alert-description {
+  color: #e0e0e0;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
+
+/* Alert Actions Section */
+.alert-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 80px;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.8em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  min-height: 50px;
+}
+
+.action-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.view-btn:hover:not(:disabled) {
+  background: rgba(77, 171, 247, 0.3);
+  border: 1px solid rgba(77, 171, 247, 0.5);
+}
+
+.treat-btn:hover:not(:disabled) {
+  background: rgba(40, 167, 69, 0.3);
+  border: 1px solid rgba(40, 167, 69, 0.5);
+}
+
+.action-icon {
+  font-size: 1.2em;
+}
+
+.action-text {
+  font-size: 0.75em;
+  white-space: nowrap;
+}
+
+/* Severity-specific styles */
+.alert-item.critical {
+  border-left-color: #dc3545;
+  background: linear-gradient(135deg, rgba(220, 53, 69, 0.15), rgba(220, 53, 69, 0.05));
+}
+
+.alert-item.critical .health-percent {
+  background: rgba(220, 53, 69, 0.4);
+  color: #ff6b6b;
+}
+
+.alert-item.critical .action-btn:not(:disabled):hover {
+  background: rgba(220, 53, 69, 0.3);
+}
+
+.alert-item.serious {
+  border-left-color: #ffc107;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 193, 7, 0.05));
+}
+
+.alert-item.serious .health-percent {
+  background: rgba(255, 193, 7, 0.4);
+  color: #ffc107;
+}
+
+.alert-item.serious .action-btn:not(:disabled):hover {
+  background: rgba(255, 193, 7, 0.3);
+}
+
+.alert-item.warning {
+  border-left-color: #17a2b8;
+  background: linear-gradient(135deg, rgba(23, 162, 184, 0.15), rgba(23, 162, 184, 0.05));
+}
+
+.alert-item.warning .health-percent {
+  background: rgba(23, 162, 184, 0.4);
+  color: #17a2b8;
+}
+
+.alert-item.warning .action-btn:not(:disabled):hover {
+  background: rgba(23, 162, 184, 0.3);
+}
+
+/* Pulsing animation for critical alerts */
+@keyframes criticalPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.3);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+  }
+}
+
+.alert-item.critical {
+  animation: criticalPulse 4s infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .alert-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .alert-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    min-width: auto;
+  }
+  
+  .action-btn {
+    flex: 1;
+    flex-direction: row;
+    justify-content: center;
+    min-height: auto;
+    padding: 10px;
+  }
+  
+  .alert-header {
+    flex-wrap: wrap;
+  }
+  
+  .colonist-name {
+    flex: 1;
+    min-width: 120px;
+  }
+}
+
+@media (max-width: 480px) {
+  .alert-item {
+    padding: 12px;
+  }
+  
+  .alert-header {
+    gap: 6px;
+  }
+  
+  .health-percent {
+    font-size: 0.8em;
+    padding: 3px 6px;
+    min-width: 45px;
+  }
+  
+  .alert-condition {
+    font-size: 0.9em;
+  }
+  
+  .alert-description {
+    font-size: 0.85em;
+  }
+  
+  .action-btn {
+    padding: 8px;
+    font-size: 0.75em;
+  }
+  
+  .action-icon {
+    font-size: 1em;
+  }
+}
+
+/* Enhanced visual hierarchy */
+.alert-item {
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    currentColor 50%, 
+    transparent 100%);
+  opacity: 0.3;
+}

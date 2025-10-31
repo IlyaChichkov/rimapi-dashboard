@@ -11,8 +11,11 @@ import ConnectionErrorScreen from './ConnectionErrorScreen';
 import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
 import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
+import './DefenceTab.css';
 import ResearchCards from './ResearchCards';
 import Footer from './Footer';
+import MedicalAlertsCard from './MedicalAlertsCard';
+import ModsTab from './ModsTab';
 
 const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 5) return 1;    // Normal size
@@ -20,6 +23,9 @@ const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 15) return 3;   // 3x width
   return 4;                             // 4x width for 16+ colonists
 };
+
+// Tab types
+type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'defense' | 'mods';
 
 const renderColonistCharts = (colonists: Colonist[]) => {
   if (colonists.length <= 10) {
@@ -77,6 +83,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const colonistsDetailed = data?.colonistsDetailed || [];
 
   const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
 
@@ -166,7 +173,9 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     by_tech_level: {},
     by_tab: {}
   };
+  const modsInfo = data?.modsInfo || [];
 
+  const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const colonistChartSize = getChartSize(colonists.length);
 
   // Update the sorted colonists
@@ -184,6 +193,65 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         onChangeUrl={onResetConfig}
       />;
   }
+
+  
+  // Render different content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'dashboard':
+        return <DashboardTab 
+          colonists={colonists}
+          resources={resources}
+          power={power}
+          creatures={creatures}
+          researchProgress={researchProgress}
+          researchFinished={researchFinished}
+          researchSummary={researchSummary}
+          loading={loading}
+        />;
+      
+      case 'medical':
+        return <MedicalTab 
+          colonistsDetailed={colonistsDetailed}
+          loading={loading}
+        />;
+      
+      case 'research':
+        return <ResearchTab 
+          researchProgress={researchProgress}
+          researchFinished={researchFinished}
+          researchSummary={researchSummary}
+          loading={loading}
+        />;
+      
+      case 'colonists':
+        return <ColonistsTab 
+          colonists={colonists}
+          loading={loading}
+        />;
+      
+      case 'defense':
+        return <DefenseTab loading={loading} />;
+
+    case 'mods':
+      return <ModsTab 
+        modsInfo={modsInfo}
+        loading={loading}
+      />;
+
+      default:
+        return <DashboardTab 
+          colonists={colonists}
+          resources={resources}
+          power={power}
+          creatures={creatures}
+          researchProgress={researchProgress}
+          researchFinished={researchFinished}
+          researchSummary={researchSummary}
+          loading={loading}
+        />;
+    }
+  };
 
   return (
     <div className="rimworld-dashboard">
@@ -219,122 +287,49 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         </div>
       </header>
 
-      <div className="dashboard-grid">
-        {/* Colonist Stats */}
-        {isMobile? (
-          renderColonistCharts(colonists)
-          ) : (<div 
-          className={`chart-card colonist-stats-card size-${colonistChartSize}`}
-          data-colonist-count={colonists.length}
-          >
-            <div className="chart-header">
-              <h3>Mood</h3>
-              <div className="chart-corner-container">
-                <div className="colonist-count-badge">
-                  {colonists.length} Colonists
-                </div>
-                <div className="sort-controls">
-                  <span className="sort-label">Sort by:</span>
-                  <select 
-                    value={sortBy} 
-                    onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-                    className="sort-select"
-                  >
-                    <option className="filter-option" value="name">Name</option>
-                    <option className="filter-option" value="mood">Mood</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-            <div className="chart-container">
-              {colonists.length > 0 ? (
-                <ColonistStatsChart colonists={sortedColonists} />
-              ) : (
-                <div className="no-data">No colonist data available</div>
-              )}
-            </div>
-          </div>
-        )}
+      {/* Tabs Navigation */}
+      <div className="tabs-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          📊 Dashboard
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'medical' ? 'active' : ''}`}
+          onClick={() => setActiveTab('medical')}
+        >
+          🩺 Medical
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
+          onClick={() => setActiveTab('research')}
+        >
+          🔬 Research
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'colonists' ? 'active' : ''}`}
+          onClick={() => setActiveTab('colonists')}
+        >
+          👥 Colonists
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'defense' ? 'active' : ''}`}
+          onClick={() => setActiveTab('defense')}
+        >
+          🛡️ Defense
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'mods' ? 'active' : ''}`}
+          onClick={() => setActiveTab('mods')}
+        >
+          📦 Mods
+        </button>
+      </div>
 
-        {/* Resource Distribution */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Resource Distribution</h3>
-            <div className="resource-total">
-              Total: {resources.total_items || 0} items
-            </div>
-          </div>
-          <div className="chart-container">
-            {resources.categories && resources.categories.length > 0 ? (
-              <ResourcesChart resources={resources} />
-            ) : (
-              <div className="no-data">No resource data available</div>
-            )}
-          </div>
-        </div>
-
-        {/* Power Management */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <div className="chart-header-top">
-              <h3>Power Management</h3>
-              <div className="power-header-controls">
-                <div className="power-status">
-                  Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
-                  {(power.total_consumption || 0) > (power.current_power || 0) && (
-                    <span className="power-warning-icon" title="Power consumption exceeds production!">
-                      ⚠️
-                    </span>
-                    )}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-            <PowerChart power={power} />
-          </div>
-        </div>
-
-        {/* Population Overview */}
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Population Overview</h3>
-          </div>
-          <div className="chart-container">
-            <PopulationChart creatures={creatures} />
-          </div>
-        </div>
-
-        {/* Research Cards */}
-        <ResearchCards 
-          researchProgress={researchProgress}
-          researchFinished={researchFinished}
-          researchSummary={researchSummary}
-          loading={loading}
-        />
-
-        {/* Quick Stats */}
-        <div className="stats-card">
-          <h3>Colony Summary</h3>
-          <div className="stats-grid">
-            <div className="stat-item">
-              <div className="stat-value">{colonists.length}</div>
-              <div className="stat-label">Colonists</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{creatures.animals_count || 0}</div>
-              <div className="stat-label">Animals</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">{resources.total_items || 0}</div>
-              <div className="stat-label">Total Items</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-value">${Math.round(resources.total_market_value || 0) }</div>
-              <div className="stat-label">Wealth</div>
-            </div>
-          </div>
-        </div>
+      {/* Tab Content */}
+      <div className="tab-content">
+        {renderTabContent()}
       </div>
 
       {autoRefresh && (
@@ -344,7 +339,528 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         </div>
       )}
       
+      <div className='footer-spacer'></div>
       <Footer />
+    </div>
+  );
+};
+
+// Tab Components
+interface DashboardTabProps {
+  colonists: Colonist[];
+  resources: any;
+  power: any;
+  creatures: any;
+  researchProgress: any;
+  researchFinished: any;
+  researchSummary: any;
+  loading: boolean;
+}
+
+const DashboardTab: React.FC<DashboardTabProps> = ({
+  colonists,
+  resources,
+  power,
+  creatures,
+  researchProgress,
+  researchFinished,
+  researchSummary,
+  loading,
+}) => {
+  // Add the missing state and functions here
+  const [isMobile, setIsMobile] = useState(false);
+  const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
+
+  // Check screen size for responsive behavior
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  // Helper function to calculate chart size for PC
+  const getChartSize = (colonistsCount: number): number => {
+    if (colonistsCount <= 5) return 1;    // Normal size
+    if (colonistsCount <= 10) return 2;   // 2x width
+    if (colonistsCount <= 15) return 3;   // 3x width
+    return 4;                             // 4x width for 16+ colonists
+  };
+
+  // Helper function to split colonists into chunks for mobile
+  const splitColonistsIntoChunks = (colonists: Colonist[], chunkSize: number = 8): Colonist[][] => {
+    const chunks = [];
+    for (let i = 0; i < colonists.length; i += chunkSize) {
+      chunks.push(colonists.slice(i, i + chunkSize));
+    }
+    return chunks;
+  };
+
+  // Add sorting function
+  const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'mood') => {
+    const sorted = [...colonists];
+    switch (sortBy) {
+      case 'mood':
+        return sorted.sort((a, b) => (b.mood || 0) - (a.mood || 0));
+      case 'name':
+      default:
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+    }
+  }, []);
+
+  // Calculate chart size for PC
+  const colonistChartSize = getChartSize(colonists.length);
+
+  // Split colonists for mobile display
+  const colonistChunks = splitColonistsIntoChunks(colonists);
+
+  // Update sorted colonists
+  const sortedColonists = getSortedColonists(colonists, sortBy);
+
+  // Mobile colonist charts render function
+  const renderColonistCharts = (colonists: Colonist[]) => {
+    if (colonists.length <= 10) {
+      return (
+        <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
+          <div className="chart-header">
+            <h3>Mood</h3>
+            <div className="chart-corner-container">
+              <div className="colonist-count-badge">
+                {colonists.length} Colonists
+              </div>
+              <div className="sort-controls">
+                <span className="sort-label">Sort by:</span>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
+                  className="sort-select"
+                >
+                  <option className="filter-option" value="name">Name</option>
+                  <option className="filter-option" value="mood">Mood</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="chart-container">
+            {colonists.length > 0 ? (
+              <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} />
+            ) : (
+              <div className="no-data">No colonist data available</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Split colonists into chunks for mobile
+    const chunks = splitColonistsIntoChunks(colonists);
+    
+    return chunks.map((chunk, index) => (
+      <div key={index} className="chart-card colonist-stats-card mobile-split">
+        <div className="chart-header">
+          <h3>
+            Colonists {index * 8 + 1}-{index * 8 + chunk.length}
+            <span className="colonist-chunk-badge">
+              {chunk.length} Colonists
+            </span>
+          </h3>
+          <div className="sort-controls">
+            <span className="sort-label">Sort by:</span>
+            <select 
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
+              className="sort-select"
+            >
+              <option className="filter-option" value="name">Name</option>
+              <option className="filter-option" value="mood">Mood</option>
+            </select>
+          </div>
+        </div>
+        <div className="chart-container">
+          <ColonistStatsChart colonists={getSortedColonists(chunk, sortBy)} />
+        </div>
+      </div>
+    ));
+  };
+
+  return (
+    <div className="dashboard-grid">
+      {/* Colonist Stats */}
+      {isMobile ? (
+        renderColonistCharts(colonists)
+      ) : (
+        <div 
+          className={`chart-card colonist-stats-card size-${colonistChartSize}`}
+          data-colonist-count={colonists.length}
+        >
+          <div className="chart-header">
+            <h3>Mood</h3>
+            <div className="chart-corner-container">
+              <div className="colonist-count-badge">
+                {colonists.length} Colonists
+              </div>
+              <div className="sort-controls">
+                <span className="sort-label">Sort by:</span>
+                <select 
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
+                  className="sort-select"
+                >
+                  <option className="filter-option" value="name">Name</option>
+                  <option className="filter-option" value="mood">Mood</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <div className="chart-container">
+            {colonists.length > 0 ? (
+              <ColonistStatsChart colonists={sortedColonists} />
+            ) : (
+              <div className="no-data">No colonist data available</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Resource Distribution */}
+      <div className="chart-card">
+        <div className="chart-header">
+          <h3>Resource Distribution</h3>
+          <div className="resource-total">
+            Total: {resources.total_items || 0} items
+          </div>
+        </div>
+        <div className="chart-container">
+          {resources.categories && resources.categories.length > 0 ? (
+            <ResourcesChart resources={resources} />
+          ) : (
+            <div className="no-data">No resource data available</div>
+          )}
+        </div>
+      </div>
+
+      {/* Power Management */}
+      <div className="chart-card">
+        <div className="chart-header">
+          <div className="chart-header-top">
+            <h3>Power Management</h3>
+            <div className="power-header-controls">
+              <div className="power-status">
+                Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
+                {(power.total_consumption || 0) > (power.current_power || 0) && (
+                  <span className="power-warning-icon" title="Power consumption exceeds production!">
+                    ⚠️
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="chart-container">
+          <PowerChart power={power} />
+        </div>
+      </div>
+
+      {/* Population Overview */}
+      <div className="chart-card">
+        <div className="chart-header">
+          <h3>Population Overview</h3>
+        </div>
+        <div className="chart-container">
+          <PopulationChart creatures={creatures} />
+        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="stats-card">
+        <h3>Colony Summary</h3>
+        <div className="stats-grid">
+          <div className="stat-item">
+            <div className="stat-value">{colonists.length}</div>
+            <div className="stat-label">Colonists</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{creatures.animals_count || 0}</div>
+            <div className="stat-label">Animals</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">{resources.total_items || 0}</div>
+            <div className="stat-label">Total Items</div>
+          </div>
+          <div className="stat-item">
+            <div className="stat-value">${Math.round(resources.total_market_value || 0)}</div>
+            <div className="stat-label">Wealth</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface MedicalTabProps {
+  colonistsDetailed: any[];
+  loading: boolean;
+}
+
+const MedicalTab: React.FC<MedicalTabProps> = ({ colonistsDetailed, loading }) => {
+  return (
+    <div className="medical-tab">
+      <MedicalAlertsCard 
+        colonistsDetailed={colonistsDetailed}
+        loading={loading}
+      />
+      {/* You can add more medical-specific components here */}
+    </div>
+  );
+};
+
+interface ResearchTabProps {
+  researchProgress: any;
+  researchFinished: any;
+  researchSummary: any;
+  loading: boolean;
+}
+
+const ResearchTab: React.FC<ResearchTabProps> = ({
+  researchProgress,
+  researchFinished,
+  researchSummary,
+  loading
+}) => {
+  return (
+    <div className="research-tab">
+      <ResearchCards 
+        researchProgress={researchProgress}
+        researchFinished={researchFinished}
+        researchSummary={researchSummary}
+        loading={loading}
+      />
+    </div>
+  );
+};
+
+interface ColonistsTabProps {
+  colonists: Colonist[];
+  loading: boolean;
+}
+
+const ColonistsTab: React.FC<ColonistsTabProps> = ({ colonists, loading }) => {
+  return (
+    <div className="colonists-tab">
+      <div className="colonists-grid">
+        {colonists.map((colonist) => (
+          <div key={colonist.id} className="colonist-card">
+            <div className="colonist-header">
+              <h3>{colonist.name}</h3>
+              <span className="colonist-age">{colonist.age} years</span>
+            </div>
+            <div className="colonist-stats">
+              <div className="stat-row">
+                <span className="stat-label">Health:</span>
+                <span className="stat-value">{Math.round((colonist.health || 0) * 100)}%</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Mood:</span>
+                <span className="stat-value">{Math.round((colonist.mood || 0) * 100)}%</span>
+              </div>
+              <div className="stat-row">
+                <span className="stat-label">Gender:</span>
+                <span className="stat-value">{colonist.gender}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface DefenseTabProps {
+  loading: boolean;
+}
+
+const DefenseTab: React.FC<DefenseTabProps> = ({ loading }) => {
+  // Mock data - replace with actual API data when available
+  const mockTurrets = [
+    { id: 1, name: 'Auto-Cannon Turret', status: 'Operational', health: 100, ammo: 85, target: '12' },
+    { id: 2, name: 'Mini-Turret', status: 'Operational', health: 100, ammo: 92, target: '5' },
+    { id: 3, name: 'Uranium Slug Turret', status: 'Damaged', health: 65, ammo: 45, target: '17' },
+    { id: 4, name: 'Charge Blaster', status: 'Operational', health: 100, ammo: 78, target: '21' },
+  ];
+
+  const mockThreatAssessment = {
+    defenseScore: 725,
+    threatLevel: 'Medium',
+    recommendedImprovements: ['Repair damaged turrets', 'Add more mini-turrets', 'Stockpile more ammunition'],
+    weakPoints: ['North wall section', 'Eastern flank']
+  };
+
+  const mockCombatHistory = [
+    { id: 1, date: '2 days ago', event: 'Raid - Tribal', damageTaken: 120, damageDealt: 450, outcome: 'Victory' },
+    { id: 2, date: '5 days ago', event: 'Mech Cluster', damageTaken: 340, damageDealt: 680, outcome: 'Victory' },
+    { id: 3, date: '8 days ago', event: 'Infestation', damageTaken: 280, damageDealt: 320, outcome: 'Victory' },
+    { id: 4, date: '12 days ago', event: 'Siege - Pirates', damageTaken: 560, damageDealt: 890, outcome: 'Victory' },
+  ];
+
+  return (
+    <div className="defense-tab">
+
+      {/* API Placeholder Notice */}
+      <div className="api-notice">
+        <div className="notice-icon">🚧</div>
+        <div className="notice-content">
+          <h4>Defense API Coming Soon</h4>
+          <p>This section displays mock data. Real-time defense monitoring will be available when the RIMAPI defense endpoints are implemented.</p>
+        </div>
+      </div>
+
+      {/* Defense Overview Header */}
+      <div className="defense-overview">
+        <div className="defense-header">
+          <h2>🛡️ Colony Defense Systems</h2>
+          <div className="defense-status">
+            <span className="status-indicator operational">Operational</span>
+            <span className="last-drill">Last combat drill: 3 days ago</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="defense-grid">
+        {/* Active Turrets Section */}
+        <div className="defense-section turrets-section">
+          <div className="section-header">
+            <h3>🎯 Active Defense Turrets</h3>
+            <span className="section-count">{mockTurrets.length} Turrets</span>
+          </div>
+          <div className="turrets-grid">
+            {mockTurrets.map(turret => (
+              <div key={turret.id} className={`turret-card ${turret.status.toLowerCase()}`}>
+                <div className="turret-header">
+                  <h4>{turret.name}</h4>
+                  <span className={`status-badge ${turret.status.toLowerCase()}`}>
+                    {turret.status}
+                  </span>
+                </div>
+                <div className="turret-stats">
+                  <div className="stat-row">
+                    <span className="stat-label">Health:</span>
+                    <div className="health-bar">
+                      <div 
+                        className="health-fill"
+                        style={{ width: `${turret.health}%` }}
+                      ></div>
+                    </div>
+                    <span className="stat-value">{turret.health}%</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Ammo:</span>
+                    <div className="ammo-bar">
+                      <div 
+                        className="ammo-fill"
+                        style={{ width: `${turret.ammo}%` }}
+                      ></div>
+                    </div>
+                    <span className="stat-value">{turret.ammo}%</span>
+                  </div>
+                  <div className="stat-row">
+                    <span className="stat-label">Damage:</span>
+                    <span className="stat-value target-status">{turret.target}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Threat Assessment Section */}
+        <div className="defense-section threat-section">
+          <div className="section-header">
+            <h3>📊 Threat Assessment</h3>
+            <span className={`threat-level ${mockThreatAssessment.threatLevel.toLowerCase()}`}>
+              {mockThreatAssessment.threatLevel} Threat
+            </span>
+          </div>
+          <div className="threat-content">
+            <div className="defense-score">
+              <div className="score-circle">
+                <span className="score-value">{mockThreatAssessment.defenseScore}</span>
+                <span className="score-label">Defense Score</span>
+              </div>
+            </div>
+            <div className="assessment-details">
+              <div className="weak-points">
+                <h4>Weak Points:</h4>
+                <ul>
+                  {mockThreatAssessment.weakPoints.map((point, index) => (
+                    <li key={index}>📍 {point}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="recommendations">
+                <h4>Recommended Improvements:</h4>
+                <ul>
+                  {mockThreatAssessment.recommendedImprovements.map((rec, index) => (
+                    <li key={index}>✅ {rec}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Combat History Section */}
+        <div className="defense-section history-section">
+          <div className="section-header">
+            <h3>📈 Combat History</h3>
+            <span className="history-count">Last {mockCombatHistory.length} Engagements</span>
+          </div>
+          <div className="combat-history">
+            <div className="history-stats">
+              <div className="history-stat">
+                <span className="stat-number">{mockCombatHistory.length}</span>
+                <span className="stat-label">Total Engagements</span>
+              </div>
+              <div className="history-stat">
+                <span className="stat-number">{mockCombatHistory.filter(e => e.outcome === 'Victory').length}</span>
+                <span className="stat-label">Victories</span>
+              </div>
+              <div className="history-stat">
+                <span className="stat-number">
+                  {Math.round(mockCombatHistory.reduce((acc, curr) => acc + curr.damageDealt, 0) / mockCombatHistory.length)}
+                </span>
+                <span className="stat-label">Avg Damage Dealt</span>
+              </div>
+            </div>
+            <div className="engagements-list">
+              {mockCombatHistory.map(engagement => (
+                <div key={engagement.id} className="engagement-card">
+                  <div className="engagement-header">
+                    <span className="engagement-date">{engagement.date}</span>
+                    <span className={`outcome-badge ${engagement.outcome.toLowerCase()}`}>
+                      {engagement.outcome}
+                    </span>
+                  </div>
+                  <div className="engagement-event">{engagement.event}</div>
+                  <div className="engagement-stats">
+                    <div className="damage-taken">
+                      <span className="damage-label">Damage Taken:</span>
+                      <span className="damage-value">{engagement.damageTaken}</span>
+                    </div>
+                    <div className="damage-dealt">
+                      <span className="damage-label">Damage Dealt:</span>
+                      <span className="damage-value">{engagement.damageDealt}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

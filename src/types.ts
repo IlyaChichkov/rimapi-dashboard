@@ -3,6 +3,7 @@
 export interface RimWorldData {
   gameState?: GameState;
   colonists?: Colonist[];
+  colonistsDetailed?: ColonistDetailed[];
   resources?: ResourceSummary;
   creatures?: CreaturesSummary;
   power?: any;
@@ -11,6 +12,7 @@ export interface RimWorldData {
   researchProgress?: ResearchProgress;
   researchFinished?: ResearchFinished;
   researchSummary?: ResearchSummary;
+  modsInfo?: ModInfo[];
 }
 
 export interface GameState {
@@ -116,4 +118,57 @@ export interface ResearchSummary {
   by_tab: {
     [key: string]: TechLevelSummary;
   };
+}
+
+export interface ColonistDetailed {
+  sleep: number;
+  comfort: number;
+  surrounding_beauty: number;
+  fresh_air: number;
+  colonist: {
+    id: number;
+    name: string;
+    gender: string;
+    age: number;
+    health: number;
+    mood: number;
+    hunger: number;
+    position: {
+      x: number;
+      y: number;
+      z: number;
+    };
+  };
+  colonist_medical_info: {
+    health: number;
+    hediffs: Hediff[];
+    medical_policy_id: number;
+    is_self_tend_allowed: boolean;
+  };
+  // ... other properties can be added as needed
+}
+
+export interface Hediff {
+  part: string | null;
+  label: string;
+}
+
+export interface MedicalAlert {
+  colonistId: number;
+  colonistName: string;
+  condition: string;
+  severity: 'critical' | 'serious' | 'warning' | 'info';
+  bodyPart: string;
+  description: string;
+  healthPercent: number;
+}
+
+export interface ModInfo {
+  name: string;
+  package_id: string;
+  load_order: number;
+}
+
+export interface ModsList {
+  mods: ModInfo[];
 }
