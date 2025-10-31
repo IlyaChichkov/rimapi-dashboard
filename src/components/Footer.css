@@ -1,0 +1,177 @@
+/* src/components/Footer.css */
+.dashboard-footer {
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 0;
+  margin-top: 40px;
+  position: relative;
+}
+
+.footer-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 30px;
+}
+
+.footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.copyright {
+  color: white;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.disclaimer {
+  color: #b0b0b0;
+  font-size: 0.75em;
+  line-height: 1.4;
+  max-width: 400px;
+}
+
+.footer-right {
+  flex-shrink: 0;
+}
+
+.footer-links {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.footer-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b0b0b0;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.footer-link:hover {
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.link-icon {
+  font-size: 1.1em;
+}
+
+.link-text {
+  font-size: 0.85em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* RimWorld theme colors for links */
+.footer-link:nth-child(1):hover { /* GitHub */
+  color: #8bc34a;
+  border-color: rgba(139, 195, 74, 0.3);
+}
+
+.footer-link:nth-child(2):hover { /* Discord */
+  color: #7289da;
+  border-color: rgba(114, 137, 218, 0.3);
+}
+
+.footer-link:nth-child(3):hover { /* RimWorld */
+  color: #ff6b35;
+  border-color: rgba(255, 107, 53, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .footer-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .footer-left {
+    align-items: center;
+  }
+  
+  .disclaimer {
+    max-width: 300px;
+  }
+  
+  .footer-links {
+    gap: 15px;
+  }
+  
+  .footer-link {
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-content {
+    padding: 0 15px;
+  }
+  
+  .footer-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .footer-link {
+    flex: 1;
+    min-width: 100px;
+    justify-content: center;
+  }
+  
+  .copyright {
+    font-size: 0.85em;
+  }
+  
+  .disclaimer {
+    font-size: 0.7em;
+  }
+}
+
+/* Animation for footer appearance */
+.dashboard-footer {
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optional: Add a subtle pattern or gradient */
+.dashboard-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 107, 53, 0.5) 50%, 
+    transparent 100%);
+}

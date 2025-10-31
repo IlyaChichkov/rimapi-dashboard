@@ -12,6 +12,7 @@ import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
 import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
 import ResearchCards from './ResearchCards';
+import Footer from './Footer';
 
 const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 5) return 1;    // Normal size
@@ -342,6 +343,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           Auto-refreshing every 5 seconds...
         </div>
       )}
+      
+      <Footer />
     </div>
   );
 };

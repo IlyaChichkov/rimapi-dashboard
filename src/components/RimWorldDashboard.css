@@ -1,6 +1,6 @@
 /* src/components/RimWorldDashboard.css */
 .rimworld-dashboard {
-  padding: 20px;
+  padding-top: 20px;
   min-height: 100vh;
   color: white;
   position: relative;
@@ -342,6 +342,8 @@
 @media (max-width: 768px) {
   .dashboard-grid {
     grid-template-columns: 1fr;
+    margin: 0 auto;
+    width: 90%;
   }
   
   .dashboard-header {
