@@ -2,15 +2,16 @@
 import React from 'react';
 import { ColonistDetailed, MedicalAlert } from '../types';
 import './MedicalAlertsCard.css';
+import { selectAndViewColonist } from '../services/rimworldApi';
 
 interface MedicalAlertsCardProps {
   colonistsDetailed?: ColonistDetailed[];
   loading?: boolean;
 }
 
-const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({ 
-  colonistsDetailed = [], 
-  loading = false 
+const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
+  colonistsDetailed = [],
+  loading = false
 }) => {
   // Analyze medical conditions and generate alerts
   const medicalAlerts = React.useMemo(() => {
@@ -18,7 +19,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
 
     colonistsDetailed.forEach(colonist => {
       const { colonist: col, colonist_medical_info: medical } = colonist;
-      
+
       // Check overall health
       if (medical.health < 0.3) {
         alerts.push({
@@ -114,7 +115,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           {medicalAlerts.length} Issues
         </div>
       </div>
-      
+
       <div className="medical-content">
         {medicalAlerts.length === 0 ? (
           <div className="no-alerts">
@@ -173,10 +174,12 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
 };
 
 const MedicalAlertItem: React.FC<{ alert: MedicalAlert }> = ({ alert }) => {
-  const handleViewColonist = () => {
-    // Placeholder for future API integration
-    console.log(`Viewing colonist ${alert.colonistName} with condition: ${alert.condition}`);
-    // TODO: Implement camera navigation to colonist in API
+  const handleViewColonist = async () => {
+    try {
+      await selectAndViewColonist(alert.colonistId, alert.colonistName);
+    } catch (error) {
+      console.error('Failed to navigate to colonist:', error);
+    }
   };
 
   const getSeverityIcon = (severity: string) => {
@@ -202,9 +205,9 @@ const MedicalAlertItem: React.FC<{ alert: MedicalAlert }> = ({ alert }) => {
             <span className="colonist-name">{alert.colonistName}</span>
             <span className="health-percent">{Math.round(alert.healthPercent * 100)}%</span>
           </div>
-          
+
           <div className="alert-condition">{alert.condition}</div>
-          
+
           <div className="alert-details">
             <span className="body-part">{alert.bodyPart}</span>
             <span className="alert-description">{alert.description}</span>
@@ -213,7 +216,7 @@ const MedicalAlertItem: React.FC<{ alert: MedicalAlert }> = ({ alert }) => {
 
         {/* Right Column - Actions */}
         <div className="alert-actions">
-          <button 
+          <button
             className="action-btn view-btn"
             onClick={handleViewColonist}
             title={`View ${alert.colonistName}'s details`}
@@ -230,29 +233,29 @@ const MedicalAlertItem: React.FC<{ alert: MedicalAlert }> = ({ alert }) => {
 // Helper functions to analyze medical conditions
 const getHediffSeverity = (label: string): MedicalAlert['severity'] | null => {
   const lowerLabel = label.toLowerCase();
-  
+
   // Critical conditions
-  if (lowerLabel.includes('критический') || lowerLabel.includes('critical') || 
-      lowerLabel.includes('инфаркт') || lowerLabel.includes('heart attack') ||
-      lowerLabel.includes('открытый перелом') || lowerLabel.includes('open fracture') ||
-      lowerLabel.includes('острая') || lowerLabel.includes('acute')) {
+  if (lowerLabel.includes('критический') || lowerLabel.includes('critical') ||
+    lowerLabel.includes('инфаркт') || lowerLabel.includes('heart attack') ||
+    lowerLabel.includes('открытый перелом') || lowerLabel.includes('open fracture') ||
+    lowerLabel.includes('острая') || lowerLabel.includes('acute')) {
     return 'critical';
   }
-  
+
   // Serious conditions
   if (lowerLabel.includes('болезнь') || lowerLabel.includes('disease') ||
-      lowerLabel.includes('инфекция') || lowerLabel.includes('infection') ||
-      lowerLabel.includes('перелом') || lowerLabel.includes('fracture')) {
+    lowerLabel.includes('инфекция') || lowerLabel.includes('infection') ||
+    lowerLabel.includes('перелом') || lowerLabel.includes('fracture')) {
     return 'serious';
   }
-  
+
   // Warning conditions
   if (lowerLabel.includes('мигрень') || lowerLabel.includes('migraine') ||
-      lowerLabel.includes('косоглазие') || lowerLabel.includes('lazy eye') ||
-      lowerLabel.includes('слабовыраженная') || lowerLabel.includes('mild')) {
+    lowerLabel.includes('косоглазие') || lowerLabel.includes('lazy eye') ||
+    lowerLabel.includes('слабовыраженная') || lowerLabel.includes('mild')) {
     return 'warning';
   }
-  
+
   return null;
 };
 
