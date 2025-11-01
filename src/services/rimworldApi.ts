@@ -19,6 +19,37 @@ export const getApiBaseUrl = () => {
   return API_BASE_URL;
 };
 
+const fetchApiPost = async <T>(endpoint: string, options: RequestInit = {}): Promise<T | null> => {
+  // For POST requests, use a simpler approach without Content-Type to avoid preflight
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: {
+      ...(options.method !== 'POST' ? { 'Content-Type': 'application/json' } : {}),
+      ...options.headers,
+    },
+    mode: 'cors', // Ensure CORS mode
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
+  console.log(`Fetch: ${API_BASE_URL}${endpoint}`, options.method || 'GET');
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  // For POST requests that might not return JSON, check content type
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    const data = await response.json();
+    console.log(`Data: `, data);
+    return data;
+  } else {
+    // For empty responses or non-JSON responses
+    console.log(`Response status: ${response.status}`);
+    return null;
+  }
+};
+
 const fetchApi = async <T>(endpoint: string): Promise<T | null> => {
   const response = await fetch(`${API_BASE_URL}${endpoint}`,{
     headers: {
@@ -179,6 +210,34 @@ const validateResearchFinished = (data: any): ResearchFinished => {
   return {
     finished_projects: data.finished_projects || []
   };
+};
+
+export const selectAndViewColonist = async (colonistId: number, colonistName: string): Promise<void> => {
+  try {
+    // First, get the colonist's current position
+    const colonistData = await fetchApi<{ position: { x: number; y: number, z: number } }>(`/colonist?id=${colonistId}&fields=position`);
+    
+    if (!colonistData || !colonistData.position) {
+      throw new Error('Failed to get colonist position');
+    }
+
+    await fetchApiPost(`/deselect?type=all`, { method: 'POST' });
+    
+    // Select the colonist
+    await fetchApiPost(`/select?type=pawn&id=${colonistId}`, { method: 'POST' });
+    
+    // Move camera to colonist position
+    await fetchApiPost(`/camera/change/position?x=${colonistData.position.x}&y=${colonistData.position.z}`, { method: 'POST' });
+    
+    // Change camera zoom to close level
+    await fetchApiPost(`/camera/change/zoom?zoom=8`, { method: 'POST' });
+    await fetchApiPost(`/open-tab?type=health`, { method: 'POST' });
+    
+    console.log(`Navigated to colonist ${colonistName} at position (${colonistData.position.x}, ${colonistData.position.z})`);
+  } catch (error) {
+    console.error('Failed to navigate to colonist:', error);
+    throw error;
+  }
 };
 
 export const fetchRimWorldData = async (): Promise<RimWorldData> => {
