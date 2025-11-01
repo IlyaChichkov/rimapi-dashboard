@@ -149,9 +149,34 @@ export interface ColonistDetailed {
 }
 
 export interface Hediff {
-  part: string | null;
+  load_id: number;
+  def_name: string;
   label: string;
+  label_cap: string;
+  label_in_brackets: string;
+  severity: number;
+  severity_label: string;
+  cur_stage_index: number;
+  cur_stage_label: string | null;
+  part_label: string | null;
+  part_def_name: string | null;
+  age_ticks: number;
+  age_string: string;
+  visible: boolean;
+  is_permanent: boolean;
+  is_tended: boolean;
+  tendable_now: boolean;
+  bleeding: boolean;
+  bleed_rate: number;
+  source_def_name: string | null;
+  source_label: string | null;
+  source_body_part_group_def_name: string | null;
+  source_hediff_def_name: string | null;
+  combat_log_text: string | null;
+  tip_string_extra: string;
+  pain_factor: number;
 }
+
 
 export interface MedicalAlert {
   colonistId: number;
