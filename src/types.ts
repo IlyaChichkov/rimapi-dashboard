@@ -175,6 +175,10 @@ export interface Hediff {
   combat_log_text: string | null;
   tip_string_extra: string;
   pain_factor: number;
+  pain_offset: number;
+  is_lethal: boolean;
+  is_currently_life_threatening: boolean;
+  can_ever_kill: boolean;
 }
 
 
@@ -186,6 +190,7 @@ export interface MedicalAlert {
   bodyPart: string;
   description: string;
   healthPercent: number;
+  bleedRate?: number;
 }
 
 export interface ModInfo {
@@ -197,3 +202,4 @@ export interface ModInfo {
 export interface ModsList {
   mods: ModInfo[];
 }
+

@@ -6,9 +6,11 @@ import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   flexRender,
   ColumnDef,
   SortingState,
+  ColumnFiltersState,
 } from '@tanstack/react-table';
 import './MedicalAlertsCard.css';
 
@@ -21,9 +23,20 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   colonistsDetailed = [],
   loading = false
 }) => {
+  // Set default sorting by severity (critical first)
   const [sorting, setSorting] = React.useState<SortingState>([
-    { id: 'severity', desc: false } // asc: critical -> serious -> warning -> info
+    { id: 'severity', desc: false }
   ]);
+
+  // State for filters
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState('');
+
+  // Get unique colonist names for the filter dropdown
+  const colonistNames = React.useMemo(() => {
+    const names = colonistsDetailed.map(col => col.colonist.name);
+    return Array.from(new Set(names)).sort();
+  }, [colonistsDetailed]);
 
   // Analyze medical conditions and generate alerts using new API structure
   const medicalAlerts = React.useMemo(() => {
@@ -34,11 +47,16 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
 
       // Calculate pain percentage from hediffs
       const totalPainPercent = medical.hediffs.reduce((total, hediff) => {
-        return total + (hediff.pain_factor || 0);
+        return total + (hediff.pain_factor * hediff.pain_offset);
       }, 0);
 
+      // Check for bleeding conditions
+      const bleedingHediffs = medical.hediffs.filter(h => h.bleeding && h.bleed_rate > 0);
+      const totalBleedRate = bleedingHediffs.reduce((total, h) => total + h.bleed_rate, 0);
+      console.log("totalPainPercent: ", totalPainPercent)
+
       // Check overall health
-      if (medical.health < 0.3) {
+      if (medical.health < 0.25) {
         alerts.push({
           colonistId: col.id,
           colonistName: col.name,
@@ -46,7 +64,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           severity: 'critical',
           bodyPart: 'Overall',
           description: `Health at ${Math.round(medical.health * 100)}% - Immediate medical attention required`,
-          healthPercent: medical.health
+          healthPercent: medical.health,
         });
       } else if (medical.health < 0.6) {
         alerts.push({
@@ -56,7 +74,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           severity: 'serious',
           bodyPart: 'Overall',
           description: `Health at ${Math.round(medical.health * 100)}% - Medical attention recommended`,
-          healthPercent: medical.health
+          healthPercent: medical.health,
         });
       }
 
@@ -71,13 +89,14 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
             severity,
             bodyPart: hediff.part_label || 'Unknown',
             description: getHediffDescription(hediff),
-            healthPercent: medical.health
+            healthPercent: medical.health,
+            bleedRate: hediff.bleed_rate,
           });
         }
       });
 
       // Check for high pain levels
-      if (totalPainPercent > 0.5) {
+      if (totalPainPercent > 0.8) {
         alerts.push({
           colonistId: col.id,
           colonistName: col.name,
@@ -95,14 +114,11 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           severity: 'warning',
           bodyPart: 'Overall',
           description: `Moderate pain level (${Math.round(totalPainPercent * 100)}%)`,
-          healthPercent: medical.health
+          healthPercent: medical.health,
         });
       }
 
-      // Check for bleeding conditions
-      const bleedingHediffs = medical.hediffs.filter(h => h.bleeding && h.bleed_rate > 0);
       if (bleedingHediffs.length > 0) {
-        const totalBleedRate = bleedingHediffs.reduce((total, h) => total + h.bleed_rate, 0);
         if (totalBleedRate > 0.01) {
           alerts.push({
             colonistId: col.id,
@@ -111,7 +127,8 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
             severity: 'critical',
             bodyPart: 'Multiple',
             description: `Bleeding at ${(totalBleedRate * 100).toFixed(1)}%/day - Immediate treatment required`,
-            healthPercent: medical.health
+            healthPercent: medical.health,
+            bleedRate: totalBleedRate,
           });
         } else if (totalBleedRate > 0.001) {
           alerts.push({
@@ -121,49 +138,16 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
             severity: 'serious',
             bodyPart: 'Multiple',
             description: `Bleeding at ${(totalBleedRate * 100).toFixed(1)}%/day - Treatment needed`,
-            healthPercent: medical.health
+            healthPercent: medical.health,
+            bleedRate: totalBleedRate,
           });
         }
       }
 
       // Check for untended wounds that need treatment
       const untendedWounds = medical.hediffs.filter(h =>
-        h.tendable_now && !h.is_tended && h.def_name !== 'Scratch' // Exclude minor scratches
+        h.tendable_now && !h.is_tended && h.def_name !== 'Scratch'
       );
-      if (untendedWounds.length > 2) {
-        alerts.push({
-          colonistId: col.id,
-          colonistName: col.name,
-          condition: 'Multiple Untended Wounds',
-          severity: 'serious',
-          bodyPart: 'Multiple',
-          description: `${untendedWounds.length} wounds require treatment`,
-          healthPercent: medical.health
-        });
-      }
-
-      // Check mood (mental health)
-      if (col.mood < 0.3) {
-        alerts.push({
-          colonistId: col.id,
-          colonistName: col.name,
-          condition: 'Extreme Mental Break Risk',
-          severity: 'critical',
-          bodyPart: 'Mental',
-          description: `Mood at ${Math.round(col.mood * 100)}% - High risk of mental break`,
-          healthPercent: medical.health
-        });
-      } else if (col.mood < 0.5) {
-        alerts.push({
-          colonistId: col.id,
-          colonistName: col.name,
-          condition: 'Low Mood',
-          severity: 'warning',
-          bodyPart: 'Mental',
-          description: `Mood at ${Math.round(col.mood * 100)}% - Monitor for mental breaks`,
-          healthPercent: medical.health
-        });
-      }
 
       // Check hunger
       if (col.hunger < 0.2) {
@@ -182,7 +166,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     return alerts;
   }, [colonistsDetailed]);
 
-  // Define columns for the table (same as before)
+  // Define columns for the table
   const columns = React.useMemo<ColumnDef<MedicalAlert>[]>(
     () => [
       {
@@ -203,6 +187,11 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           const b = rowB.getValue(columnId) as keyof typeof severityOrder;
           return severityOrder[a] - severityOrder[b];
         },
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || filterValue.length === 0) return true;
+          const severity = row.getValue(columnId) as string;
+          return filterValue.includes(severity);
+        },
       },
       {
         accessorKey: 'colonistName',
@@ -210,6 +199,11 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
         cell: ({ getValue }) => (
           <span className="colonist-name">{getValue() as string}</span>
         ),
+        filterFn: (row, columnId, filterValue) => {
+          if (!filterValue || filterValue.length === 0) return true;
+          const colonistName = row.getValue(columnId) as string;
+          return filterValue.includes(colonistName);
+        },
       },
       {
         accessorKey: 'condition',
@@ -224,6 +218,34 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
         cell: ({ getValue }) => (
           <span className="body-part">{getValue() as string}</span>
         ),
+      },
+      {
+        accessorKey: 'bleedRate',
+        header: 'Bleeding',
+        cell: ({ getValue }) => {
+          const bleedRate = getValue() as number | undefined;
+
+          if (bleedRate && bleedRate > 0) {
+            return (
+              <div className="bleeding-cell">
+                <span className="bleeding-indicator">🩸</span>
+                <span className="bleed-rate">{(bleedRate * 100).toFixed(1)}%/day</span>
+              </div>
+            );
+          }
+
+          return <span className="no-bleeding">-</span>;
+        },
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.getValue(columnId) as number | undefined;
+          const b = rowB.getValue(columnId) as number | undefined;
+
+          // Treat undefined/0 as 0 for sorting
+          const aValue = a || 0;
+          const bValue = b || 0;
+
+          return aValue - bValue;
+        },
       },
       {
         accessorKey: 'description',
@@ -274,11 +296,15 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     columns,
     state: {
       sorting,
+      columnFilters,
+      globalFilter,
     },
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    // Enable initial automatic sorting
+    getFilteredRowModel: getFilteredRowModel(),
     initialState: {
       sorting: [{ id: 'severity', desc: false }]
     },
@@ -305,9 +331,46 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     }
   };
 
-  const criticalCount = medicalAlerts.filter(a => a.severity === 'critical').length;
-  const seriousCount = medicalAlerts.filter(a => a.severity === 'serious').length;
-  const warningCount = medicalAlerts.filter(a => a.severity === 'warning').length;
+  // Get current filter values
+  const severityFilterValue = (table.getColumn('severity')?.getFilterValue() as string[]) || [];
+  const colonistFilterValue = (table.getColumn('colonistName')?.getFilterValue() as string[]) || [];
+
+  // Counts for filtered data
+  const filteredAlerts = table.getFilteredRowModel().rows;
+  const criticalCount = filteredAlerts.filter(row => row.original.severity === 'critical').length;
+  const seriousCount = filteredAlerts.filter(row => row.original.severity === 'serious').length;
+  const warningCount = filteredAlerts.filter(row => row.original.severity === 'warning').length;
+
+  const handleSeverityFilter = (severity: string) => {
+    const column = table.getColumn('severity');
+    const currentFilter = (column?.getFilterValue() as string[]) || [];
+
+    const newFilter = currentFilter.includes(severity)
+      ? currentFilter.filter(s => s !== severity)
+      : [...currentFilter, severity];
+
+    column?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+  };
+
+  const handleColonistFilter = (colonistName: string) => {
+    const column = table.getColumn('colonistName');
+    const currentFilter = (column?.getFilterValue() as string[]) || [];
+
+    const newFilter = currentFilter.includes(colonistName)
+      ? currentFilter.filter(name => name !== colonistName)
+      : [...currentFilter, colonistName];
+
+    column?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+  };
+
+  const clearAllFilters = () => {
+    table.setColumnFilters([]);
+    setGlobalFilter('');
+  };
+
+  const hasActiveFilters = columnFilters.some(filter =>
+    Array.isArray(filter.value) ? filter.value.length > 0 : !!filter.value
+  ) || globalFilter;
 
   return (
     <div className="medical-alerts-card">
@@ -317,16 +380,88 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           {criticalCount > 0 && <span className="stat critical">🚨 {criticalCount}</span>}
           {seriousCount > 0 && <span className="stat serious">⚠️ {seriousCount}</span>}
           {warningCount > 0 && <span className="stat warning">📋 {warningCount}</span>}
-          <span className="total-alerts">Total: {medicalAlerts.length}</span>
+          <span className="total-alerts">Showing: {filteredAlerts.length}</span>
         </div>
       </div>
 
+      {/* Filter Controls */}
+      <div className="filter-controls">
+        <div className="filter-group">
+          <label>Severity:</label>
+          <div className="filter-buttons">
+            {['critical', 'serious', 'warning'].map(severity => (
+              <button
+                key={severity}
+                className={`filter-btn severity ${severity} ${severityFilterValue.includes(severity) ? 'active' : ''}`}
+                onClick={() => handleSeverityFilter(severity)}
+              >
+                {getSeverityIcon(severity)} {severity.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-group">
+          <label>Colonist:</label>
+          <select
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                handleColonistFilter(e.target.value);
+                e.target.value = ''; // Reset select
+              }
+            }}
+            className="colonist-select"
+          >
+            <option value="">Add colonist filter...</option>
+            {colonistNames.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
+          <div className="active-filters">
+            {colonistFilterValue.map(name => (
+              <span key={name} className="active-filter-tag">
+                {name}
+                <button onClick={() => handleColonistFilter(name)}>×</button>
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="filter-group">
+          <label>Search:</label>
+          <input
+            type="text"
+            placeholder="Search conditions, body parts..."
+            value={globalFilter ?? ''}
+            onChange={e => setGlobalFilter(e.target.value)}
+            className="search-input"
+          />
+        </div>
+
+        {hasActiveFilters && (
+          <button className="clear-filters-btn" onClick={clearAllFilters}>
+            Clear All Filters
+          </button>
+        )}
+      </div>
+
       <div className="medical-content">
-        {medicalAlerts.length === 0 ? (
+        {filteredAlerts.length === 0 ? (
           <div className="no-alerts">
-            <div className="no-alerts-icon">✅</div>
-            <p>All colonists are healthy</p>
-            <span className="no-alerts-subtitle">No medical issues detected</span>
+            <div className="no-alerts-icon">🔍</div>
+            <p>No alerts match your filters</p>
+            <span className="no-alerts-subtitle">
+              {medicalAlerts.length > 0
+                ? 'Try adjusting your filters'
+                : 'No medical issues detected'
+              }
+            </span>
+            {hasActiveFilters && (
+              <button className="clear-filters-btn" onClick={clearAllFilters}>
+                Clear All Filters
+              </button>
+            )}
           </div>
         ) : (
           <div className="medical-table-container">
@@ -382,7 +517,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   );
 };
 
-// Updated helper functions to use new hediff structure
+// Helper functions to analyze medical conditions
 const getHediffSeverity = (hediff: any): MedicalAlert['severity'] | null => {
   const lowerLabel = hediff.label.toLowerCase();
   const defName = hediff.def_name?.toLowerCase();
@@ -403,18 +538,12 @@ const getHediffSeverity = (hediff: any): MedicalAlert['severity'] | null => {
   }
 
   // Serious conditions - moderate severity wounds, infections
-  if (hediff.severity > 5 ||
-    lowerLabel.includes('болезнь') || lowerLabel.includes('disease') ||
-    lowerLabel.includes('инфекция') || lowerLabel.includes('infection') ||
-    lowerLabel.includes('перелом') || lowerLabel.includes('fracture') ||
-    lowerLabel.includes('шрам') && lowerLabel.includes('сильно болит')) {
+  if (hediff.severity > 5) {
     return 'serious';
   }
 
   // Warning conditions - minor wounds, bruises, pain
   if (hediff.severity > 2 ||
-    lowerLabel.includes('ушиб') || lowerLabel.includes('bruise') ||
-    lowerLabel.includes('царапина') || lowerLabel.includes('scratch') ||
     hediff.tendable_now && !hediff.is_tended) {
     return 'warning';
   }
