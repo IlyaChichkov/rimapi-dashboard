@@ -10,7 +10,7 @@ interface ColonistsTabProps {
     onViewHealth?: (colonistName: string) => void;
 }
 
-type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory';
+type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory' | 'analyze';
 
 const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     const [activeSubTab, setActiveSubTab] = React.useState<ColonistsSubTab>('overview');
@@ -38,6 +38,8 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                 return <WorkTabPlaceholder />;
             case 'inventory':
                 return <InventoryTabPlaceholder />;
+            case 'analyze':
+                return <AnalyzeTabPlaceholder />;
             default:
                 return <ColonistsOverview {...props} />;
         }
@@ -82,6 +84,12 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                 >
                     🎒 Inventory
                 </button>
+                <button
+                    className={`subtab-button ${activeSubTab === 'inventory' ? 'active' : ''}`}
+                    onClick={() => setActiveSubTab('analyze')}
+                >
+                    🔬 Analyze
+                </button>
             </div>
 
             {/* Sub-tab Content */}
@@ -106,6 +114,14 @@ const InventoryTabPlaceholder: React.FC = () => (
         <div className="placeholder-icon">🎒</div>
         <h3>Inventory Management</h3>
         <p>Equipment and inventory management coming soon!</p>
+    </div>
+);
+
+const AnalyzeTabPlaceholder: React.FC = () => (
+    <div className="tab-placeholder">
+        <div className="placeholder-icon">🔬</div>
+        <h3>Analyze Colonists</h3>
+        <p>Find suitable roles for colonists. Coming soon!</p>
     </div>
 );
 

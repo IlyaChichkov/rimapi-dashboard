@@ -82,6 +82,16 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
     const [skillFilter, setSkillFilter] = React.useState<string>('');
+    const [selectedRowId, setSelectedRowId] = React.useState<string | null>(null);
+
+    const handleRowClick = (rowId: string) => {
+        setSelectedRowId(selectedRowId === rowId ? null : rowId);
+    };
+
+    // Clear selection when filter changes
+    React.useEffect(() => {
+        setSelectedRowId(null);
+    }, [filterColonist]);
 
     // Prepare data for skills matrix - this will update when colonistsDetailed changes
     const skillsMatrixData = React.useMemo(() => {
@@ -478,7 +488,11 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
                             ))}
                             {/* Regular colonist rows */}
                             {table.getRowModel().rows.map(row => (
-                                <tr key={row.id} className="skills-row">
+                                <tr
+                                    key={row.id}
+                                    className={`skills-row ${selectedRowId === row.id ? 'selected-row' : ''} ${selectedRowId && selectedRowId !== row.id ? 'dimmed-row' : ''}`}
+                                    onClick={() => handleRowClick(row.id)}
+                                >
                                     {row.getVisibleCells().map(cell => (
                                         <td key={cell.id}>
                                             {flexRender(

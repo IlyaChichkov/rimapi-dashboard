@@ -120,14 +120,6 @@
     text-align: left;
 }
 
-.skills-row {
-    transition: background-color 0.2s ease;
-}
-
-.skills-row:hover {
-    background: #3d3d3d;
-}
-
 .skills-colonist-info {
     text-align: left;
     padding: 8px;
@@ -681,63 +673,30 @@
     font-size: 0.8rem;
     background: #2d2d2d;
 }
-
-/* Default row state */
+/* Clean solution without layout-breaking elements */
 .skills-row {
     transition: all 0.3s ease;
-    background: #2d2d2d;
+    cursor: pointer;
+    position: relative; /* Reset position */
 }
 
 .skills-row:hover {
-    background: #3d3d3d !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    z-index: 1;
-    position: relative;
+    background: rgba(255, 255, 255, 0.15) !important;
 }
 
-/* When table is hovered, dim all non-hovered rows */
-.skills-table:hover .skills-row:not(:hover) {
-    opacity: 0.8;
-    background: #2a2a2a;
+.selected-row {
+    background: linear-gradient(90deg, rgba(77, 171, 247, 0.25), rgba(77, 171, 247, 0.15)) !important;
+    border-left: 4px solid #4dabf7;
+    border-right: 2px solid rgba(77, 171, 247, 0.3);
 }
 
-/* Ensure summary rows don't get dimmed */
-.skills-table:hover .summary-row:not(:hover) {
-    opacity: 0.8; /* Less dimming for summary rows */
-    background: #2a2a2a;
+.dimmed-row {
+    opacity: 0.5;
+    background: rgba(255, 255, 255, 0.02) !important;
 }
 
-/* Keep the highlighted row (if you have the filter feature) visible */
-.skills-table:hover .highlighted-row:not(:hover) {
-    opacity: 0.8;
-    background: rgba(77, 171, 247, 0.15);
-}
-
-/* Enhanced hover effect for the hovered row */
-.skills-row:hover td {
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
-.skills-row:hover .skill-level-bar {
-    border-color: rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.15);
-}
-
-.skills-row:hover .xp-progress-bar {
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-.skills-row:hover .xp-progress-fill {
-    background: linear-gradient(45deg, #339af0, #4dabf7);
-    box-shadow: 0 0 6px rgba(51, 154, 240, 0.6);
-}
-
-/* Smooth transition for the dimming effect */
-.skills-table .skills-row {
-    transition: opacity 0.2s ease-out, background-color 0.3s ease;
-}
-
-/* Ensure the table container doesn't clip the hover effects */
-.skills-table-container {
-    position: relative;
+/* Remove any pseudo-elements that might affect layout */
+.skills-row::before,
+.skills-row::after {
+    content: none;
 }
