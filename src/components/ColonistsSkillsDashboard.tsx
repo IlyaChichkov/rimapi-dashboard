@@ -89,7 +89,7 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
 
             colonist.colonist_work_info.skills.forEach(skill => {
                 skillsRecord[skill.name] = skill.level;
-                passionsRecord[skill.name] = skill.aptitude;
+                passionsRecord[skill.name] = skill.passion;
                 xpRecords[skill.name] = {
                     currentXP: skill.xp_since_last_level || 0,
                     xpForNextLevel: skill.xp_required_for_level_up || 0
@@ -240,14 +240,6 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
                 const level = row.original.skills[skillName] || 0;
                 const passion = row.original.passions[skillName] || 0;
 
-                // Find the actual skill data for XP values
-                const colonistData = colonistsDetailed.find(col =>
-                    col.colonist.id === row.original.colonist.id
-                );
-                const skillData = colonistData?.colonist_work_info.skills.find(
-                    (s: any) => s.name === skillName
-                );
-
                 // Get XP data directly from the row
                 const xpInfo = row.original.xpData[skillName] || { currentXP: 0, xpForNextLevel: 0 };
                 const currentXP = xpInfo.currentXP;
@@ -347,21 +339,6 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
             <div className="skills-header">
                 <h3>🎯 Skills Matrix</h3>
                 <div className="skills-controls">
-                    <select
-                        value={skillFilter}
-                        onChange={(e) => setSkillFilter(e.target.value)}
-                        className="skill-filter-select"
-                    >
-                        <option value="">Filter by skill level...</option>
-                        {SKILLS_LIST.map(skill => (
-                            <React.Fragment key={skill}>
-                                <option value={`${skill}:1`}>{skill} ≥ 1 (Any)</option>
-                                <option value={`${skill}:5`}>{skill} ≥ 5 (Competent)</option>
-                                <option value={`${skill}:10`}>{skill} ≥ 10 (Expert)</option>
-                                <option value={`${skill}:15`}>{skill} ≥ 15 (Master)</option>
-                            </React.Fragment>
-                        ))}
-                    </select>
                     <input
                         type="text"
                         placeholder="Search colonists..."
