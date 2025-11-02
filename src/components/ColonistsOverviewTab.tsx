@@ -17,10 +17,12 @@ import './ColonistsOverviewTab.css';
 interface ColonistsOverviewTabProps {
     colonistsDetailed?: ColonistDetailed[];
     loading?: boolean;
+    onViewHealth?: (colonistName: string) => void;
 }
 
 const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
     colonistsDetailed = [],
+    onViewHealth = null,
     loading = false
 }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -60,8 +62,30 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
 
     // Add these state variables inside the component, after existing states
     const [traitFilter, setTraitFilter] = React.useState<string[]>([]);
-    const [skillFilter, setSkillFilter] = React.useState<string[]>([]);
     const [jobFilter, setJobFilter] = React.useState<string[]>([]);
+
+    interface SkillFilter {
+        name: string;
+        minLevel: number;
+        maxLevel: number;
+    }
+
+    const [skillFilters, setSkillFilters] = React.useState<SkillFilter[]>([]);
+
+    // Replace the handleSkillFilter function
+    const handleAddSkillFilter = (skillName: string, minLevel: number = 1, maxLevel: number = 20) => {
+        setSkillFilters(prev => [...prev, { name: skillName, minLevel, maxLevel }]);
+    };
+
+    const handleRemoveSkillFilter = (index: number) => {
+        setSkillFilters(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleUpdateSkillFilter = (index: number, updates: Partial<SkillFilter>) => {
+        setSkillFilters(prev => prev.map((filter, i) =>
+            i === index ? { ...filter, ...updates } : filter
+        ));
+    };
 
     // Add this function to handle custom filtering
     const filteredData = React.useMemo(() => {
@@ -77,16 +101,6 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                 if (!hasMatchingTrait) return false;
             }
 
-            // Skill filter
-            if (skillFilter.length > 0) {
-                const colonistSkills = colonist.colonist_work_info.skills;
-                const hasMatchingSkill = skillFilter.some(skillName => {
-                    const skill = colonistSkills.find(s => s.name === skillName);
-                    return skill && skill.level > 0;
-                });
-                if (!hasMatchingSkill) return false;
-            }
-
             // Job filter
             if (jobFilter.length > 0) {
                 const currentJob = colonist.colonist_work_info.current_job;
@@ -96,9 +110,20 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                 if (!jobFilter.includes(currentJob) && !hasWorkPriority) return false;
             }
 
+            // Skill filter - range based
+            if (skillFilters.length > 0) {
+                const colonistSkills = colonist.colonist_work_info.skills;
+                const passesAllSkillFilters = skillFilters.every(skillFilter => {
+                    const skill = colonistSkills.find(s => s.name === skillFilter.name);
+                    if (!skill) return false; // Colonist doesn't have this skill
+                    return skill.level >= skillFilter.minLevel && skill.level <= skillFilter.maxLevel;
+                });
+                if (!passesAllSkillFilters) return false;
+            }
+
             return true;
         });
-    }, [colonistsDetailed, traitFilter, skillFilter, jobFilter]);
+    }, [colonistsDetailed, traitFilter, skillFilters, jobFilter]);
 
 
     // Define columns for the table
@@ -185,7 +210,11 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                     return (
                         <div className="skills-cell">
                             {topSkills.map((skill, index) => (
-                                <div key={index} className="skill-chip">
+                                <div
+                                    key={index}
+                                    className="skill-chip"
+                                    data-level={skill.level} // Add this line
+                                >
                                     {skill.name}: {skill.level}
                                 </div>
                             ))}
@@ -279,14 +308,6 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
         );
     };
 
-    const handleSkillFilter = (skill: string) => {
-        setSkillFilter(prev =>
-            prev.includes(skill)
-                ? prev.filter(s => s !== skill)
-                : [...prev, skill]
-        );
-    };
-
     const handleJobFilter = (job: string) => {
         setJobFilter(prev =>
             prev.includes(job)
@@ -297,16 +318,18 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
 
     const clearAllFilters = () => {
         setTraitFilter([]);
-        setSkillFilter([]);
+        setSkillFilters([]);
         setJobFilter([]);
         setGlobalFilter('');
     };
 
-    const hasActiveFilters = traitFilter.length > 0 || skillFilter.length > 0 || jobFilter.length > 0 || globalFilter;
+    const hasActiveFilters = traitFilter.length > 0 || skillFilters.length > 0 || jobFilter.length > 0 || globalFilter;
 
     const handleViewHealth = (colonist: ColonistDetailed) => {
         console.log('View health for:', colonist.colonist.name);
-        // TODO: Implement health details view
+        if (onViewHealth) {
+            onViewHealth(colonist.colonist.name); // Call the parent function
+        }
     };
 
     const handleViewInventory = (colonist: ColonistDetailed) => {
@@ -382,7 +405,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                         {traitFilter.map(trait => (
                             <span key={trait} className="active-filter-tag">
                                 {trait}
-                                <button onClick={() => handleTraitFilter(trait)}>×</button>
+                                <button onClick={() => handleTraitFilter(trait)}>❌</button>
                             </span>
                         ))}
                     </div>
@@ -390,27 +413,53 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
 
                 <div className="filter-group">
                     <label>Skills:</label>
-                    <select
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                handleSkillFilter(e.target.value);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="filter-select"
-                    >
-                        <option value="">Add skill filter...</option>
-                        {SKILL_OPTIONS.map(skill => (
-                            <option key={skill.value} value={skill.value}>{skill.label}</option>
-                        ))}
-                    </select>
+                    <div className="skill-filter-controls">
+                        <select
+                            value=""
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    handleAddSkillFilter(e.target.value);
+                                    e.target.value = '';
+                                }
+                            }}
+                            className="filter-select"
+                        >
+                            <option value="">Add skill filter...</option>
+                            {SKILL_OPTIONS.map(skill => (
+                                <option key={skill.value} value={skill.value}>{skill.label}</option>
+                            ))}
+                        </select>
+                    </div>
                     <div className="active-filters">
-                        {skillFilter.map(skill => (
-                            <span key={skill} className="active-filter-tag">
-                                {SKILL_OPTIONS.find(s => s.value === skill)?.label || skill}
-                                <button onClick={() => handleSkillFilter(skill)}>×</button>
-                            </span>
+                        {skillFilters.map((filter, index) => (
+                            <div key={index} className="skill-filter-tag">
+                                <span className="skill-filter-name">{filter.name}:</span>
+                                <select
+                                    value={filter.minLevel}
+                                    onChange={(e) => handleUpdateSkillFilter(index, { minLevel: Number(e.target.value) })}
+                                    className="level-select"
+                                >
+                                    {Array.from({ length: 21 }, (_, i) => (
+                                        <option key={i} value={i}>≥{i}</option>
+                                    ))}
+                                </select>
+                                <span className="range-separator">-</span>
+                                <select
+                                    value={filter.maxLevel}
+                                    onChange={(e) => handleUpdateSkillFilter(index, { maxLevel: Number(e.target.value) })}
+                                    className="level-select"
+                                >
+                                    {Array.from({ length: 21 }, (_, i) => (
+                                        <option key={i} value={i}>≤{i}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={() => handleRemoveSkillFilter(index)}
+                                    className="remove-filter-btn"
+                                >
+                                    ❌
+                                </button>
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -450,7 +499,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                         {jobFilter.map(job => (
                             <span key={job} className="active-filter-tag">
                                 {job}
-                                <button onClick={() => handleJobFilter(job)}>×</button>
+                                <button onClick={() => handleJobFilter(job)}>❌</button>
                             </span>
                         ))}
                     </div>

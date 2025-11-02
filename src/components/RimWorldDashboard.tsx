@@ -87,6 +87,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const colonistsDetailed = data?.colonistsDetailed || [];
 
   const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
+  const [medicalTabColonistFilter, setMedicalTabColonistFilter] = React.useState<string[]>([]);
 
   // Add this function to sort colonists
   const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'health' | 'mood') => {
@@ -195,6 +196,12 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     />;
   }
 
+  // And make sure medicalTabColonistFilter is being set correctly:
+  const handleOpenMedicalTabWithColonist = (colonistName: string) => {
+    console.log('Setting medical filter for:', colonistName); // Debug log
+    setMedicalTabColonistFilter([colonistName]);
+    setActiveTab('medical');
+  };
 
   // Render different content based on active tab
   const renderTabContent = () => {
@@ -215,6 +222,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         return <MedicalTab
           colonistsDetailed={colonistsDetailed}
           loading={loading}
+          initialColonistFilter={medicalTabColonistFilter}
         />;
 
       case 'research':
@@ -229,6 +237,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         return <ColonistsTab
           colonistsDetailed={colonistsDetailed}
           loading={loading}
+          onViewHealth={handleOpenMedicalTabWithColonist}
         />;
 
       case 'defense':
@@ -607,14 +616,16 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
 interface MedicalTabProps {
   colonistsDetailed: any[];
   loading: boolean;
+  initialColonistFilter?: string[];
 }
 
-const MedicalTab: React.FC<MedicalTabProps> = ({ colonistsDetailed, loading }) => {
+const MedicalTab: React.FC<MedicalTabProps> = ({ colonistsDetailed, loading, initialColonistFilter }) => {
   return (
     <div className="medical-tab">
       <MedicalAlertsCard
         colonistsDetailed={colonistsDetailed}
         loading={loading}
+        initialColonistFilter={initialColonistFilter}
       />
       {/* You can add more medical-specific components here */}
     </div>

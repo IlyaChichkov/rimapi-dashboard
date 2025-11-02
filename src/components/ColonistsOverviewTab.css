@@ -385,13 +385,6 @@
   min-width: 150px;
 }
 
-.active-filters {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
 .active-filter-tag {
   display: flex;
   align-items: center;
@@ -463,4 +456,249 @@
   background: rgba(32, 201, 151, 0.2);
   color: #20c997;
   border-color: #20c997;
+}
+
+/* Add these styles for the skill range filter */
+.skill-filter-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.skill-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+.skill-filter-name {
+  font-weight: 600;
+  margin-right: 2px;
+}
+
+.level-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+
+.level-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+}
+
+.range-separator {
+  color: #b0b0b0;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+.remove-filter-btn {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+  font-size: 0.9rem;
+  line-height: 1;
+  padding: 0;
+  width: 14px;
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 4px;
+}
+
+.remove-filter-btn:hover {
+  color: #ff5252;
+}
+
+.active-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  align-items: flex-start;
+}
+
+/* Style the level select dropdown options */
+.level-select option {
+  background: #2d2d2d;
+  color: #e0e0e0;
+  padding: 8px;
+  font-size: 0.8rem;
+}
+
+/* Style for different level ranges to make it more visual */
+.level-select option[value="0"] {
+  color: #ff6b6b; /* Red for level 0 */
+}
+
+.level-select option[value="1"],
+.level-select option[value="2"],
+.level-select option[value="3"],
+.level-select option[value="4"] {
+  color: #ffa94d; /* Orange for low levels */
+}
+
+.level-select option[value="5"],
+.level-select option[value="6"],
+.level-select option[value="7"],
+.level-select option[value="8"] {
+  color: #ffd43b; /* Yellow for medium levels */
+}
+
+.level-select option[value="9"],
+.level-select option[value="10"],
+.level-select option[value="11"],
+.level-select option[value="12"] {
+  color: #a9e34b; /* Light green for high medium levels */
+}
+
+.level-select option[value="13"],
+.level-select option[value="14"],
+.level-select option[value="15"],
+.level-select option[value="16"] {
+  color: #69db7c; /* Green for high levels */
+}
+
+.level-select option[value="17"],
+.level-select option[value="18"],
+.level-select option[value="19"],
+.level-select option[value="20"] {
+  color: #40c057; /* Bright green for expert levels */
+  font-weight: 600;
+}
+
+/* Improve the select appearance */
+.level-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 4px 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  min-width: 50px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23b0b0b0' d='M3 4.5L6 7.5L9 4.5H3Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  background-size: 10px;
+  padding-right: 20px;
+}
+
+.level-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.level-select:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Make the skill filter tags more compact */
+.skill-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 6px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+.skill-filter-name {
+  font-weight: 600;
+  margin-right: 2px;
+  font-size: 0.7rem;
+}
+
+.range-separator {
+  color: #b0b0b0;
+  font-weight: 600;
+  margin: 0 1px;
+  font-size: 0.7rem;
+}
+
+/* Skill chip colors based on level */
+.skill-chip {
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+  white-space: nowrap;
+}
+
+/* Level 0-2 - Gray/disabled */
+.skill-chip[data-level="1"],
+.skill-chip[data-level="2"],
+.skill-chip[data-level="0"] {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border-color: rgba(108, 117, 125, 0.3);
+}
+
+/* Levels 3-4 - Red/beginner */
+.skill-chip[data-level="3"],
+.skill-chip[data-level="4"] {
+  background: rgba(220, 38, 38, 0.2);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Levels 5-8 - Orange/intermediate */
+.skill-chip[data-level="5"],
+.skill-chip[data-level="6"],
+.skill-chip[data-level="7"],
+.skill-chip[data-level="8"] {
+  background: rgba(217, 119, 6, 0.2);
+  color: #d97706;
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+/* Levels 9-12 - Yellow/advanced */
+.skill-chip[data-level="9"],
+.skill-chip[data-level="10"],
+.skill-chip[data-level="11"],
+.skill-chip[data-level="12"] {
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  border-color: rgba(234, 179, 8, 0.3);
+}
+
+/* Levels 13-16 - Green/expert */
+.skill-chip[data-level="13"],
+.skill-chip[data-level="14"],
+.skill-chip[data-level="15"],
+.skill-chip[data-level="16"] {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+/* Levels 17-20 - Blue/master */
+.skill-chip[data-level="17"],
+.skill-chip[data-level="18"],
+.skill-chip[data-level="19"],
+.skill-chip[data-level="20"] {
+  background: rgba(59, 130, 246, 0.2);
+  color: #3b82f6;
+  border-color: rgba(59, 130, 246, 0.3);
+  font-weight: 600;
 }

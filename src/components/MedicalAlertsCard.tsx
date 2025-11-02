@@ -17,6 +17,7 @@ import './MedicalAlertsCard.css';
 interface MedicalAlertsCardProps {
   colonistsDetailed?: ColonistDetailed[];
   loading?: boolean;
+  initialColonistFilter?: string[];
 }
 
 // Filter chip types
@@ -29,7 +30,8 @@ type FilterChip = {
 
 const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   colonistsDetailed = [],
-  loading = false
+  loading = false,
+  initialColonistFilter = [],
 }) => {
   // Set default sorting by severity (critical first)
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -41,6 +43,24 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   const [globalFilter, setGlobalFilter] = React.useState('');
   const [filterChips, setFilterChips] = React.useState<FilterChip[]>([]);
   const [searchInput, setSearchInput] = React.useState('');
+
+  React.useEffect(() => {
+    if (initialColonistFilter.length > 0) {
+      // Convert initial colonist names to filter chips
+      const colonistChips = initialColonistFilter.map(colonistName => ({
+        id: `colonist-${colonistName}-initial`,
+        type: 'colonist' as const,
+        value: colonistName,
+        label: colonistName
+      }));
+
+      // Add to existing filter chips (or replace existing colonist filters)
+      setFilterChips(prev => [
+        ...prev.filter(chip => chip.type !== 'colonist'), // Remove existing colonist filters
+        ...colonistChips
+      ]);
+    }
+  }, [initialColonistFilter]);
 
   // Get unique values for filters
   const filterOptions = React.useMemo(() => {
