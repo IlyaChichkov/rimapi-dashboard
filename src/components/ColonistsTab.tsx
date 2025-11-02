@@ -2,14 +2,16 @@
 import React from 'react';
 import ColonistsOverview from './ColonistsOverview';
 import './ColonistsTab.css';
-import WorkPriorities from './WorkPriorities';
 import ColonistsSkillsDashboard from './ColonistsSkillsDashboard';
+import WorkTab from './WorkTab';
 
 interface ColonistsTabProps {
     colonistsDetailed?: any[];
     loading?: boolean;
     onViewHealth?: (colonistName: string) => void;
+    selectedColonist?: any; // Add this line
 }
+
 
 type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory' | 'analyze';
 
@@ -22,15 +24,12 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
         switch (activeSubTab) {
             case 'work':
                 return (
-                    <WorkPriorities
+                    <WorkTab
                         colonistsDetailed={props.colonistsDetailed}
                         loading={props.loading}
-                        selectedColonistId={selectedColonistId}
-                        onColonistSelect={setSelectedColonistId}
+                        selectedColonist={props.selectedColonist} // Pass selected colonist if any
                     />
                 );
-
-            // Update the overview tab to set selected colonist when navigating
             case 'overview':
                 return (
                     <ColonistsOverview
@@ -138,7 +137,7 @@ const AnalyzeTabPlaceholder: React.FC = () => (
     <div className="tab-placeholder">
         <div className="placeholder-icon">🔬</div>
         <h3>Analyze Colonists</h3>
-        <p>Find suitable roles for colonists. Coming soon!</p>
+        <p>Find suitable roles for colonists. Find nessesary tools/weapons/apparels and assign. Coming soon!</p>
     </div>
 );
 
