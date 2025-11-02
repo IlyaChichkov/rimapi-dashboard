@@ -13,7 +13,7 @@ import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
 import './DefenceTab.css';
 import ResearchCards from './ResearchCards';
-import ColonistsTab from './ColonistsOverviewTab'
+import ColonistsTab from './ColonistsTab';
 import Footer from './Footer';
 import MedicalAlertsCard from './MedicalAlertsCard';
 import ModsTab from './ModsTab';

@@ -1,0 +1,621 @@
+/* src/components/ColonistsSkillsDashboard.css */
+.skills-dashboard {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 20px;
+    color: #ffffff;
+}
+
+.skills-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.skills-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.25rem;
+}
+
+.skills-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.skill-filter-select,
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid #555;
+    border-radius: 6px;
+    background: #2d2d2d;
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    min-width: 180px;
+}
+
+.clear-filter-btn {
+    padding: 8px 12px;
+    background: #495057;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.clear-filter-btn:hover {
+    background: #6c757d;
+}
+
+.skills-stats {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #4dabf7;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #b0b0b0;
+}
+
+.skills-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #333;
+    margin-bottom: 20px;
+}
+
+.skills-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    background: #2d2d2d;
+}
+
+.skills-table th {
+    background: #3d3d3d;
+    padding: 12px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: #ffffff;
+    border-bottom: 2px solid #444;
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.skills-sortable-header {
+    text-align: center;
+}
+
+.skills-sortable-header[data-level="0"] {
+    text-align: left;
+}
+
+.skills-table td {
+    padding: 8px;
+    border-bottom: 1px solid #444;
+    text-align: left;
+}
+
+.skills-row {
+    transition: background-color 0.2s ease;
+}
+
+.skills-row:hover {
+    background: #3d3d3d;
+}
+
+.skills-colonist-info {
+    text-align: left;
+    padding: 8px;
+}
+
+.colonist-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.colonist-details {
+    font-size: 0.75rem;
+    color: #b0b0b0;
+    margin: 2px 0;
+}
+
+.current-job {
+    font-size: 0.7rem;
+    color: #888;
+    font-style: italic;
+}
+
+.skill-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 4px;
+    min-height: 50px;
+}
+
+.skill-xp-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 70px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 0 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* XP Bar fill based on level */
+.skill-xp-bar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        rgba(77, 171, 247, 0.3) 0%, 
+        rgba(77, 171, 247, 0.6) 100%);
+    width: calc(var(--level-percentage, 0%) * 1%);
+    border-radius: 12px;
+    z-index: 1;
+}
+
+.skill-level {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    min-width: 24px;
+    text-align: center;
+}
+
+/* Skill level colors */
+.skill-level.level-0 {
+    background: rgba(108, 117, 125, 0.3);
+    color: #6c757d;
+}
+
+.skill-level.level-1-4 {
+    background: rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+}
+
+.skill-level.level-5-8 {
+    background: rgba(217, 119, 6, 0.3);
+    color: #d97706;
+}
+
+.skill-level.level-9-12 {
+    background: rgba(234, 179, 8, 0.3);
+    color: #eab308;
+}
+
+.skill-level.level-13-16 {
+    background: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+}
+
+.skill-level.level-17-20 {
+    background: rgba(59, 130, 246, 0.3);
+    color: #3b82f6;
+}
+
+.passion-indicator {
+    font-size: 0.7rem;
+}
+
+.no-skills-data {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.no-data-icon {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.7;
+}
+
+.no-skills-data p {
+    margin: 0;
+    font-weight: 600;
+    color: #b0b0b0;
+}
+
+/* Skills Legend */
+.skills-legend {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.legend-title {
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 12px;
+    font-size: 0.9rem;
+}
+
+.legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    color: #b0b0b0;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.color-dot.level-0 { background: #6c757d; }
+.color-dot.level-1-4 { background: #dc2626; }
+.color-dot.level-5-8 { background: #d97706; }
+.color-dot.level-9-12 { background: #eab308; }
+.color-dot.level-13-16 { background: #22c55e; }
+.color-dot.level-17-20 { background: #3b82f6; }
+
+
+/* Summary rows styles */
+.summary-row {
+    background: rgba(255, 255, 255, 0.05);
+    border-top: 2px solid #444;
+}
+
+.summary-value-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.summary-row.average {
+    background: rgba(77, 171, 247, 0.1);
+}
+
+.summary-row.min {
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.summary-row.max {
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.summary-label {
+    font-weight: 600;
+    color: #e0e0e0;
+    padding: 12px 8px;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+.colonist-count {
+    font-size: 0.7rem;
+    color: #888;
+    font-weight: normal;
+    margin-left: 8px;
+}
+
+.summary-cell {
+    text-align: center;
+    padding: 12px 8px;
+}
+
+.summary-value {
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 6px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    min-width: 40px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.summary-value.average {
+    background: rgba(77, 171, 247, 0.3);
+    color: #4dabf7;
+    border: 1px solid rgba(77, 171, 247, 0.5);
+}
+
+.summary-value.min {
+    background: rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+    border: 1px solid rgba(220, 38, 38, 0.5);
+}
+
+.summary-value.max {
+    background: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.5);
+}
+
+.decimal {
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
+
+/* Ensure summary rows stand out */
+.skills-table tr:last-child {
+    border-bottom: 2px solid #666;
+}
+
+/* Add some spacing between regular rows and summary */
+.skills-table tr:last-child:not(.summary-row) {
+    border-bottom: 1px solid #444;
+}
+
+/* Level-based colors */
+.skill-xp-bar.level-0::before { background: rgba(108, 117, 125, 0.3); }
+.skill-xp-bar.level-1-4::before { background: linear-gradient(90deg, rgba(220, 38, 38, 0.3), rgba(220, 38, 38, 0.6)); }
+.skill-xp-bar.level-5-8::before { background: linear-gradient(90deg, rgba(217, 119, 6, 0.3), rgba(217, 119, 6, 0.6)); }
+.skill-xp-bar.level-9-12::before { background: linear-gradient(90deg, rgba(234, 179, 8, 0.3), rgba(234, 179, 8, 0.6)); }
+.skill-xp-bar.level-13-16::before { background: linear-gradient(90deg, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.6)); }
+.skill-xp-bar.level-17-20::before { background: linear-gradient(90deg, rgba(59, 130, 246, 0.3), rgba(59, 130, 246, 0.6)); }
+
+.skill-level-number {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #ffffff;
+    z-index: 2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    min-width: 16px;
+    text-align: center;
+}
+
+.aptitude-container {
+    display: flex;
+    align-items: center;
+    z-index: 2;
+}
+
+.passion-stars {
+    display: flex;
+    gap: 1px;
+}
+
+.passion-star {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    transition: transform 0.2s ease;
+}
+
+.passion-star:hover {
+    transform: scale(1.2);
+}
+
+/* Dual Bar Skill Cell Styles - Fixed Width */
+.skill-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px;
+    min-height: 55px;
+}
+
+/* Main Level Bar - Remove padding, use absolute positioning */
+.skill-level-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-width: 70px;
+    height: 22px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px 8px 0 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: none;
+    position: relative;
+    overflow: hidden;
+    /* Remove padding and use absolute positioning for content */
+    padding: 0;
+}
+
+/* Level Bar Fill */
+.skill-level-bar::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: calc(var(--level-percentage, 0%) * 1%);
+    border-radius: 8px 0 0 0;
+    z-index: 1;
+}
+
+/* Level-based colors for main bar */
+.skill-cell[data-level-range="0"] .skill-level-bar::before { background: rgba(108, 117, 125, 0.4); }
+.skill-cell[data-level-range="1-4"] .skill-level-bar::before { background: linear-gradient(90deg, rgba(220, 38, 38, 0.4), rgba(220, 38, 38, 0.7)); }
+.skill-cell[data-level-range="5-8"] .skill-level-bar::before { background: linear-gradient(90deg, rgba(217, 119, 6, 0.4), rgba(217, 119, 6, 0.7)); }
+.skill-cell[data-level-range="9-12"] .skill-level-bar::before { background: linear-gradient(90deg, rgba(234, 179, 8, 0.4), rgba(234, 179, 8, 0.7)); }
+.skill-cell[data-level-range="13-16"] .skill-level-bar::before { background: linear-gradient(90deg, rgba(34, 197, 94, 0.4), rgba(34, 197, 94, 0.7)); }
+.skill-cell[data-level-range="17-20"] .skill-level-bar::before { background: linear-gradient(90deg, rgba(59, 130, 246, 0.4), rgba(59, 130, 246, 0.7)); }
+
+/* Position level number and stars absolutely */
+.skill-level-number {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #ffffff;
+    z-index: 2;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    min-width: 16px;
+    text-align: center;
+}
+
+.aptitude-container {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    z-index: 2;
+}
+
+.passion-stars {
+    display: flex;
+    gap: 1px;
+}
+
+.passion-star {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    transition: transform 0.2s ease;
+}
+
+.passion-star:hover {
+    transform: scale(1.2);
+}
+
+/* XP Progress Bar - Same width as level bar */
+.xp-progress-bar {
+    width: 100%;
+    min-width: 70px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 0 0 4px 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.xp-progress-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: calc(var(--xp-percentage, 0%) * 1%);
+    background: linear-gradient(45deg, #4dabf7, #339af0);
+    border-radius: 0 0 4px 4px;
+    transition: width 0.3s ease;
+}
+
+/* XP Text */
+.xp-progress-text {
+    font-size: 0.68rem;
+    color: #6e6e75;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    line-height: 1;
+    margin-top: 1px;
+}
+
+/* Enhanced hover effects */
+.skill-cell:hover .skill-level-bar {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.skill-cell:hover .xp-progress-bar {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.skill-cell:hover .xp-progress-fill {
+    background: linear-gradient(45deg, #339af0, #4dabf7);
+    box-shadow: 0 0 4px rgba(51, 154, 240, 0.5);
+}
+
+/* Compact version for mobile */
+@media (max-width: 768px) {
+    .skill-cell {
+        min-height: 50px;
+        padding: 4px 2px;
+    }
+    
+    .skill-level-bar {
+        min-width: 60px;
+        height: 20px;
+    }
+    
+    .skill-level-number {
+        left: 4px;
+        font-size: 0.8rem;
+    }
+    
+    .aptitude-container {
+        right: 4px;
+    }
+    
+    .passion-star {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .xp-progress-bar {
+        min-width: 60px;
+        height: 3px;
+    }
+    
+    .xp-progress-text {
+        font-size: 0.55rem;
+    }
+}
+
+/* Seamless dual-bar version */
+.skill-level-bar {
+    border-radius: 8px 8px 0 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1); /* Subtle separator */
+}
+
+.xp-progress-bar {
+    border-radius: 0 0 8px 8px;
+    margin-top: -1px; /* Overlap to create seamless look */
+}
+
+/* Make the bars appear as one continuous element */
+.skill-cell:hover .skill-level-bar,
+.skill-cell:hover .xp-progress-bar {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.xp-progress-fill[style*="--xp-percentage: 9"] {
+    background: linear-gradient(45deg, #4dabf7, #51cf66);
+    box-shadow: 0 0 6px rgba(81, 207, 102, 0.6);
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}

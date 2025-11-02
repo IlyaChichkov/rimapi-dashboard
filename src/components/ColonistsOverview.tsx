@@ -12,7 +12,7 @@ import {
     SortingState,
     ColumnFiltersState,
 } from '@tanstack/react-table';
-import './ColonistsOverviewTab.css';
+import './ColonistsOverview.css';
 
 interface ColonistsOverviewTabProps {
     colonistsDetailed?: ColonistDetailed[];

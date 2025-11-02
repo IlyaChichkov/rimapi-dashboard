@@ -134,7 +134,9 @@ export interface Skill {
   xp_total_earned: number;
   xp_progress_percent: number;
   xp_required_for_level_up: number;
+  xp_since_last_level: number;
   aptitude: number;
+  passion: number;
 }
 
 export interface WorkPriority {
