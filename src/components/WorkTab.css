@@ -343,3 +343,60 @@
     min-width: 100px;
     margin-left: auto; /* Push to right in flex container */
 }
+
+/* Auto-assign Buttons */
+.auto-assign-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+    flex-wrap: wrap;
+}
+
+.auto-assign-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.auto-assign-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.auto-assign-btn:active {
+    transform: translateY(0);
+}
+
+/* Remove the individual button color overrides and use consistent blue accent */
+.auto-assign-btn:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #3b82f6;
+}
+
+/* Responsive Design for Auto-assign Buttons */
+@media (max-width: 768px) {
+    .auto-assign-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .auto-assign-btn {
+        text-align: center;
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auto-assign-buttons {
+        padding: 0 4px;
+    }
+}

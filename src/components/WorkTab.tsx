@@ -41,7 +41,6 @@ const WorkTab: React.FC<WorkTabProps> = ({
     const [selectedWorkType, setSelectedWorkType] = React.useState<any>(null);
     const [selectedColonists, setSelectedColonists] = React.useState<any[]>([]);
 
-
     const handleOverflowClick = (workType: any, assignments: any[]) => {
         setSelectedWorkType(workType);
         setSelectedColonists(assignments);
@@ -106,6 +105,19 @@ const WorkTab: React.FC<WorkTabProps> = ({
         }));
     };
 
+    // Auto-assign functionality placeholders
+    const handleOptimizeBySkills = () => {
+        // Placeholder for skill-based optimization
+        console.log('Optimizing work assignments by skills...');
+        // Future implementation: Assign colonists to jobs where they have highest skills
+    };
+
+    const handleSetDefaultPriorities = () => {
+        // Placeholder for default priority assignment
+        console.log('Setting default priorities for skilled colonists...');
+        // Future implementation: Set priority to 3 if pawn's skill > 5 for job
+    };
+
     return (
         <div className="work-tab">
             <div className="work-tab-header">
@@ -118,6 +130,24 @@ const WorkTab: React.FC<WorkTabProps> = ({
                         {Object.values(assignments).flat().length} Assignments
                     </span>
                 </div>
+            </div>
+
+            {/* Auto-assign buttons */}
+            <div className="auto-assign-buttons">
+                <button
+                    className="auto-assign-btn"
+                    onClick={handleOptimizeBySkills}
+                    title="Assign colonists to jobs based on their highest skills"
+                >
+                    Optimize By Skills
+                </button>
+                <button
+                    className="auto-assign-btn"
+                    onClick={handleSetDefaultPriorities}
+                    title="Set priority to 3 for jobs where colonist has skill > 5"
+                >
+                    Set Default
+                </button>
             </div>
 
             <div className="work-grid">
