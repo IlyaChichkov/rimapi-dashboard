@@ -108,6 +108,10 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
       tags.push('emergency');
     }
 
+    if (hediff.is_tended) {
+      tags.push('treated');
+    }
+
     return tags;
   };
 
@@ -764,7 +768,11 @@ const getHediffSeverity = (hediff: Hediff): MedicalAlert['severity'] | null => {
     return 'warning';
   }
 
-  return null;
+  if (hediff.is_tended) {
+    return 'info';
+  }
+
+  return 'warning';
 };
 
 const getHediffDescription = (hediff: Hediff): string => {

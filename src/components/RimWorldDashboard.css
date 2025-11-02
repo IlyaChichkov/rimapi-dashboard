@@ -221,13 +221,13 @@
   font-size: 1.3em;
 }
 
-.stats-grid {
+.summary-stats-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 15px;
 }
 
-.stat-item {
+.summary-stat-item {
   text-align: center;
   padding: 20px;
   background: rgba(255, 255, 255, 0.1);
@@ -235,14 +235,7 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.stat-value {
-  font-size: 2em;
-  font-weight: bold;
-  color: #4dabf7;
-  margin-bottom: 5px;
-}
-
-.stat-label {
+.summary-stat-label {
   font-size: 0.9em;
   color: #e0e0e0;
 }
@@ -368,7 +361,7 @@
     justify-content: center;
   }
   
-  .stats-grid {
+  .summary-stats-grid {
     grid-template-columns: 1fr;
   }
   
@@ -795,12 +788,12 @@
   padding: 6px 0;
 }
 
-.stat-label {
+.summary-stat-label {
   color: #b0b0b0;
   font-size: 0.9em;
 }
 
-.stat-value {
+.summary-stat-value {
   color: white;
   font-weight: 600;
   font-size: 0.9em;

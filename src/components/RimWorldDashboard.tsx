@@ -590,22 +590,22 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
       {/* Quick Stats */}
       <div className="stats-card">
         <h3>Colony Summary</h3>
-        <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-value">{colonists.length}</div>
-            <div className="stat-label">Colonists</div>
+        <div className="summary-stats-grid">
+          <div className="summary-stat-item">
+            <div className="summary-stat-value">{colonists.length}</div>
+            <div className="summary-stat-label">Colonists</div>
           </div>
-          <div className="stat-item">
-            <div className="stat-value">{creatures.animals_count || 0}</div>
-            <div className="stat-label">Animals</div>
+          <div className="summary-stat-item">
+            <div className="summary-stat-value">{creatures.animals_count || 0}</div>
+            <div className="summary-stat-label">Animals</div>
           </div>
-          <div className="stat-item">
-            <div className="stat-value">{resources.total_items || 0}</div>
-            <div className="stat-label">Total Items</div>
+          <div className="summary-stat-item">
+            <div className="summary-stat-value">{resources.total_items || 0}</div>
+            <div className="summary-stat-label">Total Items</div>
           </div>
-          <div className="stat-item">
-            <div className="stat-value">${Math.round(resources.total_market_value || 0)}</div>
-            <div className="stat-label">Wealth</div>
+          <div className="summary-stat-item">
+            <div className="summary-stat-value">${Math.round(resources.total_market_value || 0)}</div>
+            <div className="summary-stat-label">Wealth</div>
           </div>
         </div>
       </div>

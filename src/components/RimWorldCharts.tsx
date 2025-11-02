@@ -34,9 +34,26 @@ const chartOptions = {
   plugins: {
     legend: {
       position: 'top' as const,
+      labels: {
+        color: '#eff8fdff',
+        font: {
+          weight: 'bold' as const, // Use 'as const' for string literals
+        },
+      },
+    },
+  },
+  scales: {
+    x: {
+      ticks: {
+        color: '#eff8fdff',
+        font: {
+          weight: 'bold' as const, // Use 'as const' for string literals
+        },
+      },
     },
   },
 };
+
 
 // Chart 1: Colonist Mood and Health
 interface ColonistStatsProps {
@@ -45,7 +62,7 @@ interface ColonistStatsProps {
 
 export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) => {
   const validColonists = colonists.filter(col => col && col.name);
-  
+
   if (validColonists.length === 0) {
     return <div className="no-data">No colonist data available</div>;
   }
@@ -66,6 +83,14 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
   const options = {
     ...chartOptions,
     scales: {
+      x: {
+        ticks: {
+          color: '#eff8fdff',
+          font: {
+            weight: 'bold' as const, // Use 'as const' for string literals
+          },
+        },
+      },
       y: {
         beginAtZero: true,
         max: 100,
@@ -87,7 +112,7 @@ interface ResourcesChartProps {
 
 export const ResourcesChart: React.FC<ResourcesChartProps> = ({ resources }) => {
   const categories = resources?.categories || [];
-  
+
   if (categories.length === 0) {
     return <div className="no-data">No resource data available</div>;
   }

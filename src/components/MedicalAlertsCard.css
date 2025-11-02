@@ -249,6 +249,13 @@
   border: 1px solid;
 }
 
+.tag-treated {
+  background: #224422;
+  color: #0fa74e;
+  border-color: #0a883f;
+  border-color: #abd8f1;
+}
+
 .tag-bloodLoss {
   background: #442222;
   color: #852222;
