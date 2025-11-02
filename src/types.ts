@@ -27,10 +27,11 @@ export interface GameState {
 export interface Colonist {
   id: number;
   name: string;
-  gender?: string;
-  age?: number;
-  health?: number;
-  mood?: number;
+  gender: string;
+  age: number;
+  health: number;
+  mood: number;
+  hunger: number;
   skills?: Skill[];
 }
 
@@ -120,32 +121,49 @@ export interface ResearchSummary {
   };
 }
 
+// Add to src/types.ts
+
+export interface Skill {
+  name: string;
+  level: number;
+  min_level: number;
+  max_level: number;
+  level_descriptor: string;
+  permanently_disabled: boolean;
+  totally_disabled: boolean;
+  xp_total_earned: number;
+  xp_progress_percent: number;
+  xp_required_for_level_up: number;
+  aptitude: number;
+}
+
+export interface WorkPriority {
+  work_type: string;
+  priority: number;
+}
+
+export interface ColonistWorkInfo {
+  skills: Skill[];
+  current_job: string;
+  traits: string[];
+  work_priorities: WorkPriority[];
+}
+
+export interface ColonistMedicalInfo {
+  health: number;
+  hediffs: Hediff[];
+  medical_policy_id: number;
+  is_self_tend_allowed: boolean;
+}
+
 export interface ColonistDetailed {
   sleep: number;
   comfort: number;
   surrounding_beauty: number;
   fresh_air: number;
-  colonist: {
-    id: number;
-    name: string;
-    gender: string;
-    age: number;
-    health: number;
-    mood: number;
-    hunger: number;
-    position: {
-      x: number;
-      y: number;
-      z: number;
-    };
-  };
-  colonist_medical_info: {
-    health: number;
-    hediffs: Hediff[];
-    medical_policy_id: number;
-    is_self_tend_allowed: boolean;
-  };
-  // ... other properties can be added as needed
+  colonist: Colonist;
+  colonist_work_info: ColonistWorkInfo;
+  colonist_medical_info: ColonistMedicalInfo;
 }
 
 export interface Hediff {
