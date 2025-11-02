@@ -1,10 +1,10 @@
 // src/components/RimWorldDashboard.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  ColonistStatsChart, 
-  ResourcesChart, 
-  PowerChart, 
-  PopulationChart, 
+import {
+  ColonistStatsChart,
+  ResourcesChart,
+  PowerChart,
+  PopulationChart,
 } from './RimWorldCharts';
 import LoadingScreen from './LoadingScreen';
 import ConnectionErrorScreen from './ConnectionErrorScreen';
@@ -13,6 +13,7 @@ import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
 import './DefenceTab.css';
 import ResearchCards from './ResearchCards';
+import ColonistsTab from './ColonistsOverviewTab'
 import Footer from './Footer';
 import MedicalAlertsCard from './MedicalAlertsCard';
 import ModsTab from './ModsTab';
@@ -74,7 +75,7 @@ interface RimWorldDashboardProps {
 }
 
 const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
-  apiUrl, 
+  apiUrl,
   onResetConfig
 }) => {
   const [data, setData] = useState<RimWorldData | null>(null);
@@ -186,20 +187,20 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   }
 
   if (error) {
-    return <ConnectionErrorScreen 
-        error={error}
-        apiUrl={apiUrl}
-        onRetry={loadData}
-        onChangeUrl={onResetConfig}
-      />;
+    return <ConnectionErrorScreen
+      error={error}
+      apiUrl={apiUrl}
+      onRetry={loadData}
+      onChangeUrl={onResetConfig}
+    />;
   }
 
-  
+
   // Render different content based on active tab
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardTab 
+        return <DashboardTab
           colonists={colonists}
           resources={resources}
           power={power}
@@ -209,38 +210,38 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           researchSummary={researchSummary}
           loading={loading}
         />;
-      
+
       case 'medical':
-        return <MedicalTab 
+        return <MedicalTab
           colonistsDetailed={colonistsDetailed}
           loading={loading}
         />;
-      
+
       case 'research':
-        return <ResearchTab 
+        return <ResearchTab
           researchProgress={researchProgress}
           researchFinished={researchFinished}
           researchSummary={researchSummary}
           loading={loading}
         />;
-      
+
       case 'colonists':
-        return <ColonistsTab 
-          colonists={colonists}
+        return <ColonistsTab
+          colonistsDetailed={colonistsDetailed}
           loading={loading}
         />;
-      
+
       case 'defense':
         return <DefenseTab loading={loading} />;
 
-    case 'mods':
-      return <ModsTab 
-        modsInfo={modsInfo}
-        loading={loading}
-      />;
+      case 'mods':
+        return <ModsTab
+          modsInfo={modsInfo}
+          loading={loading}
+        />;
 
       default:
-        return <DashboardTab 
+        return <DashboardTab
           colonists={colonists}
           resources={resources}
           power={power}
@@ -263,17 +264,17 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
             <span>Weather: {weather.weather || 'Unknown'}</span>
             <span>Temp: {Math.round(weather.temperature) || 0}°C</span>
             <span>Storyteller: {gameState.storyteller || 'Unknown'}</span>
-          {lastUpdated && (
-            <div className="last-updated">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </div>
-          )}
+            {lastUpdated && (
+              <div className="last-updated">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
           </div>
         </div>
-        
+
         <div className="header-controls">
-          <button 
-            onClick={toggleAutoRefresh} 
+          <button
+            onClick={toggleAutoRefresh}
             className={`auto-refresh-btn ${autoRefresh ? 'active' : ''}`}
           >
             Auto Refresh: {autoRefresh ? 'ON' : 'OFF'}
@@ -289,37 +290,37 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
       {/* Tabs Navigation */}
       <div className="tabs-navigation">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
           onClick={() => setActiveTab('dashboard')}
         >
           📊 Dashboard
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'medical' ? 'active' : ''}`}
           onClick={() => setActiveTab('medical')}
         >
           🩺 Medical
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
           onClick={() => setActiveTab('research')}
         >
           🔬 Research
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'colonists' ? 'active' : ''}`}
           onClick={() => setActiveTab('colonists')}
         >
           👥 Colonists
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'defense' ? 'active' : ''}`}
           onClick={() => setActiveTab('defense')}
         >
           🛡️ Defense
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'mods' ? 'active' : ''}`}
           onClick={() => setActiveTab('mods')}
         >
@@ -338,7 +339,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           Auto-refreshing every 5 seconds...
         </div>
       )}
-      
+
       <div className='footer-spacer'></div>
       <Footer />
     </div>
@@ -434,8 +435,8 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
               </div>
               <div className="sort-controls">
                 <span className="sort-label">Sort by:</span>
-                <select 
-                  value={sortBy} 
+                <select
+                  value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
                   className="sort-select"
                 >
@@ -458,7 +459,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
 
     // Split colonists into chunks for mobile
     const chunks = splitColonistsIntoChunks(colonists);
-    
+
     return chunks.map((chunk, index) => (
       <div key={index} className="chart-card colonist-stats-card mobile-split">
         <div className="chart-header">
@@ -470,8 +471,8 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
           </h3>
           <div className="sort-controls">
             <span className="sort-label">Sort by:</span>
-            <select 
-              value={sortBy} 
+            <select
+              value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
               className="sort-select"
             >
@@ -493,7 +494,7 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
       {isMobile ? (
         renderColonistCharts(colonists)
       ) : (
-        <div 
+        <div
           className={`chart-card colonist-stats-card size-${colonistChartSize}`}
           data-colonist-count={colonists.length}
         >
@@ -505,8 +506,8 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
               </div>
               <div className="sort-controls">
                 <span className="sort-label">Sort by:</span>
-                <select 
-                  value={sortBy} 
+                <select
+                  value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
                   className="sort-select"
                 >
@@ -527,21 +528,23 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
       )}
 
       {/* Resource Distribution */}
-      <div className="chart-card">
-        <div className="chart-header">
-          <h3>Resource Distribution</h3>
-          <div className="resource-total">
-            Total: {resources.total_items || 0} items
+      {resources.categories && resources.categories.length > 0 ? (
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Resource Distribution</h3>
+            <div className="resource-total">
+              Total: {resources.total_items || 0} items
+            </div>
+          </div>
+          <div className="chart-container">
+            {resources.categories && resources.categories.length > 0 ? (
+              <ResourcesChart resources={resources} />
+            ) : (
+              <div className="no-data">No resource data available</div>
+            )}
           </div>
         </div>
-        <div className="chart-container">
-          {resources.categories && resources.categories.length > 0 ? (
-            <ResourcesChart resources={resources} />
-          ) : (
-            <div className="no-data">No resource data available</div>
-          )}
-        </div>
-      </div>
+      ) : (null)}
 
       {/* Power Management */}
       <div className="chart-card">
@@ -609,7 +612,7 @@ interface MedicalTabProps {
 const MedicalTab: React.FC<MedicalTabProps> = ({ colonistsDetailed, loading }) => {
   return (
     <div className="medical-tab">
-      <MedicalAlertsCard 
+      <MedicalAlertsCard
         colonistsDetailed={colonistsDetailed}
         loading={loading}
       />
@@ -633,48 +636,12 @@ const ResearchTab: React.FC<ResearchTabProps> = ({
 }) => {
   return (
     <div className="research-tab">
-      <ResearchCards 
+      <ResearchCards
         researchProgress={researchProgress}
         researchFinished={researchFinished}
         researchSummary={researchSummary}
         loading={loading}
       />
-    </div>
-  );
-};
-
-interface ColonistsTabProps {
-  colonists: Colonist[];
-  loading: boolean;
-}
-
-const ColonistsTab: React.FC<ColonistsTabProps> = ({ colonists, loading }) => {
-  return (
-    <div className="colonists-tab">
-      <div className="colonists-grid">
-        {colonists.map((colonist) => (
-          <div key={colonist.id} className="colonist-card">
-            <div className="colonist-header">
-              <h3>{colonist.name}</h3>
-              <span className="colonist-age">{colonist.age} years</span>
-            </div>
-            <div className="colonist-stats">
-              <div className="stat-row">
-                <span className="stat-label">Health:</span>
-                <span className="stat-value">{Math.round((colonist.health || 0) * 100)}%</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Mood:</span>
-                <span className="stat-value">{Math.round((colonist.mood || 0) * 100)}%</span>
-              </div>
-              <div className="stat-row">
-                <span className="stat-label">Gender:</span>
-                <span className="stat-value">{colonist.gender}</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 };
@@ -749,7 +716,7 @@ const DefenseTab: React.FC<DefenseTabProps> = ({ loading }) => {
                   <div className="stat-row">
                     <span className="stat-label">Health:</span>
                     <div className="health-bar">
-                      <div 
+                      <div
                         className="health-fill"
                         style={{ width: `${turret.health}%` }}
                       ></div>
@@ -759,7 +726,7 @@ const DefenseTab: React.FC<DefenseTabProps> = ({ loading }) => {
                   <div className="stat-row">
                     <span className="stat-label">Ammo:</span>
                     <div className="ammo-bar">
-                      <div 
+                      <div
                         className="ammo-fill"
                         style={{ width: `${turret.ammo}%` }}
                       ></div>

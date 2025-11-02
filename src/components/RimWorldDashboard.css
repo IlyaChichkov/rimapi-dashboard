@@ -2,6 +2,7 @@
 .rimworld-dashboard {
   padding-top: 20px;
   min-height: 100vh;
+  width: 100%;
   color: white;
   min-height: 100vh;
   display: flex;
@@ -42,7 +43,7 @@
   justify-content: space-between;
   align-items: flex-start;
   padding: 25px;
-  width: 78%;
+  width: 100%;
   margin: 0 auto;
   margin-bottom: 30px;
   background: rgba(255, 255, 255, 0.1);
@@ -414,7 +415,7 @@
 }
 
 /* Responsive design for dynamic sizing */
-@media (max-width: 1200px) {
+@media (max-width: 1600px) {
   .colonist-stats-card.size-4 {
     grid-column: span 3;
   }
@@ -424,7 +425,7 @@
   }
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1224px) {
   .colonist-stats-card.size-4,
   .colonist-stats-card.size-3 {
     grid-column: span 2;
@@ -660,9 +661,6 @@
   background-color: #5a6268;
 }
 
-
-/* Add these styles to RimWorldDashboard.css */
-
 /* Tabs Navigation */
 .tabs-navigation {
   display: flex;
@@ -670,7 +668,7 @@
   backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 8px;
-  width: 78%;
+  width: 100%;
   margin: 0 auto;
   margin-bottom: 25px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -705,12 +703,6 @@
   color: #4dabf7;
   border: 1px solid rgba(77, 171, 247, 0.4);
   box-shadow: 0 4px 12px rgba(77, 171, 247, 0.3);
-}
-
-/* Tab Content */
-.tab-content {
-  width: 78%;
-  margin: 0 auto;
 }
 
 .footer-spacer {
@@ -885,4 +877,14 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.dashboard-header,
+.tabs-navigation,
+.tab-content {
+  width: calc(100% - 50px); /* Same calculation as header */
+  max-width: 1800px; /* Optional: add max-width if header has one */
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
