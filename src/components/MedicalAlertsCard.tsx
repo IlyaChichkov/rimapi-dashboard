@@ -53,7 +53,12 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
       // Check for bleeding conditions
       const bleedingHediffs = medical.hediffs.filter(h => h.bleeding && h.bleed_rate > 0);
       const totalBleedRate = bleedingHediffs.reduce((total, h) => total + h.bleed_rate, 0);
-      console.log("totalPainPercent: ", totalPainPercent)
+      const BloodLoss = medical.hediffs?.find(h => h.def_name == "BloodLoss");
+      const BloodLossSeverity = BloodLoss?.severity ?? 0;
+      let DeathDueBloodLossTime: number = 0;
+      if (BloodLossSeverity && BloodLossSeverity > 0.01 && totalBleedRate && totalBleedRate > 0.01) {
+        DeathDueBloodLossTime = ((1 - BloodLossSeverity) / totalBleedRate);
+      }
 
       // Check overall health
       if (medical.health < 0.25) {
@@ -119,7 +124,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
       }
 
       if (bleedingHediffs.length > 0) {
-        if (totalBleedRate > 0.01) {
+        if (totalBleedRate > 0.5) {
           alerts.push({
             colonistId: col.id,
             colonistName: col.name,
@@ -130,13 +135,13 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
             healthPercent: medical.health,
             bleedRate: totalBleedRate,
           });
-        } else if (totalBleedRate > 0.001) {
+        } else if (totalBleedRate > 0.01) {
           alerts.push({
             colonistId: col.id,
             colonistName: col.name,
             condition: 'Bleeding',
             severity: 'serious',
-            bodyPart: 'Multiple',
+            bodyPart: 'Overall',
             description: `Bleeding at ${(totalBleedRate * 100).toFixed(1)}%/day - Treatment needed`,
             healthPercent: medical.health,
             bleedRate: totalBleedRate,
@@ -155,7 +160,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           colonistId: col.id,
           colonistName: col.name,
           condition: 'Starvation',
-          severity: 'critical',
+          severity: 'serious',
           bodyPart: 'Overall',
           description: 'Severely malnourished - Immediate food required',
           healthPercent: medical.health
@@ -519,21 +524,12 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
 
 // Helper functions to analyze medical conditions
 const getHediffSeverity = (hediff: any): MedicalAlert['severity'] | null => {
-  const lowerLabel = hediff.label.toLowerCase();
-  const defName = hediff.def_name?.toLowerCase();
-
   // Critical conditions - bleeding, high severity wounds, permanent injuries
-  if (hediff.bleeding && hediff.bleed_rate > 0.01) {
+  if (hediff.bleeding && hediff.bleed_rate > 0.5) {
     return 'critical';
   }
 
-  if (hediff.severity > 10 || hediff.is_permanent) {
-    return 'critical';
-  }
-
-  if (defName?.includes('gunshot') || defName?.includes('burn') ||
-    lowerLabel.includes('размозжённая') || lowerLabel.includes('crush') ||
-    lowerLabel.includes('открытый') || lowerLabel.includes('open')) {
+  if (hediff.severity > 10) {
     return 'critical';
   }
 
