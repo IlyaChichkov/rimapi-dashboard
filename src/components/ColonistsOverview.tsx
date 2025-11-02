@@ -1,6 +1,6 @@
 // src/components/ColonistsOverviewTab.tsx
 import React from 'react';
-import { ColonistDetailed } from '../types';
+import { Colonist, ColonistDetailed } from '../types';
 import { selectAndViewColonist } from '../services/rimworldApi';
 import {
     useReactTable,
@@ -14,15 +14,17 @@ import {
 } from '@tanstack/react-table';
 import './ColonistsOverview.css';
 
-interface ColonistsOverviewTabProps {
-    colonistsDetailed?: ColonistDetailed[];
+interface ColonistsOverviewProps {
+    colonistsDetailed?: any[];
     loading?: boolean;
     onViewHealth?: (colonistName: string) => void;
+    onViewSkills?: (colonistName: string) => void; // Add this
 }
 
-const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
+const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     colonistsDetailed = [],
     onViewHealth = null,
+    onViewSkills = null,
     loading = false
 }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -37,7 +39,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
 
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
-        colonistsDetailed.forEach(colonist => {
+        colonistsDetailed.forEach((colonist: ColonistDetailed) => {
             colonist.colonist_work_info.traits.forEach(trait => {
                 traits.add(trait);
             });
@@ -91,7 +93,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
     const filteredData = React.useMemo(() => {
         if (!colonistsDetailed.length) return [];
 
-        return colonistsDetailed.filter(colonist => {
+        return colonistsDetailed.filter((colonist: ColonistDetailed) => {
             // Trait filter
             if (traitFilter.length > 0) {
                 const colonistTraits = colonist.colonist_work_info.traits;
@@ -255,7 +257,11 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewTabProps> = ({
                             </button>
                             <button
                                 className="action-btn skills-btn"
-                                onClick={() => handleViewSkills(row.original)}
+                                onClick={() => {
+                                    if (onViewSkills) {
+                                        onViewSkills(colonist.name);
+                                    }
+                                }}
                                 title="View Skills Details"
                             >
                                 📊

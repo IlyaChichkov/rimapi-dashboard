@@ -14,13 +14,26 @@ type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory';
 
 const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     const [activeSubTab, setActiveSubTab] = React.useState<ColonistsSubTab>('overview');
+    const [skillsFilterColonist, setSkillsFilterColonist] = React.useState<string>('');
 
     const renderSubTabContent = () => {
         switch (activeSubTab) {
             case 'overview':
-                return <ColonistsOverview {...props} />;
+                return <ColonistsOverview
+                    colonistsDetailed={props.colonistsDetailed}
+                    loading={props.loading}
+                    onViewHealth={props.onViewHealth}
+                    onViewSkills={handleOpenSkillsWithFilter}
+                />
             case 'skills':
-                return <ColonistsSkillsDashboard {...props} />;
+                return (
+                    <ColonistsSkillsDashboard
+                        colonistsDetailed={props.colonistsDetailed}
+                        loading={props.loading}
+                        filterColonist={skillsFilterColonist}
+                        onClearFilter={handleClearSkillsFilter}
+                    />
+                );
             case 'work':
                 return <WorkTabPlaceholder />;
             case 'inventory':
@@ -28,6 +41,17 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
             default:
                 return <ColonistsOverview {...props} />;
         }
+    };
+
+    // Add function to handle opening skills tab with filter
+    const handleOpenSkillsWithFilter = (colonistName: string) => {
+        setSkillsFilterColonist(colonistName);
+        setActiveSubTab('skills');
+    };
+
+    // Add function to clear skills filter
+    const handleClearSkillsFilter = () => {
+        setSkillsFilterColonist('');
     };
 
     return (

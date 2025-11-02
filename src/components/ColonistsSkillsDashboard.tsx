@@ -63,6 +63,8 @@ interface HighestSkillColonist {
 interface ColonistsSkillsDashboardProps {
     colonistsDetailed?: ColonistDetailed[];
     loading?: boolean;
+    filterColonist?: string;
+    onClearFilter?: () => void;
 }
 
 const SKILLS_LIST = [
@@ -73,7 +75,9 @@ const SKILLS_LIST = [
 
 const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
     colonistsDetailed = [],
-    loading = false
+    loading = false,
+    filterColonist = '',
+    onClearFilter
 }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
@@ -292,9 +296,21 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
         })),
     ], []);
 
-    // Also update the table definition to use the proper type
+    const filteredSkillsMatrixData = React.useMemo(() => {
+        let data = skillsMatrixData;
+
+        // Apply colonist name filter
+        if (filterColonist) {
+            data = data.filter(colonist =>
+                colonist.colonist.name.toLowerCase().includes(filterColonist.toLowerCase())
+            );
+        }
+
+        return data;
+    }, [skillsMatrixData, filterColonist]);
+
     const table = useReactTable({
-        data: skillsMatrixData as SkillsMatrixRow[],
+        data: filteredSkillsMatrixData,
         columns,
         state: {
             sorting,
@@ -307,7 +323,6 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
         getFilteredRowModel: getFilteredRowModel(),
     });
 
-    // Update the filteredData function with proper typing
     const filteredData = React.useMemo(() => {
         if (!skillFilter) return skillsMatrixData;
 
@@ -337,23 +352,40 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
     return (
         <div className="skills-dashboard">
             <div className="skills-header">
-                <h3>🎯 Skills Matrix</h3>
-                <div className="skills-controls">
-                    <input
-                        type="text"
-                        placeholder="Search colonists..."
-                        value={globalFilter ?? ''}
-                        onChange={e => setGlobalFilter(e.target.value)}
-                        className="search-input"
-                    />
-                    {skillFilter && (
-                        <button
-                            className="clear-filter-btn"
-                            onClick={() => setSkillFilter('')}
-                        >
-                            Clear Filter
-                        </button>
+                <div className="skills-header-top">
+                    <h3>🎯 Skills Matrix</h3>
+                    <div className="skills-controls">
+                        <input
+                            type="text"
+                            placeholder="Search colonists..."
+                            value={globalFilter ?? ''}
+                            onChange={e => setGlobalFilter(e.target.value)}
+                            className="search-input"
+                        />
+                        {skillFilter && (
+                            <button
+                                className="clear-filter-btn"
+                                onClick={() => setSkillFilter('')}
+                            >
+                                Clear Filter
+                            </button>
+                        )}
+                    </div>
+                    {filterColonist && (
+                        <div className="active-colonist-filter">
+                            <span className="filter-text">Showing: {filterColonist}</span>
+                            <button
+                                className="clear-filter-btn"
+                                onClick={onClearFilter}
+                                title="Show all colonists"
+                            >
+                                ×
+                            </button>
+                        </div>
                     )}
+                </div>
+                <div className="skills-controls">
+                    {/* ... existing controls ... */}
                 </div>
             </div>
 

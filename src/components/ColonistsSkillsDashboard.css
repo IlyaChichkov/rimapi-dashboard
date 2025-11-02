@@ -619,3 +619,125 @@
     0%, 100% { opacity: 1; }
     50% { opacity: 0.8; }
 }
+
+/* Skills Dashboard Filter Styles */
+.skills-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.active-colonist-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(77, 171, 247, 0.3);
+    font-size: 0.9rem;
+}
+
+.filter-text {
+    font-weight: 600;
+}
+
+.clear-filter-btn {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.clear-filter-btn:hover {
+    background: rgba(255, 107, 107, 0.2);
+}
+
+/* Skills Table Hover Effects */
+.skills-table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    border: 1px solid #333;
+    margin-bottom: 20px;
+}
+
+.skills-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    background: #2d2d2d;
+}
+
+/* Default row state */
+.skills-row {
+    transition: all 0.3s ease;
+    background: #2d2d2d;
+}
+
+.skills-row:hover {
+    background: #3d3d3d !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+    position: relative;
+}
+
+/* When table is hovered, dim all non-hovered rows */
+.skills-table:hover .skills-row:not(:hover) {
+    opacity: 0.8;
+    background: #2a2a2a;
+}
+
+/* Ensure summary rows don't get dimmed */
+.skills-table:hover .summary-row:not(:hover) {
+    opacity: 0.8; /* Less dimming for summary rows */
+    background: #2a2a2a;
+}
+
+/* Keep the highlighted row (if you have the filter feature) visible */
+.skills-table:hover .highlighted-row:not(:hover) {
+    opacity: 0.8;
+    background: rgba(77, 171, 247, 0.15);
+}
+
+/* Enhanced hover effect for the hovered row */
+.skills-row:hover td {
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.skills-row:hover .skill-level-bar {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.skills-row:hover .xp-progress-bar {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.skills-row:hover .xp-progress-fill {
+    background: linear-gradient(45deg, #339af0, #4dabf7);
+    box-shadow: 0 0 6px rgba(51, 154, 240, 0.6);
+}
+
+/* Smooth transition for the dimming effect */
+.skills-table .skills-row {
+    transition: opacity 0.2s ease-out, background-color 0.3s ease;
+}
+
+/* Ensure the table container doesn't clip the hover effects */
+.skills-table-container {
+    position: relative;
+}
