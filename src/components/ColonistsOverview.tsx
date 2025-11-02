@@ -18,13 +18,15 @@ interface ColonistsOverviewProps {
     colonistsDetailed?: any[];
     loading?: boolean;
     onViewHealth?: (colonistName: string) => void;
-    onViewSkills?: (colonistName: string) => void; // Add this
+    onViewSkills?: (colonistName: string) => void;
+    onViewWork?: (colonistId: number) => void; // Add this
 }
 
 const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     colonistsDetailed = [],
     onViewHealth = null,
     onViewSkills = null,
+    onViewWork = null,
     loading = false
 }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -343,14 +345,10 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         // TODO: Implement inventory view
     };
 
-    const handleViewSkills = (colonist: ColonistDetailed) => {
-        console.log('View skills for:', colonist.colonist.name);
-        // TODO: Implement skills details view
-    };
-
     const handleAssignWork = (colonist: ColonistDetailed) => {
-        console.log('Assign work for:', colonist.colonist.name);
-        // TODO: Implement work assignment
+        if (onViewWork) {
+            onViewWork(colonist.colonist.id);
+        }
     };
 
     const handleSelectColonist = async (colonist: ColonistDetailed) => {

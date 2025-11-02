@@ -2,6 +2,7 @@
 import React from 'react';
 import ColonistsOverview from './ColonistsOverview';
 import './ColonistsTab.css';
+import WorkPriorities from './WorkPriorities';
 import ColonistsSkillsDashboard from './ColonistsSkillsDashboard';
 
 interface ColonistsTabProps {
@@ -15,16 +16,34 @@ type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory' | 'analyze';
 const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     const [activeSubTab, setActiveSubTab] = React.useState<ColonistsSubTab>('overview');
     const [skillsFilterColonist, setSkillsFilterColonist] = React.useState<string>('');
+    const [selectedColonistId, setSelectedColonistId] = React.useState<number | undefined>();
 
     const renderSubTabContent = () => {
         switch (activeSubTab) {
+            case 'work':
+                return (
+                    <WorkPriorities
+                        colonistsDetailed={props.colonistsDetailed}
+                        loading={props.loading}
+                        selectedColonistId={selectedColonistId}
+                        onColonistSelect={setSelectedColonistId}
+                    />
+                );
+
+            // Update the overview tab to set selected colonist when navigating
             case 'overview':
-                return <ColonistsOverview
-                    colonistsDetailed={props.colonistsDetailed}
-                    loading={props.loading}
-                    onViewHealth={props.onViewHealth}
-                    onViewSkills={handleOpenSkillsWithFilter}
-                />
+                return (
+                    <ColonistsOverview
+                        colonistsDetailed={props.colonistsDetailed}
+                        loading={props.loading}
+                        onViewHealth={props.onViewHealth}
+                        onViewSkills={handleOpenSkillsWithFilter}
+                        onViewWork={(colonistId) => {
+                            setSelectedColonistId(colonistId);
+                            setActiveSubTab('work');
+                        }}
+                    />
+                );
             case 'skills':
                 return (
                     <ColonistsSkillsDashboard
@@ -34,8 +53,6 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                         onClearFilter={handleClearSkillsFilter}
                     />
                 );
-            case 'work':
-                return <WorkTabPlaceholder />;
             case 'inventory':
                 return <InventoryTabPlaceholder />;
             case 'analyze':
