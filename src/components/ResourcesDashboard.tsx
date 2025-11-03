@@ -1,6 +1,6 @@
 // src/components/ResourcesDashboard.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { rimworldApi } from '../services/rimworldApi';
+import { rimworldApi, selectItem } from '../services/rimworldApi';
 import { ResourcesData, ResourceItem } from '../types';
 import './ResourcesDashboard.css';
 
@@ -60,6 +60,7 @@ export const ResourcesDashboard: React.FC = () => {
     // Resource categories with metadata
     const resourceCategories: ResourceCategory[] = [
         { key: 'resources_raw', label: 'Raw Materials', icon: '⛏️', color: '#8B4513' },
+        { key: 'apparel_misc', label: 'Apparel', icon: '👕', color: '#daf735ff' },
         { key: 'armor_headgear', label: 'Headgear', icon: '⛑️', color: '#4dabf7' },
         { key: 'apparel_armor', label: 'Armor', icon: '🛡️', color: '#495057' },
         { key: 'weapons_melee', label: 'Melee Weapons', icon: '⚔️', color: '#e03131' },
@@ -123,6 +124,21 @@ export const ResourcesDashboard: React.FC = () => {
         return resources;
     }, [resourcesData]);
 
+
+    // Helper function for quality sorting
+    const getQualityLabel = (quality: number | null): string => {
+        const qualityValues: Record<number, string> = {
+            0: 'awful',
+            1: 'poor',
+            2: 'normal',
+            3: 'good',
+            4: 'excellent',
+            5: 'masterwork',
+            6: 'legendary'
+        };
+        return quality ? qualityValues[quality] : 'none';
+    };
+
     // Filter resources
     const filteredResources = useMemo(() => {
         let filtered = allResources;
@@ -146,7 +162,7 @@ export const ResourcesDashboard: React.FC = () => {
         // Quality filter
         if (filters.qualities.length > 0) {
             filtered = filtered.filter(resource =>
-                resource.quality && filters.qualities.includes(resource.quality.toLowerCase())
+                resource.quality && filters.qualities.includes(getQualityLabel(resource.quality).toLowerCase())
             );
         }
 
@@ -201,8 +217,8 @@ export const ResourcesDashboard: React.FC = () => {
                     bValue = b.market_value * b.stack_count;
                     break;
                 case 'quality':
-                    aValue = getQualityValue(a.quality);
-                    bValue = getQualityValue(b.quality);
+                    aValue = (a.quality);
+                    bValue = (b.quality);
                     break;
                 case 'hitPoints':
                     aValue = a.max_hit_points > 0 ? (a.hit_points / a.max_hit_points) * 100 : 100;
@@ -223,20 +239,6 @@ export const ResourcesDashboard: React.FC = () => {
 
         return sorted;
     }, [filteredResources, sortOption]);
-
-    // Helper function for quality sorting
-    const getQualityValue = (quality: string | null): number => {
-        const qualityValues: Record<string, number> = {
-            'awful': 0,
-            'poor': 1,
-            'normal': 2,
-            'good': 3,
-            'excellent': 4,
-            'masterwork': 5,
-            'legendary': 6
-        };
-        return quality ? (qualityValues[quality.toLowerCase()] || 0) : 0;
-    };
 
     // Paginate resources
     const displayedResources = useMemo(() => {
@@ -336,23 +338,23 @@ export const ResourcesDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Prefetch images for visible items
     useEffect(() => {
-        if (displayedResources.length > 0) {
-            displayedResources.forEach(resource => {
+        let isMounted = true;
+
+        if (displayedResources.length > 0 && isMounted) {
+            const validResources = displayedResources.filter(resource =>
+                !resource.category.includes("corpses") && !imageCache[resource.def_name]
+            );
+
+            validResources.forEach(resource => {
                 fetchItemImage(resource.def_name);
             });
         }
-    }, [displayedResources]);
 
-    if (loading && !resourcesData) {
-        return (
-            <div className="resources-dashboard loading">
-                <div className="loading-spinner">🔄</div>
-                <p>Loading colony resources...</p>
-            </div>
-        );
-    }
+        return () => {
+            isMounted = false;
+        };
+    }, [displayedResources, imageCache]);
 
     if (error) {
         return (
@@ -546,24 +548,14 @@ export const ResourcesDashboard: React.FC = () => {
 
             {/* Resources Grid */}
             <div className={`resources-grid ${!pagination.showAll ? 'paged' : 'compact'}`}>
-                {displayedResources.length === 0 ? (
-                    <div className="no-resources">
-                        <div className="no-resources-icon">📭</div>
-                        <p>No resources match your filters</p>
-                        <button onClick={clearAllFilters} className="clear-search">
-                            Clear all filters
-                        </button>
-                    </div>
-                ) : (
-                    displayedResources.map((resource) => (
-                        <ResourceCard
-                            key={resource.thing_id}
-                            resource={resource}
-                            imageUrl={imageCache[resource.def_name]}
-                            categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
-                        />
-                    ))
-                )}
+                {displayedResources.map((resource) => (
+                    <ResourceCard
+                        key={`${resource.thing_id}-${resource.category}-${resource.stack_count}`}
+                        resource={resource}
+                        imageUrl={imageCache[resource.def_name]}
+                        categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
+                    />
+                ))}
             </div>
 
             {/* Bottom Pagination */}
@@ -639,10 +631,58 @@ export const ResourcesDashboard: React.FC = () => {
     );
 };
 
-// ResourceCard component remains the same as previous implementation
-// ... [ResourceCard component code from previous implementation]
+interface QualityTagProps {
+    resource: ResourceItem & { category: string };
+}
 
-// Individual Resource Card Component
+const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
+    const getQualityColor = (quality: number | null) => {
+        if (!quality) return '#6c757d';
+
+        const qualityMap: Record<string, string> = {
+            0: '#e03131',
+            1: '#f08c00',
+            2: '#74b816',
+            3: '#22b8cf',
+            4: '#7950f2',
+            5: '#f783ac',
+            6: '#fab005'
+        };
+
+        return qualityMap[quality] || '#6c757d';
+    };
+
+    // Helper function for quality sorting
+    const getQualityLabel = (quality: number | null): string | null => {
+        const qualityValues: Record<number, string> = {
+            0: 'awful',
+            1: 'poor',
+            2: 'normal',
+            3: 'good',
+            4: 'excellent',
+            5: 'masterwork',
+            6: 'legendary'
+        };
+        return quality ? qualityValues[quality] : null;
+    };
+
+    const quality = resource.quality;
+
+    if (quality === null || quality === undefined || !getQualityLabel(quality)) {
+        return (
+            <div className="empty-quality-badge"></div>
+        )
+    }
+
+    return (
+        <div className="quality-badge" style={{ color: getQualityColor(resource.quality) }}>
+            {
+                getQualityLabel(resource.quality) ?? "None"
+            }
+        </div>
+    )
+};
+
 interface ResourceCardProps {
     resource: ResourceItem & { category: string };
     imageUrl?: string;
@@ -650,25 +690,17 @@ interface ResourceCardProps {
 }
 
 const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categoryInfo }) => {
-    const getQualityColor = (quality: string | null) => {
-        if (!quality) return '#6c757d';
-
-        const qualityMap: Record<string, string> = {
-            'awful': '#e03131',
-            'poor': '#f08c00',
-            'normal': '#74b816',
-            'good': '#22b8cf',
-            'excellent': '#7950f2',
-            'masterwork': '#f783ac',
-            'legendary': '#fab005'
-        };
-
-        return qualityMap[quality.toLowerCase()] || '#6c757d';
-    };
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
 
     const getDurabilityPercent = () => {
         if (resource.max_hit_points === 0) return 100;
         return (resource.hit_points / resource.max_hit_points) * 100;
+    };
+
+    // API call placeholder for forbidden toggle
+    const handleForbiddenToggle = async (event: React.MouseEvent) => {
+        event.stopPropagation();
     };
 
     const durabilityPercent = getDurabilityPercent();
@@ -677,74 +709,84 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
 
     return (
         <div className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''}`}>
-            {/* Add content wrapper for aspect-ratio fallback */}
-            <div className="resource-card-content">
-                {/* Item Image */}
-                <div className="resource-image">
-                    {imageUrl ? (
-                        <img src={imageUrl} alt={resource.def_name} />
-                    ) : (
-                        <div className="image-placeholder">
-                            {categoryInfo?.icon || '📦'}
-                        </div>
-                    )}
-                    {resource.stack_count > 1 && (
-                        <div className="stack-count">
-                            ×{resource.stack_count}
-                        </div>
-                    )}
+            {/* View Action Button */}
+            <button
+                className="view-action-btn"
+                onClick={() => selectItem(resource.thing_id, resource.position)}
+                title="View item details"
+            >
+                👁️
+            </button>
+
+            {/* Item Image */}
+            <div className="resource-image">
+                {imageUrl && !imageError ? (
+                    <img
+                        src={imageUrl}
+                        alt={resource.def_name}
+                        onLoad={() => setImageLoaded(true)}
+                        onError={() => setImageError(true)}
+                        style={{ opacity: imageLoaded ? 1 : 0 }}
+                    />
+                ) : (
+                    <div className="image-placeholder">
+                        {categoryInfo?.icon || '📦'}
+                    </div>
+                )}
+                {resource.stack_count > 1 && (
+                    <div className="stack-count">
+                        ×{resource.stack_count}
+                    </div>
+                )}
+            </div>
+
+            {/* Resource Info */}
+            <div className="resource-info">
+                <h3 className="resource-name" title={resource.label}>
+                    {resource.label}
+                </h3>
+
+                <div className="resource-meta">
+                    <QualityTag resource={resource} />
                 </div>
 
-                {/* Resource Info */}
-                <div className="resource-info">
-                    <h3 className="resource-name" title={resource.label}>
-                        {resource.label}
-                    </h3>
-
-                    <div className="resource-meta">
-                        {/* Quality */}
-                        {resource.quality && (
-                            <div className="quality-badge" style={{ color: getQualityColor(resource.quality) }}>
-                                {resource.quality}
-                            </div>
-                        )}
-
-                        {/* Market Value */}
-                        <div className="value-badge">
-                            ${(resource.market_value * resource.stack_count).toFixed(0)}
-                        </div>
-                    </div>
-
-                    {/* Durability Bar */}
-                    {resource.max_hit_points > 0 && (
-                        <div className="durability-bar">
-                            <div
-                                className="durability-fill"
-                                style={{
-                                    width: `${durabilityPercent}%`,
-                                    backgroundColor: durabilityColor
-                                }}
-                            />
-                            <span className="durability-text">
-                                {resource.hit_points}/{resource.max_hit_points}
-                            </span>
-                        </div>
-                    )}
-
-                    {/* Category and Position */}
-                    <div className="resource-details">
-                        <span className="resource-category">
-                            {categoryInfo?.icon} {categoryInfo?.label || resource.category}
+                {/* Durability Bar */}
+                {resource.max_hit_points > 0 && (
+                    <div className="durability-bar">
+                        <div
+                            className="durability-fill"
+                            style={{
+                                width: `${durabilityPercent}%`,
+                                backgroundColor: durabilityColor
+                            }}
+                        />
+                        <span className="durability-text">
+                            {resource.hit_points}/{resource.max_hit_points}
                         </span>
                     </div>
+                )}
 
-                    {/* Forbidden Indicator */}
-                    {resource.is_forbidden && (
-                        <div className="forbidden-indicator">
-                            🔒 Forbidden
-                        </div>
-                    )}
+                {/* Category and Position */}
+                <div className="resource-details">
+                    <span className="resource-category">
+                        {categoryInfo?.icon} {categoryInfo?.label || resource.category}
+                    </span>
+                    {/* Market Value Only - removed amount badge from here */}
+                    <div className="value-badge">
+                        ${(resource.market_value * resource.stack_count).toFixed(0)}
+                    </div>
                 </div>
+
+                {/* Clickable Forbidden Indicator */}
+                {resource.is_forbidden && (
+                    <button
+                        className="forbidden-indicator clickable"
+                        onClick={handleForbiddenToggle}
+                        title="Click to allow this item"
+                    >
+                        🔒 Forbidden
+                    </button>
+                )}
             </div>
         </div>
     );

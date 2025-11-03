@@ -240,20 +240,22 @@ export interface ItemImageResponse {
   image_base64?: string;
 }
 
+export interface Position {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface ResourceItem {
   thing_id: number;
   def_name: string;
   label: string;
   categories: string[];
-  position: {
-    x: number;
-    y: number;
-    z: number;
-  };
+  position: Position;
   stack_count: number;
   market_value: number;
   is_forbidden: boolean;
-  quality: string | null;
+  quality: number | null;
   hit_points: number;
   max_hit_points: number;
 }

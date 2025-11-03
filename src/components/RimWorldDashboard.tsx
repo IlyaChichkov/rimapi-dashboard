@@ -326,13 +326,13 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
           onClick={() => setActiveTab('resources')}
         >
-          🪵 Resources
+          📦 Resources
         </button>
         <button
           className={`tab-button ${activeTab === 'mods' ? 'active' : ''}`}
           onClick={() => setActiveTab('mods')}
         >
-          📦 Mods
+          ⚙️ Mods
         </button>
       </div>
 

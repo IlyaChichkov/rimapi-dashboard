@@ -9,7 +9,8 @@ import {
   ModInfo,
   ResourcesStoredResponse,
   ItemImageResponse,
-  ResourcesData
+  ResourcesData,
+  Position
 } from '../types';
 
 let API_BASE_URL = 'http://localhost:8765/api/v1';
@@ -213,6 +214,20 @@ const validateResearchFinished = (data: any): ResearchFinished => {
   return {
     finished_projects: data.finished_projects || []
   };
+};
+
+export const selectItem = async (itemId: number, position: Position): Promise<void> => {
+  try {
+    console.log('select item: ', position)
+    await fetchApiPost(`/deselect?type=all`, { method: 'POST' });
+    await fetchApiPost(`/select?type=item&id=${itemId}`, { method: 'POST' });
+
+    await fetchApiPost(`/camera/change/position?x=${position.x}&y=${position.z}`, { method: 'POST' });
+    await fetchApiPost(`/camera/change/zoom?zoom=20`, { method: 'POST' });
+  } catch (error) {
+    console.error('Failed to navigate to colonist:', error);
+    throw error;
+  }
 };
 
 export const selectAndViewColonist = async (colonistId: number, colonistName: string): Promise<void> => {
