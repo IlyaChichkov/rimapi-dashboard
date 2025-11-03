@@ -545,7 +545,7 @@ export const ResourcesDashboard: React.FC = () => {
             </div>
 
             {/* Resources Grid */}
-            <div className="resources-grid">
+            <div className={`resources-grid ${!pagination.showAll ? 'paged' : 'compact'}`}>
                 {displayedResources.length === 0 ? (
                     <div className="no-resources">
                         <div className="no-resources-icon">📭</div>
@@ -677,76 +677,74 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
 
     return (
         <div className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''}`}>
-            {/* Item Image */}
-            <div className="resource-image">
-                {imageUrl ? (
-                    <img src={imageUrl} alt={resource.def_name} />
-                ) : (
-                    <div className="image-placeholder">
-                        {categoryInfo?.icon || '📦'}
-                    </div>
-                )}
-                {resource.stack_count > 1 && (
-                    <div className="stack-count">
-                        ×{resource.stack_count}
-                    </div>
-                )}
-            </div>
+            {/* Add content wrapper for aspect-ratio fallback */}
+            <div className="resource-card-content">
+                {/* Item Image */}
+                <div className="resource-image">
+                    {imageUrl ? (
+                        <img src={imageUrl} alt={resource.def_name} />
+                    ) : (
+                        <div className="image-placeholder">
+                            {categoryInfo?.icon || '📦'}
+                        </div>
+                    )}
+                    {resource.stack_count > 1 && (
+                        <div className="stack-count">
+                            ×{resource.stack_count}
+                        </div>
+                    )}
+                </div>
 
-            {/* Resource Info */}
-            <div className="resource-info">
-                <h3 className="resource-name" title={resource.label}>
-                    {resource.label}
-                </h3>
+                {/* Resource Info */}
+                <div className="resource-info">
+                    <h3 className="resource-name" title={resource.label}>
+                        {resource.label}
+                    </h3>
 
-                <div className="resource-meta">
-                    {/* Quality */}
-                    {resource.quality && (
-                        <div className="quality-badge" style={{ color: getQualityColor(resource.quality) }}>
-                            {resource.quality}
+                    <div className="resource-meta">
+                        {/* Quality */}
+                        {resource.quality && (
+                            <div className="quality-badge" style={{ color: getQualityColor(resource.quality) }}>
+                                {resource.quality}
+                            </div>
+                        )}
+
+                        {/* Market Value */}
+                        <div className="value-badge">
+                            ${(resource.market_value * resource.stack_count).toFixed(0)}
+                        </div>
+                    </div>
+
+                    {/* Durability Bar */}
+                    {resource.max_hit_points > 0 && (
+                        <div className="durability-bar">
+                            <div
+                                className="durability-fill"
+                                style={{
+                                    width: `${durabilityPercent}%`,
+                                    backgroundColor: durabilityColor
+                                }}
+                            />
+                            <span className="durability-text">
+                                {resource.hit_points}/{resource.max_hit_points}
+                            </span>
                         </div>
                     )}
 
-                    {/* Market Value */}
-                    <div className="value-badge">
-                        ${(resource.market_value * resource.stack_count).toFixed(0)}
-                    </div>
-                </div>
-
-                {/* Durability Bar */}
-                {resource.max_hit_points > 0 && (
-                    <div className="durability-bar">
-                        <div
-                            className="durability-fill"
-                            style={{
-                                width: `${durabilityPercent}%`,
-                                backgroundColor: durabilityColor
-                            }}
-                        />
-                        <span className="durability-text">
-                            {resource.hit_points}/{resource.max_hit_points}
+                    {/* Category and Position */}
+                    <div className="resource-details">
+                        <span className="resource-category">
+                            {categoryInfo?.icon} {categoryInfo?.label || resource.category}
                         </span>
                     </div>
-                )}
 
-                {/* Category and Position */}
-                <div className="resource-details">
-                    <span className="resource-category">
-                        {categoryInfo?.icon} {categoryInfo?.label || resource.category}
-                    </span>
-                    {!resource.is_forbidden && (
-                        <span className="resource-position">
-                            ({resource.position.x}, {resource.position.z})
-                        </span>
+                    {/* Forbidden Indicator */}
+                    {resource.is_forbidden && (
+                        <div className="forbidden-indicator">
+                            🔒 Forbidden
+                        </div>
                     )}
                 </div>
-
-                {/* Forbidden Indicator */}
-                {resource.is_forbidden && (
-                    <div className="forbidden-indicator">
-                        🔒 Forbidden
-                    </div>
-                )}
             </div>
         </div>
     );
