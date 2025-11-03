@@ -9,7 +9,7 @@ interface ConnectionErrorScreenProps {
   onChangeUrl: () => void;
 }
 
-const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({ 
+const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({
   error = "Failed to connect to RimWorld API",
   apiUrl,
   onRetry,
@@ -21,7 +21,7 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({
         <div className="error-icon">⚠️</div>
         <h2 className="error-title">Connection Failed</h2>
         <p className="error-message">{error}</p>
-        
+
         {apiUrl && (
           <div className="connection-details">
             <div className="detail-item">
@@ -30,7 +30,7 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({
             </div>
           </div>
         )}
-        
+
         <div className="troubleshooting">
           <h4>Possible Solutions:</h4>
           <ul>
@@ -40,7 +40,7 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({
             <li>Make sure RIMAPI is configured with CORS headers</li>
           </ul>
         </div>
-        
+
         <div className="error-actions">
           <button onClick={onRetry} className="retry-btn">
             🔄 Retry Connection
@@ -49,6 +49,30 @@ const ConnectionErrorScreen: React.FC<ConnectionErrorScreenProps> = ({
             🔧 Change API URL
           </button>
         </div>
+
+
+        <div className="error-actions">
+          <a
+            href="https://github.com/IlyaChichkov/rimapi-dashboard"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+            title="View on GitHub"
+          >
+            <span className="link-icon">🐙</span>
+            <span className="link-text">GitHub</span>
+          </a>
+
+          <a
+            href="https://discord.gg/rimworld"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+            title="Join RimWorld Discord"
+          >
+            <span className="link-icon">💬</span>
+            <span className="link-text">Discord</span>
+          </a></div>
       </div>
     </div>
   );

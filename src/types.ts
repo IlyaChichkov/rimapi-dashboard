@@ -223,3 +223,51 @@ export interface ModsList {
   mods: ModInfo[];
 }
 
+export interface ResourcesStoredResponse {
+  resources_raw: ResourceItem[];
+  armor_headgear: ResourceItem[];
+  apparel_armor: ResourceItem[];
+  stone_chunks: ResourceItem[];
+  weapons_melee: ResourceItem[];
+  weapons_ranged?: ResourceItem[];
+  apparel?: ResourceItem[];
+  medicine?: ResourceItem[];
+  food?: ResourceItem[];
+}
+
+export interface ItemImageResponse {
+  result: 'Success' | 'Error';
+  image_base64?: string;
+}
+
+export interface ResourceItem {
+  thing_id: number;
+  def_name: string;
+  label: string;
+  categories: string[];
+  position: {
+    x: number;
+    y: number;
+    z: number;
+  };
+  stack_count: number;
+  market_value: number;
+  is_forbidden: boolean;
+  quality: string | null;
+  hit_points: number;
+  max_hit_points: number;
+}
+
+// Make ResourcesData compatible with the API response by including all possible categories
+export interface ResourcesData {
+  resources_raw: ResourceItem[];
+  armor_headgear: ResourceItem[];
+  apparel_armor: ResourceItem[];
+  stone_chunks: ResourceItem[];
+  weapons_melee: ResourceItem[];
+  weapons_ranged?: ResourceItem[];
+  apparel?: ResourceItem[];
+  medicine?: ResourceItem[];
+  food?: ResourceItem[];
+  [key: string]: ResourceItem[] | undefined; // This allows for additional categories
+}

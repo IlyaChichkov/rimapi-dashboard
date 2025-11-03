@@ -11,12 +11,12 @@ import ConnectionErrorScreen from './ConnectionErrorScreen';
 import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
 import { Colonist, RimWorldData } from '../types';
 import './RimWorldDashboard.css';
-import './DefenceTab.css';
 import ResearchCards from './ResearchCards';
 import ColonistsTab from './ColonistsTab';
 import Footer from './Footer';
 import MedicalAlertsCard from './MedicalAlertsCard';
 import ModsTab from './ModsTab';
+import ResourcesDashboard from './ResourcesDashboard';
 
 const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 5) return 1;    // Normal size
@@ -26,7 +26,7 @@ const getChartSize = (colonistsCount: number): number => {
 };
 
 // Tab types
-type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'defense' | 'mods';
+type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'mods';
 
 const renderColonistCharts = (colonists: Colonist[]) => {
   if (colonists.length <= 10) {
@@ -239,9 +239,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           loading={loading}
           onViewHealth={handleOpenMedicalTabWithColonist}
         />;
-
-      case 'defense':
-        return <DefenseTab loading={loading} />;
+      case 'resources':
+        return <ResourcesTab loading={loading} />;
 
       case 'mods':
         return <ModsTab
@@ -324,10 +323,10 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           👥 Colonists
         </button>
         <button
-          className={`tab-button ${activeTab === 'defense' ? 'active' : ''}`}
-          onClick={() => setActiveTab('defense')}
+          className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
+          onClick={() => setActiveTab('resources')}
         >
-          🛡️ Defense
+          🪵 Resources
         </button>
         <button
           className={`tab-button ${activeTab === 'mods' ? 'active' : ''}`}
@@ -839,6 +838,18 @@ const DefenseTab: React.FC<DefenseTabProps> = ({ loading }) => {
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+interface ResourcesTabProps {
+  loading: boolean;
+}
+
+const ResourcesTab: React.FC<ResourcesTabProps> = ({ loading }) => {
+  return (
+    <div className="resources-tab">
+      <ResourcesDashboard />
     </div>
   );
 };

@@ -6,7 +6,10 @@ import {
   ResearchFinished,
   ResearchSummary,
   ColonistDetailed,
-  ModInfo
+  ModInfo,
+  ResourcesStoredResponse,
+  ItemImageResponse,
+  ResourcesData
 } from '../types';
 
 let API_BASE_URL = 'http://localhost:8765/api/v1';
@@ -285,4 +288,18 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
     researchSummary: validateResearchSummary(researchSummary),
     modsInfo: validateModsInfo(modsInfo),
   };
+};
+
+
+export const rimworldApi = {
+  
+  getResourcesStored: async (mapId: number = 0): Promise<ResourcesData> => {
+    const data = await fetchApi<ResourcesData>(`/resources/stored?map_id=${mapId}`)
+    return data as ResourcesData;
+  },
+
+  getItemImage: async (defName: string): Promise<ItemImageResponse> => {
+    const data = await fetchApi<ItemImageResponse>(`/item/image?name=${encodeURIComponent(defName)}`)
+    return data as ItemImageResponse;
+  },
 };
