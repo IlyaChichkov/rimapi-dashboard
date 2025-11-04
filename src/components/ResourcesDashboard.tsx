@@ -1234,7 +1234,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                 🔍
             </div>
 
-            {/* Item Image */}
+            {/* Item Image - Remove stack count from here */}
             <div className="resource-image">
                 {imageUrl && !imageError ? (
                     <img
@@ -1249,9 +1249,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                         {categoryInfo?.icon || '📦'}
                     </div>
                 )}
-                <div className="stack-count group-stack-count">
-                    ×{group.totalCount}
-                </div>
+                {/* Removed stack-count group-stack-count element */}
             </div>
 
             {/* Group Info */}
@@ -1281,9 +1279,9 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                     </div>
                 </div>
 
-                {/* Click Hint */}
+                {/* Click Hint - Fixed to show number of individual items, not total count */}
                 <div className="group-click-hint">
-                    Click to view {group.totalCount} individual items
+                    Click to view {group.items.length} individual items
                 </div>
             </div>
         </div>

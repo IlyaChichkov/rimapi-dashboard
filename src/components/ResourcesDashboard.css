@@ -767,12 +767,6 @@
   z-index: 10;
 }
 
-.group-stack-count {
-  background: linear-gradient(135deg, #9b59b6, #8e44ad);
-  font-size: 0.8rem;
-  min-width: 40px;
-}
-
 .group-meta {
   display: flex;
   flex-direction: column;
