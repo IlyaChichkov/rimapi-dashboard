@@ -27,10 +27,11 @@ export interface GameState {
 export interface Colonist {
   id: number;
   name: string;
-  gender?: string;
-  age?: number;
-  health?: number;
-  mood?: number;
+  gender: string;
+  age: number;
+  health: number;
+  mood: number;
+  hunger: number;
   skills?: Skill[];
 }
 
@@ -120,32 +121,51 @@ export interface ResearchSummary {
   };
 }
 
+// Add to src/types.ts
+
+export interface Skill {
+  name: string;
+  level: number;
+  min_level: number;
+  max_level: number;
+  level_descriptor: string;
+  permanently_disabled: boolean;
+  totally_disabled: boolean;
+  xp_total_earned: number;
+  xp_progress_percent: number;
+  xp_required_for_level_up: number;
+  xp_since_last_level: number;
+  aptitude: number;
+  passion: number;
+}
+
+export interface WorkPriority {
+  work_type: string;
+  priority: number;
+}
+
+export interface ColonistWorkInfo {
+  skills: Skill[];
+  current_job: string;
+  traits: string[];
+  work_priorities: WorkPriority[];
+}
+
+export interface ColonistMedicalInfo {
+  health: number;
+  hediffs: Hediff[];
+  medical_policy_id: number;
+  is_self_tend_allowed: boolean;
+}
+
 export interface ColonistDetailed {
   sleep: number;
   comfort: number;
   surrounding_beauty: number;
   fresh_air: number;
-  colonist: {
-    id: number;
-    name: string;
-    gender: string;
-    age: number;
-    health: number;
-    mood: number;
-    hunger: number;
-    position: {
-      x: number;
-      y: number;
-      z: number;
-    };
-  };
-  colonist_medical_info: {
-    health: number;
-    hediffs: Hediff[];
-    medical_policy_id: number;
-    is_self_tend_allowed: boolean;
-  };
-  // ... other properties can be added as needed
+  colonist: Colonist;
+  colonist_work_info: ColonistWorkInfo;
+  colonist_medical_info: ColonistMedicalInfo;
 }
 
 export interface Hediff {
@@ -203,3 +223,53 @@ export interface ModsList {
   mods: ModInfo[];
 }
 
+export interface ResourcesStoredResponse {
+  resources_raw: ResourceItem[];
+  armor_headgear: ResourceItem[];
+  apparel_armor: ResourceItem[];
+  stone_chunks: ResourceItem[];
+  weapons_melee: ResourceItem[];
+  weapons_ranged?: ResourceItem[];
+  apparel?: ResourceItem[];
+  medicine?: ResourceItem[];
+  food?: ResourceItem[];
+}
+
+export interface ItemImageResponse {
+  result: 'Success' | 'Error';
+  image_base64?: string;
+}
+
+export interface Position {
+  x: number;
+  y: number;
+  z: number;
+}
+
+export interface ResourceItem {
+  thing_id: number;
+  def_name: string;
+  label: string;
+  categories: string[];
+  position: Position;
+  stack_count: number;
+  market_value: number;
+  is_forbidden: boolean;
+  quality: number | null;
+  hit_points: number;
+  max_hit_points: number;
+}
+
+// Make ResourcesData compatible with the API response by including all possible categories
+export interface ResourcesData {
+  resources_raw: ResourceItem[];
+  armor_headgear: ResourceItem[];
+  apparel_armor: ResourceItem[];
+  stone_chunks: ResourceItem[];
+  weapons_melee: ResourceItem[];
+  weapons_ranged?: ResourceItem[];
+  apparel?: ResourceItem[];
+  medicine?: ResourceItem[];
+  food?: ResourceItem[];
+  [key: string]: ResourceItem[] | undefined; // This allows for additional categories
+}

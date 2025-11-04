@@ -1,0 +1,77 @@
+/* src/components/ColonistsTab.css */
+.colonists-tab {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    color: #ffffff;
+}
+
+.colonists-subtabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    padding: 4px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    gap: 4px;
+}
+
+.subtab-button {
+    flex: 1;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.subtab-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.subtab-button.active {
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    border: 1px solid rgba(77, 171, 247, 0.4);
+    box-shadow: 0 2px 8px rgba(77, 171, 247, 0.2);
+}
+
+.colonists-subtab-content {
+    min-height: 400px;
+}
+
+.tab-placeholder {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+}
+
+.placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.7;
+}
+
+.tab-placeholder h3 {
+    margin: 0 0 12px 0;
+    color: #b0b0b0;
+    font-size: 1.5rem;
+}
+
+.tab-placeholder p {
+    margin: 0;
+    font-size: 1rem;
+    color: #888;
+}

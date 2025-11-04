@@ -1,6 +1,6 @@
 // src/components/MedicalAlertsCard.tsx
 import React from 'react';
-import { ColonistDetailed, MedicalAlert } from '../types';
+import { ColonistDetailed, MedicalAlert, Hediff } from '../types';
 import { selectAndViewColonist } from '../services/rimworldApi';
 import {
   useReactTable,
@@ -17,11 +17,21 @@ import './MedicalAlertsCard.css';
 interface MedicalAlertsCardProps {
   colonistsDetailed?: ColonistDetailed[];
   loading?: boolean;
+  initialColonistFilter?: string[];
 }
+
+// Filter chip types
+type FilterChip = {
+  id: string;
+  type: 'colonist' | 'hediff' | 'tag' | 'bodypart' | 'severity' | 'search';
+  value: string;
+  label: string;
+};
 
 const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   colonistsDetailed = [],
-  loading = false
+  loading = false,
+  initialColonistFilter = [],
 }) => {
   // Set default sorting by severity (critical first)
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -31,16 +41,83 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   // State for filters
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
+  const [filterChips, setFilterChips] = React.useState<FilterChip[]>([]);
+  const [searchInput, setSearchInput] = React.useState('');
 
-  // Get unique colonist names for the filter dropdown
-  const colonistNames = React.useMemo(() => {
+  React.useEffect(() => {
+    if (initialColonistFilter.length > 0) {
+      // Convert initial colonist names to filter chips
+      const colonistChips = initialColonistFilter.map(colonistName => ({
+        id: `colonist-${colonistName}-initial`,
+        type: 'colonist' as const,
+        value: colonistName,
+        label: colonistName
+      }));
+
+      // Add to existing filter chips (or replace existing colonist filters)
+      setFilterChips(prev => [
+        ...prev.filter(chip => chip.type !== 'colonist'), // Remove existing colonist filters
+        ...colonistChips
+      ]);
+    }
+  }, [initialColonistFilter]);
+
+  // Get unique values for filters
+  const filterOptions = React.useMemo(() => {
     const names = colonistsDetailed.map(col => col.colonist.name);
-    return Array.from(new Set(names)).sort();
+    const severities = ['critical', 'serious', 'warning', 'info'] as const;
+
+    return {
+      colonists: Array.from(new Set(names)).sort(),
+      severities,
+      quickFilters: [
+        { type: 'severity' as const, value: 'critical', label: '🚨 Critical Only' },
+        { type: 'tag' as const, value: 'overall', label: '💊 Overall' },
+        { type: 'tag' as const, value: 'bleeding', label: '🩸 Bleeding' },
+        { type: 'tag' as const, value: 'infection', label: '🦠 Infection' },
+      ]
+    };
   }, [colonistsDetailed]);
+
+  // Tag system for hediffs
+  const getHediffTags = (hediff: Hediff): string[] => {
+    const tags: string[] = [];
+
+    // Example conditions - customize these as needed
+    if (hediff.bleeding && hediff.bleed_rate > 0) {
+      tags.push('bleeding');
+    }
+
+    if (hediff.def_name.includes('Infection') || hediff.label.toLowerCase().includes('infection')) {
+      tags.push('infection');
+    }
+
+    if (hediff.def_name.includes('Fracture') || hediff.label.toLowerCase().includes('fracture')) {
+      tags.push('fracture');
+    }
+
+    if (hediff.def_name.includes('Burn') || hediff.label.toLowerCase().includes('burn')) {
+      tags.push('burn');
+    }
+
+    if (hediff.is_permanent) {
+      tags.push('chronic');
+    }
+
+    if (hediff.is_currently_life_threatening) {
+      tags.push('emergency');
+    }
+
+    if (hediff.is_tended) {
+      tags.push('treated');
+    }
+
+    return tags;
+  };
 
   // Analyze medical conditions and generate alerts using new API structure
   const medicalAlerts = React.useMemo(() => {
-    const alerts: MedicalAlert[] = [];
+    const alerts: (MedicalAlert & { tags: string[] })[] = [];
 
     colonistsDetailed.forEach(colonist => {
       const { colonist: col, colonist_medical_info: medical } = colonist;
@@ -53,7 +130,25 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
       // Check for bleeding conditions
       const bleedingHediffs = medical.hediffs.filter(h => h.bleeding && h.bleed_rate > 0);
       const totalBleedRate = bleedingHediffs.reduce((total, h) => total + h.bleed_rate, 0);
-      console.log("totalPainPercent: ", totalPainPercent)
+
+      // Check specific medical conditions using new hediff properties
+      medical.hediffs.forEach(hediff => {
+        const severity = getHediffSeverity(hediff);
+        if (severity) {
+          const tags = getHediffTags(hediff);
+          alerts.push({
+            colonistId: col.id,
+            colonistName: col.name,
+            condition: hediff.label_cap || hediff.label,
+            severity,
+            bodyPart: hediff.part_label || 'Unknown',
+            description: getHediffDescription(hediff),
+            healthPercent: medical.health,
+            bleedRate: hediff.bleed_rate,
+            tags
+          });
+        }
+      });
 
       // Check overall health
       if (medical.health < 0.25) {
@@ -65,6 +160,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           bodyPart: 'Overall',
           description: `Health at ${Math.round(medical.health * 100)}% - Immediate medical attention required`,
           healthPercent: medical.health,
+          tags: ['critical-health', 'overall']
         });
       } else if (medical.health < 0.6) {
         alerts.push({
@@ -75,25 +171,9 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           bodyPart: 'Overall',
           description: `Health at ${Math.round(medical.health * 100)}% - Medical attention recommended`,
           healthPercent: medical.health,
+          tags: ['overall']
         });
       }
-
-      // Check specific medical conditions using new hediff properties
-      medical.hediffs.forEach(hediff => {
-        const severity = getHediffSeverity(hediff);
-        if (severity) {
-          alerts.push({
-            colonistId: col.id,
-            colonistName: col.name,
-            condition: hediff.label_cap || hediff.label,
-            severity,
-            bodyPart: hediff.part_label || 'Unknown',
-            description: getHediffDescription(hediff),
-            healthPercent: medical.health,
-            bleedRate: hediff.bleed_rate,
-          });
-        }
-      });
 
       // Check for high pain levels
       if (totalPainPercent > 0.8) {
@@ -104,7 +184,8 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           severity: 'serious',
           bodyPart: 'Overall',
           description: `High pain level (${Math.round(totalPainPercent * 100)}%) - Pain management needed`,
-          healthPercent: medical.health
+          healthPercent: medical.health,
+          tags: ['pain', 'overall']
         });
       } else if (totalPainPercent > 0.2) {
         alerts.push({
@@ -115,39 +196,84 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           bodyPart: 'Overall',
           description: `Moderate pain level (${Math.round(totalPainPercent * 100)}%)`,
           healthPercent: medical.health,
+          tags: ['pain', 'overall']
         });
       }
 
       if (bleedingHediffs.length > 0) {
-        if (totalBleedRate > 0.01) {
+        if (totalBleedRate > 0.5) {
           alerts.push({
             colonistId: col.id,
             colonistName: col.name,
             condition: 'Severe Bleeding',
-            severity: 'critical',
-            bodyPart: 'Multiple',
+            severity: 'serious',
+            bodyPart: 'Overall',
             description: `Bleeding at ${(totalBleedRate * 100).toFixed(1)}%/day - Immediate treatment required`,
             healthPercent: medical.health,
             bleedRate: totalBleedRate,
+            tags: ['overall']
           });
-        } else if (totalBleedRate > 0.001) {
+        } else if (totalBleedRate > 0.01) {
           alerts.push({
             colonistId: col.id,
             colonistName: col.name,
             condition: 'Bleeding',
-            severity: 'serious',
-            bodyPart: 'Multiple',
+            severity: 'warning',
+            bodyPart: 'Overall',
             description: `Bleeding at ${(totalBleedRate * 100).toFixed(1)}%/day - Treatment needed`,
             healthPercent: medical.health,
             bleedRate: totalBleedRate,
+            tags: ['overall']
           });
         }
       }
 
-      // Check for untended wounds that need treatment
-      const untendedWounds = medical.hediffs.filter(h =>
-        h.tendable_now && !h.is_tended && h.def_name !== 'Scratch'
-      );
+      const bloodLoss = medical.hediffs.find(h => h.def_name == "BloodLoss");
+      const bloodLossSeverity = bloodLoss?.severity ?? 0;
+      let deathDueBloodLossTime: number = 0;
+
+      if (bloodLossSeverity > 0.01 && totalBleedRate > 0.01) {
+        deathDueBloodLossTime = ((1 - bloodLossSeverity) / totalBleedRate * 24 * 60); // Convert to minutes
+        console.log('deathDueBloodLossTime', deathDueBloodLossTime);
+
+        if (deathDueBloodLossTime < 300) {
+          alerts.push({
+            colonistId: col.id,
+            colonistName: col.name,
+            condition: 'IMMINENT DEATH - Blood Loss',
+            severity: 'critical',
+            bodyPart: 'Circulatory',
+            description: `Will die in ${Math.round(deathDueBloodLossTime)} minutes - EMERGENCY`,
+            healthPercent: medical.health,
+            bleedRate: totalBleedRate,
+            tags: ['overall', 'bloodLoss']
+          });
+        } else if (deathDueBloodLossTime < 600) {
+          alerts.push({
+            colonistId: col.id,
+            colonistName: col.name,
+            condition: 'Critical Blood Loss',
+            severity: 'critical',
+            bodyPart: 'Overall',
+            description: `Will die in ${Math.round(deathDueBloodLossTime / 60)} hours - Immediate treatment required`,
+            healthPercent: medical.health,
+            bleedRate: totalBleedRate,
+            tags: ['overall', 'bloodLoss']
+          });
+        } else if (deathDueBloodLossTime < 900) {
+          alerts.push({
+            colonistId: col.id,
+            colonistName: col.name,
+            condition: 'Severe Blood Loss',
+            severity: 'serious',
+            bodyPart: 'Overall',
+            description: `Will die in ${Math.round(deathDueBloodLossTime / 60)} hours - Urgent treatment needed`,
+            healthPercent: medical.health,
+            bleedRate: totalBleedRate,
+            tags: ['overall', 'bloodLoss']
+          });
+        }
+      }
 
       // Check hunger
       if (col.hunger < 0.2) {
@@ -155,10 +281,11 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           colonistId: col.id,
           colonistName: col.name,
           condition: 'Starvation',
-          severity: 'critical',
+          severity: 'serious',
           bodyPart: 'Overall',
           description: 'Severely malnourished - Immediate food required',
-          healthPercent: medical.health
+          healthPercent: medical.health,
+          tags: ['starvation', 'overall']
         });
       }
     });
@@ -166,8 +293,36 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     return alerts;
   }, [colonistsDetailed]);
 
+  // Apply filter chips to table data
+  const filteredAlerts = React.useMemo(() => {
+    if (filterChips.length === 0) return medicalAlerts;
+
+    return medicalAlerts.filter(alert => {
+      return filterChips.every(chip => {
+        switch (chip.type) {
+          case 'colonist':
+            return alert.colonistName.toLowerCase().includes(chip.value.toLowerCase());
+          case 'hediff':
+            return alert.condition.toLowerCase().includes(chip.value.toLowerCase());
+          case 'tag':
+            return alert.tags.includes(chip.value);
+          case 'bodypart':
+            return alert.bodyPart.toLowerCase().includes(chip.value.toLowerCase());
+          case 'severity':
+            return alert.severity === chip.value;
+          case 'search':
+            return Object.values(alert).some(val =>
+              String(val).toLowerCase().includes(chip.value.toLowerCase())
+            );
+          default:
+            return true;
+        }
+      });
+    });
+  }, [medicalAlerts, filterChips]);
+
   // Define columns for the table
-  const columns = React.useMemo<ColumnDef<MedicalAlert>[]>(
+  const columns = React.useMemo<ColumnDef<MedicalAlert & { tags: string[] }>[]>(
     () => [
       {
         accessorKey: 'severity',
@@ -187,11 +342,6 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           const b = rowB.getValue(columnId) as keyof typeof severityOrder;
           return severityOrder[a] - severityOrder[b];
         },
-        filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || filterValue.length === 0) return true;
-          const severity = row.getValue(columnId) as string;
-          return filterValue.includes(severity);
-        },
       },
       {
         accessorKey: 'colonistName',
@@ -199,11 +349,6 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
         cell: ({ getValue }) => (
           <span className="colonist-name">{getValue() as string}</span>
         ),
-        filterFn: (row, columnId, filterValue) => {
-          if (!filterValue || filterValue.length === 0) return true;
-          const colonistName = row.getValue(columnId) as string;
-          return filterValue.includes(colonistName);
-        },
       },
       {
         accessorKey: 'condition',
@@ -218,6 +363,26 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
         cell: ({ getValue }) => (
           <span className="body-part">{getValue() as string}</span>
         ),
+      },
+      {
+        accessorKey: 'tags',
+        header: 'Tags',
+        cell: ({ getValue }) => {
+          const tags = getValue() as string[];
+          return (
+            <div className="tags-container">
+              {tags.slice(0, 3).map(tag => (
+                <span key={tag} className={`tag tag-${tag}`}>
+                  {tag}
+                </span>
+              ))}
+              {tags.length > 3 && (
+                <span className="tag-more">+{tags.length - 3}</span>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
       },
       {
         accessorKey: 'bleedRate',
@@ -292,7 +457,7 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   );
 
   const table = useReactTable({
-    data: medicalAlerts,
+    data: filteredAlerts,
     columns,
     state: {
       sorting,
@@ -318,6 +483,40 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     }
   };
 
+  // Filter chip management
+  const addFilterChip = (type: FilterChip['type'], value: string, label?: string) => {
+    const chip: FilterChip = {
+      id: `${type}-${value}-${Date.now()}`,
+      type,
+      value,
+      label: label || value
+    };
+
+    setFilterChips(prev => [...prev, chip]);
+    setSearchInput('');
+  };
+
+  const removeFilterChip = (chipId: string) => {
+    setFilterChips(prev => prev.filter(chip => chip.id !== chipId));
+  };
+
+  const clearAllFilters = () => {
+    setFilterChips([]);
+    setColumnFilters([]);
+    setGlobalFilter('');
+  };
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchInput.trim()) {
+      addFilterChip('search', searchInput.trim());
+    }
+  };
+
+  const handleQuickFilter = (type: FilterChip['type'], value: string, label: string) => {
+    addFilterChip(type, value, label);
+  };
+
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -331,118 +530,139 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
     }
   };
 
-  // Get current filter values
-  const severityFilterValue = (table.getColumn('severity')?.getFilterValue() as string[]) || [];
-  const colonistFilterValue = (table.getColumn('colonistName')?.getFilterValue() as string[]) || [];
+  // Multi-column sorting handler
+  const handleHeaderClick = (header: any, event: React.MouseEvent) => {
+    if (!header.column.getCanSort()) return;
 
-  // Counts for filtered data
-  const filteredAlerts = table.getFilteredRowModel().rows;
-  const criticalCount = filteredAlerts.filter(row => row.original.severity === 'critical').length;
-  const seriousCount = filteredAlerts.filter(row => row.original.severity === 'serious').length;
-  const warningCount = filteredAlerts.filter(row => row.original.severity === 'warning').length;
+    if (event.shiftKey) {
+      // Multi-sort: add to existing sorts
+      const currentSorts = [...sorting];
+      const existingIndex = currentSorts.findIndex(s => s.id === header.column.id);
 
-  const handleSeverityFilter = (severity: string) => {
-    const column = table.getColumn('severity');
-    const currentFilter = (column?.getFilterValue() as string[]) || [];
+      if (existingIndex >= 0) {
+        // Cycle through sort states: asc -> desc -> remove
+        const currentSort = currentSorts[existingIndex];
+        if (currentSort.desc) {
+          currentSorts.splice(existingIndex, 1);
+        } else {
+          currentSorts[existingIndex] = { ...currentSort, desc: !currentSort.desc };
+        }
+      } else {
+        // Add new sort
+        currentSorts.push({ id: header.column.id, desc: false });
+      }
 
-    const newFilter = currentFilter.includes(severity)
-      ? currentFilter.filter(s => s !== severity)
-      : [...currentFilter, severity];
-
-    column?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
+      setSorting(currentSorts);
+    } else {
+      // Single sort: replace all sorts
+      const currentSort = header.column.getIsSorted();
+      if (currentSort === 'asc') {
+        setSorting([{ id: header.column.id, desc: true }]);
+      } else if (currentSort === 'desc') {
+        setSorting([]);
+      } else {
+        setSorting([{ id: header.column.id, desc: false }]);
+      }
+    }
   };
 
-  const handleColonistFilter = (colonistName: string) => {
-    const column = table.getColumn('colonistName');
-    const currentFilter = (column?.getFilterValue() as string[]) || [];
+  const hasActiveFilters = filterChips.length > 0 || columnFilters.length > 0 || globalFilter;
 
-    const newFilter = currentFilter.includes(colonistName)
-      ? currentFilter.filter(name => name !== colonistName)
-      : [...currentFilter, colonistName];
-
-    column?.setFilterValue(newFilter.length > 0 ? newFilter : undefined);
-  };
-
-  const clearAllFilters = () => {
-    table.setColumnFilters([]);
-    setGlobalFilter('');
-  };
-
-  const hasActiveFilters = columnFilters.some(filter =>
-    Array.isArray(filter.value) ? filter.value.length > 0 : !!filter.value
-  ) || globalFilter;
+  const totalColonists = colonistsDetailed.length;
+  const injuredColonists = React.useMemo(() => {
+    const injuredIds = new Set(medicalAlerts.map(alert => alert.colonistId));
+    return injuredIds.size;
+  }, [medicalAlerts]);
 
   return (
     <div className="medical-alerts-card">
       <div className="medical-header">
         <h3>🩺 Medical Alerts</h3>
         <div className="alert-stats">
-          {criticalCount > 0 && <span className="stat critical">🚨 {criticalCount}</span>}
-          {seriousCount > 0 && <span className="stat serious">⚠️ {seriousCount}</span>}
-          {warningCount > 0 && <span className="stat warning">📋 {warningCount}</span>}
-          <span className="total-alerts">Showing: {filteredAlerts.length}</span>
+          {filteredAlerts.filter(a => a.severity === 'critical').length > 0 && (
+            <span className="stat critical">🚨 {filteredAlerts.filter(a => a.severity === 'critical').length}</span>
+          )}
+          {filteredAlerts.filter(a => a.severity === 'serious').length > 0 && (
+            <span className="stat serious">⚠️ {filteredAlerts.filter(a => a.severity === 'serious').length}</span>
+          )}
+          {filteredAlerts.filter(a => a.severity === 'warning').length > 0 && (
+            <span className="stat warning">📋 {filteredAlerts.filter(a => a.severity === 'warning').length}</span>
+          )}
+          <span className="total-alerts">
+            Injured: {injuredColonists}/{totalColonists} | Total: {filteredAlerts.length}
+          </span>
         </div>
       </div>
 
-      {/* Filter Controls */}
+      {/* Enhanced Filter Controls */}
       <div className="filter-controls">
+        {/* Quick Filters */}
         <div className="filter-group">
-          <label>Severity:</label>
+          <label>Quick Filters:</label>
           <div className="filter-buttons">
-            {['critical', 'serious', 'warning'].map(severity => (
+            {filterOptions.quickFilters.map(filter => (
               <button
-                key={severity}
-                className={`filter-btn severity ${severity} ${severityFilterValue.includes(severity) ? 'active' : ''}`}
-                onClick={() => handleSeverityFilter(severity)}
+                key={`${filter.type}-${filter.value}`}
+                className="filter-btn quick-filter"
+                onClick={() => handleQuickFilter(filter.type, filter.value, filter.label)}
               >
-                {getSeverityIcon(severity)} {severity.toUpperCase()}
+                {filter.label}
               </button>
             ))}
           </div>
         </div>
 
+        {/* Search and Chip Input */}
         <div className="filter-group">
-          <label>Colonist:</label>
-          <select
-            value=""
-            onChange={(e) => {
-              if (e.target.value) {
-                handleColonistFilter(e.target.value);
-                e.target.value = ''; // Reset select
-              }
-            }}
-            className="colonist-select"
-          >
-            <option value="">Add colonist filter...</option>
-            {colonistNames.map(name => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
-          <div className="active-filters">
-            {colonistFilterValue.map(name => (
-              <span key={name} className="active-filter-tag">
-                {name}
-                <button onClick={() => handleColonistFilter(name)}>×</button>
-              </span>
-            ))}
+          <label>Add Filter:</label>
+          <form onSubmit={handleSearchSubmit} className="chip-input-container">
+            <input
+              type="text"
+              placeholder="Type colonist, condition, tag, body part... then press Enter"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="search-input"
+              list="filter-suggestions"
+            />
+            <datalist id="filter-suggestions">
+              {filterOptions.colonists.map(name => (
+                <option key={name} value={`${name}`} />
+              ))}
+              {['critical', 'serious', 'warning', 'info'].map(severity => (
+                <option key={severity} value={`${severity}`} />
+              ))}
+              {['bleeding', 'infection', 'fracture', 'burn', 'chronic', 'emergency'].map(tag => (
+                <option key={tag} value={`${tag}`} />
+              ))}
+            </datalist>
+            <button type="submit" className="add-chip-btn">
+              Add
+            </button>
+          </form>
+        </div>
+
+        {/* Active Filter Chips */}
+        {filterChips.length > 0 && (
+          <div className="filter-group">
+            <label>Active Filters:</label>
+            <div className="chips-container">
+              {filterChips.map(chip => (
+                <div key={chip.id} className={`filter-chip chip-${chip.type}`}>
+                  <span className="chip-type">{chip.type}:</span>
+                  <span className="chip-value">{chip.label}</span>
+                  <button
+                    onClick={() => removeFilterChip(chip.id)}
+                    className="chip-remove"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              <button onClick={clearAllFilters} className="clear-all-chips">
+                Clear All
+              </button>
+            </div>
           </div>
-        </div>
-
-        <div className="filter-group">
-          <label>Search:</label>
-          <input
-            type="text"
-            placeholder="Search conditions, body parts..."
-            value={globalFilter ?? ''}
-            onChange={e => setGlobalFilter(e.target.value)}
-            className="search-input"
-          />
-        </div>
-
-        {hasActiveFilters && (
-          <button className="clear-filters-btn" onClick={clearAllFilters}>
-            Clear All Filters
-          </button>
         )}
       </div>
 
@@ -465,6 +685,18 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
           </div>
         ) : (
           <div className="medical-table-container">
+            {/* Sort Indicators */}
+            {sorting.length > 0 && (
+              <div className="sort-indicators">
+                <span>Sort Priority:</span>
+                {sorting.map((sort, index) => (
+                  <span key={sort.id} className="sort-indicator">
+                    {index + 1}. {sort.id} ({sort.desc ? 'desc' : 'asc'})
+                  </span>
+                ))}
+              </div>
+            )}
+
             <table className="medical-table">
               <thead>
                 {table.getHeaderGroups().map(headerGroup => (
@@ -473,21 +705,24 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
                       <th key={header.id}>
                         {header.isPlaceholder ? null : (
                           <div
-                            {...{
-                              className: header.column.getCanSort()
-                                ? 'sortable-header'
-                                : '',
-                              onClick: header.column.getToggleSortingHandler(),
-                            }}
+                            className={header.column.getCanSort() ? 'sortable-header' : ''}
+                            onClick={(e) => handleHeaderClick(header, e)}
                           >
                             {flexRender(
                               header.column.columnDef.header,
                               header.getContext()
                             )}
-                            {{
-                              asc: ' 🔼',
-                              desc: ' 🔽',
-                            }[header.column.getIsSorted() as string] ?? null}
+                            <span className="sort-indicator">
+                              {{
+                                asc: ' 🔼',
+                                desc: ' 🔽',
+                              }[header.column.getIsSorted() as string] ?? ' ↕️'}
+                            </span>
+                            {sorting.findIndex(s => s.id === header.column.id) >= 0 && (
+                              <span className="sort-priority">
+                                {sorting.findIndex(s => s.id === header.column.id) + 1}
+                              </span>
+                            )}
                           </div>
                         )}
                       </th>
@@ -518,40 +753,29 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
 };
 
 // Helper functions to analyze medical conditions
-const getHediffSeverity = (hediff: any): MedicalAlert['severity'] | null => {
-  const lowerLabel = hediff.label.toLowerCase();
-  const defName = hediff.def_name?.toLowerCase();
-
+const getHediffSeverity = (hediff: Hediff): MedicalAlert['severity'] | null => {
   // Critical conditions - bleeding, high severity wounds, permanent injuries
-  if (hediff.bleeding && hediff.bleed_rate > 0.01) {
+  if (hediff.bleeding && hediff.bleed_rate > 0.5) {
     return 'critical';
   }
 
-  if (hediff.severity > 10 || hediff.is_permanent) {
-    return 'critical';
-  }
-
-  if (defName?.includes('gunshot') || defName?.includes('burn') ||
-    lowerLabel.includes('размозжённая') || lowerLabel.includes('crush') ||
-    lowerLabel.includes('открытый') || lowerLabel.includes('open')) {
-    return 'critical';
+  if (hediff.severity > 10) {
+    return 'serious';
   }
 
   // Serious conditions - moderate severity wounds, infections
   if (hediff.severity > 5) {
-    return 'serious';
-  }
-
-  // Warning conditions - minor wounds, bruises, pain
-  if (hediff.severity > 2 ||
-    hediff.tendable_now && !hediff.is_tended) {
     return 'warning';
   }
 
-  return null;
+  if (hediff.is_tended) {
+    return 'info';
+  }
+
+  return 'warning';
 };
 
-const getHediffDescription = (hediff: any): string => {
+const getHediffDescription = (hediff: Hediff): string => {
   const parts = [];
 
   if (hediff.severity_label) {

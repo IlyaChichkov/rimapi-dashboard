@@ -1,0 +1,402 @@
+/* src/components/WorkTab.css */
+.work-tab {
+    padding: 20px;
+    color: #ffffff;
+}
+
+.work-tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 0 8px;
+}
+
+.work-tab-header h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.5rem;
+}
+
+.work-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.work-stats .stat {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    color: #b0b0b0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Work Grid */
+.work-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 8px;
+}
+
+/* Work Type Card - Glass Morphism */
+.work-type-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.work-type-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+}
+
+.work-type-card:hover {
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transform: translateY(-2px);
+}
+
+.work-type-card.highlighted {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3), 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Work Type Header */
+.work-type-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.work-icon {
+    font-size: 1.2rem;
+}
+
+.work-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+/* Colonist Cards Grid */
+.colonist-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    min-height: 60px;
+}
+
+/* Colonist Assignment Card */
+.colonist-assignment-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px;
+    position: relative;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.colonist-assignment-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.colonist-info {
+    flex: 1;
+}
+
+.colonist-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.colonist-details {
+    font-size: 0.65rem;
+    color: #888;
+    line-height: 1.2;
+}
+
+/* Priority Badge */
+.priority-badge {
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: flex-end;
+    position: absolute;
+    top: 6px;
+    right: 6px;
+}
+
+.priority-badge:hover {
+    transform: scale(1.1);
+}
+
+/* Priority Colors */
+.priority-0 { background: rgba(108, 117, 125, 0.3); color: #6c757d; }
+.priority-1 { background: rgba(220, 38, 38, 0.3); color: #dc2626; }
+.priority-2 { background: rgba(217, 119, 6, 0.3); color: #d97706; }
+.priority-3 { background: rgba(234, 179, 8, 0.3); color: #eab308; }
+.priority-4 { background: rgba(59, 130, 246, 0.3); color: #3b82f6; }
+.priority-5, 
+.priority-6,
+.priority-7,
+.priority-8,
+.priority-9 { 
+    background: rgba(33, 37, 41, 0.3); 
+    color: #495057; 
+}
+
+/* Remove Button */
+.remove-colonist-btn {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    background: rgba(255, 107, 107, 0.2);
+    border: none;
+    color: #ff6b6b;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+
+.colonist-assignment-card:hover .remove-colonist-btn {
+    opacity: 1;
+}
+
+.remove-colonist-btn:hover {
+    background: rgba(255, 107, 107, 0.3);
+    transform: scale(1.1);
+}
+
+/* Add Colonist Card */
+.add-colonist-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: #b0b0b0;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60px;
+}
+
+.add-colonist-card:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+    color: #ffffff;
+    transform: scale(1.02);
+}
+
+/* Overflow Indicator */
+.overflow-indicator {
+    font-size: 0.7rem;
+    color: #888;
+    text-align: center;
+    margin-top: 8px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    width: 100%;
+}
+
+.overflow-indicator:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+/* Loading State */
+.work-tab-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #888;
+    font-size: 1.1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .work-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+    
+    .work-tab-header {
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+    }
+    
+    .work-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 480px) {
+    .work-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .work-tab {
+        padding: 12px;
+    }
+}
+
+/* Fix the large priority badge positioning */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    position: relative; /* Add this to create positioning context */
+}
+
+.priority-badge.large {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 80px;
+    position: static; /* Remove absolute positioning */
+    transform: none; /* Remove transform */
+    top: auto; /* Reset positioning */
+    right: auto;
+}
+
+/* Alternative: If you want to keep it aligned to the right but properly contained */
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.priority-badge.large {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 80px;
+    /* Remove all absolute positioning properties */
+    position: static;
+    transform: none;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    left: auto;
+}
+
+/* If you want the button to be on the same line but properly aligned */
+.detail-row .priority-badge.large {
+    margin-left: auto; /* Push to the right within flex container */
+}
+
+.overflow-modal-content .priority-badge {
+    position: static !important;
+    transform: none !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+}
+
+.overflow-modal-content .priority-badge.large {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    min-width: 100px;
+    margin-left: auto; /* Push to right in flex container */
+}
+
+/* Auto-assign Buttons */
+.auto-assign-buttons {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+    padding: 0 8px;
+    flex-wrap: wrap;
+}
+
+.auto-assign-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.auto-assign-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.auto-assign-btn:active {
+    transform: translateY(0);
+}
+
+/* Remove the individual button color overrides and use consistent blue accent */
+.auto-assign-btn:hover {
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #3b82f6;
+}
+
+/* Responsive Design for Auto-assign Buttons */
+@media (max-width: 768px) {
+    .auto-assign-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .auto-assign-btn {
+        text-align: center;
+        padding: 10px 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auto-assign-buttons {
+        padding: 0 4px;
+    }
+}

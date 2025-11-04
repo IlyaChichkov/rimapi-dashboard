@@ -1,0 +1,666 @@
+/* src/components/OverflowManagementModal.css */
+.overflow-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.overflow-modal-content {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 1200px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-title h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.5rem;
+}
+
+.work-icon {
+    font-size: 1.5rem;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.close-modal-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.modal-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Left Panel */
+.left-panel {
+    flex: 1;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.panel-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.panel-header h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 1.1rem;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 12px;
+}
+
+.priority-filter,
+.search-input {
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.priority-filter {
+    min-width: 140px;
+}
+
+.search-input {
+    flex: 1;
+}
+
+.colonists-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.colonist-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.colonist-list-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.colonist-list-item.selected {
+    background: rgba(77, 171, 247, 0.15);
+    border-color: rgba(77, 171, 247, 0.4);
+}
+
+.colonist-info {
+    flex: 1;
+}
+
+.colonist-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+}
+
+.colonist-details {
+    font-size: 0.75rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+.list-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.remove-btn {
+    padding: 4px 8px;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.remove-btn:hover {
+    background: rgba(255, 107, 107, 0.3);
+}
+
+/* Right Panel */
+.right-panel {
+    width: 400px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-y: auto;
+}
+
+.no-selection {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+}
+
+.no-selection-icon {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    opacity: 0.7;
+}
+
+.selected-colonist-info {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.selected-colonist-info h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 1.2rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+}
+
+.detail-row span:first-child {
+    color: #b0b0b0;
+}
+
+.detail-row span:last-child {
+    color: #ffffff;
+    font-weight: 500;
+}
+
+.priority-badge.large {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    min-width: 80px;
+}
+
+.relevant-skills {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.relevant-skills h5 {
+    margin: 0 0 8px 0;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+}
+
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skill-tag {
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+/* Bulk Operations */
+.bulk-operations {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.bulk-operations h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.bulk-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bulk-btn {
+    padding: 10px 12px;
+    border: 1px solid;
+    border-radius: 6px;
+    background: transparent;
+    color: #ffffff;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.bulk-btn.high-priority {
+    border-color: rgba(220, 38, 38, 0.4);
+    background: rgba(220, 38, 38, 0.1);
+}
+
+.bulk-btn.high-priority:hover {
+    background: rgba(220, 38, 38, 0.2);
+}
+
+.bulk-btn.medium-priority {
+    border-color: rgba(234, 179, 8, 0.4);
+    background: rgba(234, 179, 8, 0.1);
+}
+
+.bulk-btn.medium-priority:hover {
+    background: rgba(234, 179, 8, 0.2);
+}
+
+.bulk-btn.disable {
+    border-color: rgba(108, 117, 125, 0.4);
+    background: rgba(108, 117, 125, 0.1);
+}
+
+.bulk-btn.disable:hover {
+    background: rgba(108, 117, 125, 0.2);
+}
+
+/* Work Stats */
+.work-stats-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.work-stats-panel h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.stats-grid .stat-item {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #4dabf7;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.7rem;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Add Colonist Panel */
+.add-colonist-panel {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.add-colonist-panel h4 {
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    font-size: 1rem;
+}
+
+.available-colonists {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.available-colonist-btn {
+    padding: 8px 12px;
+    background: rgba(77, 171, 247, 0.1);
+    border: 1px solid rgba(77, 171, 247, 0.3);
+    border-radius: 6px;
+    color: #4dabf7;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+
+.available-colonist-btn:hover {
+    background: rgba(77, 171, 247, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .overflow-modal-content {
+        width: 95%;
+        height: 90vh;
+    }
+    
+    .modal-body {
+        flex-direction: column;
+    }
+    
+    .right-panel {
+        width: 100%;
+        height: 300px;
+    }
+    
+    .filter-controls {
+        flex-direction: column;
+    }
+}
+
+/* Colonist List Item with Skills */
+.colonist-main-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.colonist-info {
+    /* Keep existing styles */
+}
+
+/* Relevant Skills Mini Display */
+.relevant-skills-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.skill-level-mini {
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: 1px solid;
+    min-width: 24px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* Skill level colors matching the main skills table */
+.skill-level-mini.level-0 {
+    background: rgba(108, 117, 125, 0.2);
+    color: #6c757d;
+    border-color: rgba(108, 117, 125, 0.3);
+}
+
+.skill-level-mini.level-1-4 {
+    background: rgba(220, 38, 38, 0.2);
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+.skill-level-mini.level-5-8 {
+    background: rgba(217, 119, 6, 0.2);
+    color: #d97706;
+    border-color: rgba(217, 119, 6, 0.3);
+}
+
+.skill-level-mini.level-9-12 {
+    background: rgba(234, 179, 8, 0.2);
+    color: #eab308;
+    border-color: rgba(234, 179, 8, 0.3);
+}
+
+.skill-level-mini.level-13-16 {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+}
+
+.skill-level-mini.level-17-20 {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+.more-skills {
+    font-size: 0.6rem;
+    color: #888;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.no-relevant-skills {
+    font-size: 0.7rem;
+    color: #666;
+    font-style: italic;
+}
+
+/* Adjust list item layout to accommodate skills */
+.colonist-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Change from center to flex-start */
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 12px;
+}
+
+.list-item-actions {
+    display: flex;
+    align-items: flex-start; /* Align with top content */
+    gap: 8px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Fix colonist list item layout */
+.colonist-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start; /* Align items to top */
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 16px; /* Space between content and actions */
+    min-height: 70px; /* Ensure consistent height */
+}
+
+.colonist-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0; /* Allow content to shrink */
+}
+
+.colonist-basic-info {
+    /* Basic info stays at top */
+}
+
+.colonist-name {
+    font-weight: 600;
+    color: #ffffff;
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.colonist-details {
+    font-size: 0.75rem;
+    color: #888;
+    line-height: 1.2;
+}
+
+/* Relevant Skills - positioned below basic info */
+.relevant-skills-mini {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.skill-level-mini {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    border: 1px solid;
+    text-align: center;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* List item actions - aligned to top right */
+.list-item-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0; /* Prevent shrinking */
+    margin-top: 0; /* Align with top content */
+}
+
+/* Priority badge in actions */
+.list-item-actions .priority-badge {
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: static; /* Remove any absolute positioning */
+}
+
+/* Remove button in actions */
+.list-item-actions .remove-btn {
+    padding: 4px 8px;
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    border-radius: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.list-item-actions .remove-btn:hover {
+    background: rgba(255, 107, 107, 0.3);
+}
+
+/* No relevant skills text */
+.no-relevant-skills {
+    font-size: 0.7rem;
+    color: #666;
+    font-style: italic;
+    line-height: 1.2;
+}
+
+.more-skills {
+    font-size: 0.6rem;
+    color: #888;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    line-height: 1.2;
+}
