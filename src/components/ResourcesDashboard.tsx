@@ -43,7 +43,27 @@ interface ResourceGroup {
     hasDurability: boolean;
     sampleItem: ResourceItem;
     items: (ResourceItem & { category: string })[];
+    filteredCount?: number;
+    filteredValue?: number;
+    filteredItems?: (ResourceItem & { category: string })[];
+    filteredMinDurability?: number;
+    filteredMaxDurability?: number;
+    filteredHasDurability?: boolean;
 }
+
+
+const cleanResourceName = (name: string): string => {
+    // Remove patterns like " x75", " x100", etc. (quantity indicators)
+    let cleaned = name.replace(/\s*x\d+\s*$/, '');
+
+    // Remove quality indicators in parentheses like "(normal)", "(great)", etc.
+    cleaned = cleaned.replace(/\s*\([^)]+\)\s*$/, '');
+
+    // Trim any extra spaces
+    cleaned = cleaned.trim();
+
+    return cleaned;
+};
 
 // Union type for combined display
 type DisplayItem =
@@ -162,7 +182,7 @@ export const ResourcesDashboard: React.FC = () => {
 
                 groups[resource.def_name] = {
                     def_name: resource.def_name,
-                    label: resource.label,
+                    label: cleanResourceName(resource.label),
                     category: resource.category,
                     totalCount: resource.stack_count,
                     totalValue: resource.market_value * resource.stack_count,
@@ -264,6 +284,7 @@ export const ResourcesDashboard: React.FC = () => {
     }, [allResources, filters]);
 
     // Filter groups (for grouped view)
+    // Update the filteredGroups useMemo to calculate filtered counts and values
     const filteredGroups = useMemo(() => {
         let filtered = groupedResources;
 
@@ -283,27 +304,122 @@ export const ResourcesDashboard: React.FC = () => {
             );
         }
 
-        // Amount filter
-        filtered = filtered.filter(group =>
-            group.totalCount >= filters.amountRange[0] &&
-            group.totalCount <= filters.amountRange[1]
-        );
+        // Allowed filter - Only show groups that contain items matching the allowed status
+        if (filters.allowedOnly !== null) {
+            filtered = filtered.filter(group => {
+                const hasMatchingItems = group.items.some(item =>
+                    filters.allowedOnly ? !item.is_forbidden : item.is_forbidden
+                );
+                return hasMatchingItems;
+            });
+        }
 
-        // Value filter
-        filtered = filtered.filter(group =>
-            group.totalValue >= filters.valueRange[0] &&
-            group.totalValue <= filters.valueRange[1]
-        );
+        // Now calculate filtered counts and values for each group
+        const groupsWithFilteredData = filtered.map(group => {
+            // Filter the group's items based on current filters
+            const filteredGroupItems = group.items.filter(item => {
+                // Search filter
+                if (filters.search) {
+                    const term = filters.search.toLowerCase();
+                    if (!item.label.toLowerCase().includes(term) && !item.def_name.toLowerCase().includes(term)) {
+                        return false;
+                    }
+                }
 
-        // Hit points filter - use min durability for filtering
-        filtered = filtered.filter(group => {
-            if (!group.hasDurability) return true;
-            return group.minDurability >= filters.hitPointsRange[0] &&
-                group.minDurability <= filters.hitPointsRange[1];
+                // Category filter
+                if (filters.categories.length > 0 && !filters.categories.includes(item.category)) {
+                    return false;
+                }
+
+                // Quality filter
+                if (filters.qualities.length > 0 && (!item.quality || !filters.qualities.includes(getQualityLabel(item.quality).toLowerCase()))) {
+                    return false;
+                }
+
+                // Amount filter
+                if (item.stack_count < filters.amountRange[0] || item.stack_count > filters.amountRange[1]) {
+                    return false;
+                }
+
+                // Value filter
+                const itemValue = item.market_value * item.stack_count;
+                if (itemValue < filters.valueRange[0] || itemValue > filters.valueRange[1]) {
+                    return false;
+                }
+
+                // Hit points filter
+                if (item.max_hit_points > 0) {
+                    const durabilityPercent = (item.hit_points / item.max_hit_points) * 100;
+                    if (durabilityPercent < filters.hitPointsRange[0] || durabilityPercent > filters.hitPointsRange[1]) {
+                        return false;
+                    }
+                }
+
+                // Allowed filter
+                if (filters.allowedOnly !== null) {
+                    if (filters.allowedOnly && item.is_forbidden) return false;
+                    if (!filters.allowedOnly && !item.is_forbidden) return false;
+                }
+
+                return true;
+            });
+
+            // Calculate filtered totals
+            const filteredCount = filteredGroupItems.reduce((sum, item) => sum + item.stack_count, 0);
+            const filteredValue = filteredGroupItems.reduce((sum, item) => sum + (item.market_value * item.stack_count), 0);
+
+            // Calculate filtered durability range
+            let filteredMinDurability = 100;
+            let filteredMaxDurability = 100;
+            let filteredHasDurability = false;
+
+            if (filteredGroupItems.length > 0) {
+                const durabilityValues = filteredGroupItems
+                    .filter(item => item.max_hit_points > 0)
+                    .map(item => (item.hit_points / item.max_hit_points) * 100);
+
+                if (durabilityValues.length > 0) {
+                    filteredMinDurability = Math.min(...durabilityValues);
+                    filteredMaxDurability = Math.max(...durabilityValues);
+                    filteredHasDurability = true;
+                }
+            }
+
+            return {
+                ...group,
+                filteredCount,
+                filteredValue,
+                filteredItems: filteredGroupItems,
+                filteredMinDurability,
+                filteredMaxDurability,
+                filteredHasDurability
+            };
         });
 
-        return filtered;
+        // Apply amount and value filters to the filtered counts
+        let finalFiltered = groupsWithFilteredData.filter(group => {
+            const displayCount = group.filteredCount !== undefined ? group.filteredCount : group.totalCount;
+            const displayValue = group.filteredValue !== undefined ? group.filteredValue : group.totalValue;
+
+            return displayCount >= filters.amountRange[0] &&
+                displayCount <= filters.amountRange[1] &&
+                displayValue >= filters.valueRange[0] &&
+                displayValue <= filters.valueRange[1];
+        });
+
+        // Apply hit points filter to filtered durability
+        finalFiltered = finalFiltered.filter(group => {
+            const hasDurability = group.filteredHasDurability !== undefined ? group.filteredHasDurability : group.hasDurability;
+            if (!hasDurability) return true;
+
+            const minDurability = group.filteredMinDurability !== undefined ? group.filteredMinDurability : group.minDurability;
+            return minDurability >= filters.hitPointsRange[0] &&
+                minDurability <= filters.hitPointsRange[1];
+        });
+
+        return finalFiltered;
     }, [groupedResources, filters]);
+
 
     // Sort resources (individual items)
     const sortedResources = useMemo(() => {
@@ -437,6 +553,7 @@ export const ResourcesDashboard: React.FC = () => {
                     }
                 }
 
+                // Allowed filter - FIXED: Apply the same logic as individual filtering
                 if (filters.allowedOnly !== null) {
                     if (filters.allowedOnly && resource.is_forbidden) return false;
                     if (!filters.allowedOnly && !resource.is_forbidden) return false;
@@ -455,8 +572,8 @@ export const ResourcesDashboard: React.FC = () => {
                 totalValue: resource.market_value * resource.stack_count
             }));
 
-            // Convert groups to display format
-            const groupsForDisplay: DisplayItem[] = sortedGroups.map(group => ({
+            // Convert filtered groups to display format
+            const groupsForDisplay: DisplayItem[] = filteredGroups.map(group => ({
                 type: 'group',
                 data: group,
                 label: group.label,
@@ -533,7 +650,7 @@ export const ResourcesDashboard: React.FC = () => {
                 totalValue: resource.market_value * resource.stack_count
             }));
         }
-    }, [groupItems, sortedGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
+    }, [groupItems, filteredGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
 
     // Paginate display data
     const displayedData = useMemo(() => {
@@ -1162,7 +1279,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
             {/* Resource Info */}
             <div className="resource-info">
                 <h3 className="resource-name" title={resource.label}>
-                    {resource.label}
+                    {cleanResourceName(resource.label)}
                 </h3>
 
                 <div className="resource-meta">
@@ -1223,8 +1340,13 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
-    const durabilityRange = group.hasDurability
-        ? `${Math.round(group.minDurability)}-${Math.round(group.maxDurability)}%`
+    // Use filtered data if available, otherwise use total data
+    const displayCount = group.filteredCount !== undefined ? group.filteredCount : group.totalCount;
+    const displayValue = group.filteredValue !== undefined ? group.filteredValue : group.totalValue;
+    const displayItems = group.filteredItems || group.items;
+
+    const durabilityRange = (group.filteredHasDurability !== undefined ? group.filteredHasDurability : group.hasDurability)
+        ? `${Math.round((group.filteredMinDurability !== undefined ? group.filteredMinDurability : group.minDurability))}-${Math.round((group.filteredMaxDurability !== undefined ? group.filteredMaxDurability : group.maxDurability))}%`
         : 'N/A';
 
     return (
@@ -1237,7 +1359,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                 🔍
             </div>
 
-            {/* Item Image - Remove stack count from here */}
+            {/* Item Image - No stack count overlay */}
             <div className="resource-image">
                 {imageUrl && !imageError ? (
                     <img
@@ -1252,7 +1374,6 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                         {categoryInfo?.icon || '📦'}
                     </div>
                 )}
-                {/* Removed stack-count group-stack-count element */}
             </div>
 
             {/* Group Info */}
@@ -1264,7 +1385,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                 <div className="group-meta">
                     <div className="group-stat">
                         <span className="group-stat-label">Total:</span>
-                        <span className="group-stat-value">{group.totalCount}</span>
+                        <span className="group-stat-value">{displayCount}</span>
                     </div>
                     <div className="group-stat">
                         <span className="group-stat-label">Durability:</span>
@@ -1278,17 +1399,18 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                         {categoryInfo?.icon} {categoryInfo?.label || group.category}
                     </span>
                     <div className="value-badge group-value">
-                        ${group.totalValue.toFixed(0)}
+                        ${displayValue.toFixed(0)}
                     </div>
                 </div>
 
-                {/* Click Hint - Fixed to show number of individual items, not total count */}
+                {/* Click Hint - Use filtered items count */}
                 <div className="group-click-hint">
-                    Click to view {group.items.length} individual items
+                    Click to view {displayItems.length} individual items
                 </div>
             </div>
         </div>
     );
 };
+
 
 export default ResourcesDashboard;
