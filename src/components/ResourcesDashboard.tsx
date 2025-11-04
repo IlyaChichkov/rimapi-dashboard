@@ -4,7 +4,6 @@ import { rimworldApi, selectItem } from '../services/rimworldApi';
 import { ResourcesData, ResourceItem } from '../types';
 import './ResourcesDashboard.css';
 
-// Types
 interface SortOption {
     field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category';
     direction: 'asc' | 'desc';
@@ -33,13 +32,27 @@ interface ResourceCategory {
     color: string;
 }
 
+// New interface for grouped items
+interface ResourceGroup {
+    def_name: string;
+    label: string;
+    category: string;
+    totalCount: number;
+    totalValue: number;
+    minDurability: number;
+    maxDurability: number;
+    hasDurability: boolean;
+    sampleItem: ResourceItem;
+    items: (ResourceItem & { category: string })[];
+}
+
 export const ResourcesDashboard: React.FC = () => {
     const [resourcesData, setResourcesData] = useState<ResourcesData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [imageCache, setImageCache] = useState<Record<string, string>>({});
 
-    // New state management
+    // State management
     const [sortOption, setSortOption] = useState<SortOption>({ field: 'name', direction: 'asc' });
     const [filters, setFilters] = useState<FilterSet>({
         search: '',
@@ -56,6 +69,10 @@ export const ResourcesDashboard: React.FC = () => {
         showAll: false
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    // New grouping state
+    const [groupItems, setGroupItems] = useState<boolean>(true);
+    const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
 
     // Resource categories with metadata
     const resourceCategories: ResourceCategory[] = [
@@ -124,6 +141,44 @@ export const ResourcesDashboard: React.FC = () => {
         return resources;
     }, [resourcesData]);
 
+    // Group items by def_name
+    const groupedResources = useMemo((): ResourceGroup[] => {
+        const groups: Record<string, ResourceGroup> = {};
+
+        allResources.forEach(resource => {
+            if (!groups[resource.def_name]) {
+                const durabilityPercent = resource.max_hit_points > 0
+                    ? (resource.hit_points / resource.max_hit_points) * 100
+                    : 100;
+
+                groups[resource.def_name] = {
+                    def_name: resource.def_name,
+                    label: resource.label,
+                    category: resource.category,
+                    totalCount: resource.stack_count,
+                    totalValue: resource.market_value * resource.stack_count,
+                    minDurability: durabilityPercent,
+                    maxDurability: durabilityPercent,
+                    hasDurability: resource.max_hit_points > 0,
+                    sampleItem: resource,
+                    items: [resource]
+                };
+            } else {
+                const group = groups[resource.def_name];
+                const durabilityPercent = resource.max_hit_points > 0
+                    ? (resource.hit_points / resource.max_hit_points) * 100
+                    : 100;
+
+                group.totalCount += resource.stack_count;
+                group.totalValue += resource.market_value * resource.stack_count;
+                group.minDurability = Math.min(group.minDurability, durabilityPercent);
+                group.maxDurability = Math.max(group.maxDurability, durabilityPercent);
+                group.items.push(resource);
+            }
+        });
+
+        return Object.values(groups);
+    }, [allResources]);
 
     // Helper function for quality sorting
     const getQualityLabel = (quality: number | null): string => {
@@ -139,7 +194,7 @@ export const ResourcesDashboard: React.FC = () => {
         return quality ? qualityValues[quality] : 'none';
     };
 
-    // Filter resources
+    // Filter resources (individual items)
     const filteredResources = useMemo(() => {
         let filtered = allResources;
 
@@ -196,7 +251,50 @@ export const ResourcesDashboard: React.FC = () => {
         return filtered;
     }, [allResources, filters]);
 
-    // Sort resources
+    // Filter groups (for grouped view)
+    // Filter groups (for grouped view)
+    const filteredGroups = useMemo(() => {
+        let filtered = groupedResources;
+
+        // Search filter
+        if (filters.search) {
+            const term = filters.search.toLowerCase();
+            filtered = filtered.filter(group =>
+                group.label.toLowerCase().includes(term) ||
+                group.def_name.toLowerCase().includes(term)
+            );
+        }
+
+        // Category filter
+        if (filters.categories.length > 0) {
+            filtered = filtered.filter(group =>
+                filters.categories.includes(group.category)
+            );
+        }
+
+        // Amount filter
+        filtered = filtered.filter(group =>
+            group.totalCount >= filters.amountRange[0] &&
+            group.totalCount <= filters.amountRange[1]
+        );
+
+        // Value filter
+        filtered = filtered.filter(group =>
+            group.totalValue >= filters.valueRange[0] &&
+            group.totalValue <= filters.valueRange[1]
+        );
+
+        // Hit points filter - use min durability for filtering
+        filtered = filtered.filter(group => {
+            if (!group.hasDurability) return true;
+            return group.minDurability >= filters.hitPointsRange[0] &&
+                group.minDurability <= filters.hitPointsRange[1];
+        });
+
+        return filtered;
+    }, [groupedResources, filters]);
+
+    // Sort resources (individual items)
     const sortedResources = useMemo(() => {
         const sorted = [...filteredResources];
 
@@ -240,23 +338,70 @@ export const ResourcesDashboard: React.FC = () => {
         return sorted;
     }, [filteredResources, sortOption]);
 
-    // Paginate resources
-    const displayedResources = useMemo(() => {
+    // Sort groups
+    const sortedGroups = useMemo(() => {
+        const sorted = [...filteredGroups];
+
+        sorted.sort((a, b) => {
+            let aValue: any, bValue: any;
+
+            switch (sortOption.field) {
+                case 'name':
+                    aValue = a.label.toLowerCase();
+                    bValue = b.label.toLowerCase();
+                    break;
+                case 'amount':
+                    aValue = a.totalCount;
+                    bValue = b.totalCount;
+                    break;
+                case 'value':
+                    aValue = a.totalValue;
+                    bValue = b.totalValue;
+                    break;
+                case 'hitPoints':
+                    aValue = a.hasDurability ? a.minDurability : 100;
+                    bValue = b.hasDurability ? b.minDurability : 100;
+                    break;
+                case 'category':
+                    aValue = a.category;
+                    bValue = b.category;
+                    break;
+                default:
+                    // For quality, use sample item's quality
+                    aValue = a.sampleItem.quality || 0;
+                    bValue = b.sampleItem.quality || 0;
+                    break;
+            }
+
+            if (aValue < bValue) return sortOption.direction === 'asc' ? -1 : 1;
+            if (aValue > bValue) return sortOption.direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        return sorted;
+    }, [filteredGroups, sortOption]);
+
+    // Determine what to display based on grouping
+    const displayData = groupItems ? sortedGroups : sortedResources;
+    const isGroupView = groupItems;
+
+    // Paginate display data
+    const displayedData = useMemo(() => {
         if (pagination.showAll) {
-            return sortedResources;
+            return displayData;
         }
 
         const startIndex = pagination.currentPage * pagination.itemsPerPage;
         const endIndex = startIndex + pagination.itemsPerPage;
-        return sortedResources.slice(startIndex, endIndex);
-    }, [sortedResources, pagination]);
+        return displayData.slice(startIndex, endIndex);
+    }, [displayData, pagination]);
 
     // Calculate total pages
-    const totalPages = Math.ceil(sortedResources.length / pagination.itemsPerPage);
+    const totalPages = Math.ceil(displayData.length / pagination.itemsPerPage);
 
     // Calculate total value and items
     const stats = useMemo(() => {
-        if (!resourcesData) return { totalValue: 0, totalItems: 0, categoriesCount: 0 };
+        if (!resourcesData) return { totalValue: 0, totalItems: 0, categoriesCount: 0, filteredCount: 0 };
 
         let totalValue = 0;
         let totalItems = 0;
@@ -272,13 +417,17 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        return { totalValue, totalItems, categoriesCount, filteredCount: filteredResources.length };
-    }, [resourcesData, filteredResources.length]);
+        const filteredCount = groupItems ? filteredGroups.length : filteredResources.length;
+
+        return { totalValue, totalItems, categoriesCount, filteredCount };
+    }, [resourcesData, filteredResources.length, filteredGroups.length, groupItems]);
 
     // Filter handlers
     const updateFilter = useCallback((key: keyof FilterSet, value: any) => {
         setFilters(prev => ({ ...prev, [key]: value }));
-        setPagination(prev => ({ ...prev, currentPage: 0 })); // Reset to first page on filter change
+        setPagination(prev => ({ ...prev, currentPage: 0 }));
+        // Clear expanded group when filters change
+        setExpandedGroup(null);
     }, []);
 
     const toggleCategory = useCallback((category: string) => {
@@ -289,6 +438,7 @@ export const ResourcesDashboard: React.FC = () => {
                 : [...prev.categories, category]
         }));
         setPagination(prev => ({ ...prev, currentPage: 0 }));
+        setExpandedGroup(null);
     }, []);
 
     const toggleQuality = useCallback((quality: string) => {
@@ -299,6 +449,7 @@ export const ResourcesDashboard: React.FC = () => {
                 : [...prev.qualities, quality]
         }));
         setPagination(prev => ({ ...prev, currentPage: 0 }));
+        setExpandedGroup(null);
     }, []);
 
     const clearAllFilters = useCallback(() => {
@@ -312,6 +463,7 @@ export const ResourcesDashboard: React.FC = () => {
             allowedOnly: null
         });
         setPagination(prev => ({ ...prev, currentPage: 0 }));
+        setExpandedGroup(null);
     }, []);
 
     // Sort handler
@@ -331,6 +483,25 @@ export const ResourcesDashboard: React.FC = () => {
         setPagination(prev => ({ ...prev, showAll: !prev.showAll, currentPage: 0 }));
     }, []);
 
+    // Group click handler
+    const handleGroupClick = useCallback((defName: string) => {
+        // Add def_name to search filter and disable grouping
+        setFilters(prev => ({
+            ...prev,
+            search: defName
+        }));
+        setGroupItems(false);
+        setExpandedGroup(defName);
+        setPagination(prev => ({ ...prev, currentPage: 0 }));
+    }, []);
+
+    // Toggle grouping
+    const toggleGrouping = useCallback(() => {
+        setGroupItems(prev => !prev);
+        setPagination(prev => ({ ...prev, currentPage: 0 }));
+        setExpandedGroup(null);
+    }, []);
+
     // Initial data fetch
     useEffect(() => {
         fetchResources();
@@ -338,23 +509,36 @@ export const ResourcesDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
+    // Image loading effect
     useEffect(() => {
         let isMounted = true;
 
-        if (displayedResources.length > 0 && isMounted) {
-            const validResources = displayedResources.filter(resource =>
-                !resource.category.includes("corpses") && !imageCache[resource.def_name]
-            );
+        if (displayedData.length > 0 && isMounted) {
+            const defNamesToLoad = new Set<string>();
 
-            validResources.forEach(resource => {
-                fetchItemImage(resource.def_name);
+            displayedData.forEach(item => {
+                if (isGroupView) {
+                    const group = item as ResourceGroup;
+                    if (!imageCache[group.def_name] && !group.category.includes("corpses")) {
+                        defNamesToLoad.add(group.def_name);
+                    }
+                } else {
+                    const resource = item as ResourceItem & { category: string };
+                    if (!imageCache[resource.def_name] && !resource.category.includes("corpses")) {
+                        defNamesToLoad.add(resource.def_name);
+                    }
+                }
+            });
+
+            defNamesToLoad.forEach(defName => {
+                fetchItemImage(defName);
             });
         }
 
         return () => {
             isMounted = false;
         };
-    }, [displayedResources, imageCache]);
+    }, [displayedData, imageCache, isGroupView]);
 
     if (error) {
         return (
@@ -385,13 +569,22 @@ export const ResourcesDashboard: React.FC = () => {
                         </div>
                         <div className="stat-item">
                             <span className="stat-value">{stats.filteredCount}</span>
-                            <span className="stat-label">Filtered Items</span>
+                            <span className="stat-label">
+                                {groupItems ? 'Item Types' : 'Filtered Items'}
+                            </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Controls */}
                 <div className="resources-controls">
+                    <button
+                        onClick={toggleGrouping}
+                        className={`group-toggle ${groupItems ? 'active' : ''}`}
+                    >
+                        {groupItems ? '📦 Grouped' : '📦 Ungrouped'}
+                    </button>
+
                     <button
                         onClick={() => setShowFilters(!showFilters)}
                         className={`filter-toggle ${showFilters ? 'active' : ''}`}
@@ -503,8 +696,12 @@ export const ResourcesDashboard: React.FC = () => {
                         <option value="amount-asc">Amount Low-High</option>
                         <option value="value-desc">Value High-Low</option>
                         <option value="value-asc">Value Low-High</option>
-                        <option value="quality-desc">Quality Best-Worst</option>
-                        <option value="quality-asc">Quality Worst-Best</option>
+                        {!groupItems && (
+                            <>
+                                <option value="quality-desc">Quality Best-Worst</option>
+                                <option value="quality-asc">Quality Worst-Best</option>
+                            </>
+                        )}
                         <option value="hitPoints-desc">Durability High-Low</option>
                         <option value="hitPoints-asc">Durability Low-High</option>
                     </select>
@@ -541,21 +738,38 @@ export const ResourcesDashboard: React.FC = () => {
                     )}
 
                     <span className="items-count">
-                        Showing {displayedResources.length} of {sortedResources.length} items
+                        Showing {displayedData.length} of {displayData.length} {groupItems ? 'item types' : 'items'}
                     </span>
                 </div>
             </div>
 
             {/* Resources Grid */}
-            <div className={`resources-grid ${!pagination.showAll ? 'paged' : 'compact'}`}>
-                {displayedResources.map((resource) => (
-                    <ResourceCard
-                        key={`${resource.thing_id}-${resource.category}-${resource.stack_count}`}
-                        resource={resource}
-                        imageUrl={imageCache[resource.def_name]}
-                        categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
-                    />
-                ))}
+            <div className={`resources-grid ${!pagination.showAll ? 'paged' : 'compact'} ${groupItems ? 'grouped' : ''}`}>
+                {displayedData.map((item) => {
+                    if (groupItems) {
+                        const group = item as ResourceGroup;
+                        return (
+                            <GroupCard
+                                key={group.def_name}
+                                group={group}
+                                imageUrl={imageCache[group.def_name]}
+                                categoryInfo={resourceCategories.find(cat => cat.key === group.category)}
+                                onClick={() => handleGroupClick(group.def_name)}
+                                isExpanded={expandedGroup === group.def_name}
+                            />
+                        );
+                    } else {
+                        const resource = item as ResourceItem & { category: string };
+                        return (
+                            <ResourceCard
+                                key={`${resource.thing_id}-${resource.category}-${resource.stack_count}`}
+                                resource={resource}
+                                imageUrl={imageCache[resource.def_name]}
+                                categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
+                            />
+                        );
+                    }
+                })}
             </div>
 
             {/* Bottom Pagination */}
@@ -631,6 +845,7 @@ export const ResourcesDashboard: React.FC = () => {
     );
 };
 
+// Quality Tag Component (unchanged)
 interface QualityTagProps {
     resource: ResourceItem & { category: string };
 }
@@ -652,7 +867,6 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
         return qualityMap[quality] || '#6c757d';
     };
 
-    // Helper function for quality sorting
     const getQualityLabel = (quality: number | null): string | null => {
         const qualityValues: Record<number, string> = {
             0: 'awful',
@@ -683,6 +897,7 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
     )
 };
 
+// Resource Card Component (unchanged)
 interface ResourceCardProps {
     resource: ResourceItem & { category: string };
     imageUrl?: string;
@@ -698,7 +913,6 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
         return (resource.hit_points / resource.max_hit_points) * 100;
     };
 
-    // API call placeholder for forbidden toggle
     const handleForbiddenToggle = async (event: React.MouseEvent) => {
         event.stopPropagation();
     };
@@ -787,6 +1001,89 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
                         🔒 Forbidden
                     </button>
                 )}
+            </div>
+        </div>
+    );
+};
+
+// New Group Card Component
+interface GroupCardProps {
+    group: ResourceGroup;
+    imageUrl?: string;
+    categoryInfo?: ResourceCategory;
+    onClick: () => void;
+    isExpanded: boolean;
+}
+
+const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, onClick, isExpanded }) => {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    const durabilityRange = group.hasDurability
+        ? `${Math.round(group.minDurability)}-${Math.round(group.maxDurability)}%`
+        : 'N/A';
+
+    return (
+        <div
+            className={`resource-card group-card ${isExpanded ? 'expanded' : ''}`}
+            onClick={onClick}
+        >
+            {/* Group Indicator */}
+            <div className="group-indicator" title="Click to view individual items">
+                🔍
+            </div>
+
+            {/* Item Image */}
+            <div className="resource-image">
+                {imageUrl && !imageError ? (
+                    <img
+                        src={imageUrl}
+                        alt={group.def_name}
+                        onLoad={() => setImageLoaded(true)}
+                        onError={() => setImageError(true)}
+                        style={{ opacity: imageLoaded ? 1 : 0 }}
+                    />
+                ) : (
+                    <div className="image-placeholder">
+                        {categoryInfo?.icon || '📦'}
+                    </div>
+                )}
+                <div className="stack-count group-stack-count">
+                    ×{group.totalCount}
+                </div>
+            </div>
+
+            {/* Group Info */}
+            <div className="resource-info">
+                <h3 className="resource-name" title={group.label}>
+                    {group.label}
+                </h3>
+
+                <div className="group-meta">
+                    <div className="group-stat">
+                        <span className="group-stat-label">Total:</span>
+                        <span className="group-stat-value">{group.totalCount}</span>
+                    </div>
+                    <div className="group-stat">
+                        <span className="group-stat-label">Durability:</span>
+                        <span className="group-stat-value">{durabilityRange}</span>
+                    </div>
+                </div>
+
+                {/* Group Details */}
+                <div className="resource-details">
+                    <span className="resource-category">
+                        {categoryInfo?.icon} {categoryInfo?.label || group.category}
+                    </span>
+                    <div className="value-badge group-value">
+                        ${group.totalValue.toFixed(0)}
+                    </div>
+                </div>
+
+                {/* Click Hint */}
+                <div className="group-click-hint">
+                    Click to view {group.totalCount} individual items
+                </div>
             </div>
         </div>
     );
