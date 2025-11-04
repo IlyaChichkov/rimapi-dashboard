@@ -248,9 +248,11 @@ export const ResourcesDashboard: React.FC = () => {
 
         // Quality filter
         if (filters.qualities.length > 0) {
-            filtered = filtered.filter(resource =>
-                resource.quality && filters.qualities.includes(getQualityLabel(resource.quality).toLowerCase())
-            );
+            filtered = filtered.filter(resource => {
+                if (!resource.quality) return false;
+                const qualityLabel = getQualityLabel(resource.quality);
+                return qualityLabel && filters.qualities.includes(qualityLabel.toLowerCase());
+            });
         }
 
         // Amount filter
@@ -332,8 +334,12 @@ export const ResourcesDashboard: React.FC = () => {
                 }
 
                 // Quality filter
-                if (filters.qualities.length > 0 && (!item.quality || !filters.qualities.includes(getQualityLabel(item.quality).toLowerCase()))) {
-                    return false;
+                if (filters.qualities.length > 0) {
+                    if (!item.quality) return false;
+                    const qualityLabel = getQualityLabel(item.quality);
+                    if (!qualityLabel || !filters.qualities.includes(qualityLabel.toLowerCase())) {
+                        return false;
+                    }
                 }
 
                 // Amount filter
@@ -533,9 +539,14 @@ export const ResourcesDashboard: React.FC = () => {
                     return false;
                 }
 
-                if (filters.qualities.length > 0 && (!resource.quality || !filters.qualities.includes(getQualityLabel(resource.quality).toLowerCase()))) {
-                    return false;
+                if (filters.qualities.length > 0) {
+                    if (!resource.quality) return false;
+                    const qualityLabel = getQualityLabel(resource.quality);
+                    if (!qualityLabel || !filters.qualities.includes(qualityLabel.toLowerCase())) {
+                        return false;
+                    }
                 }
+
 
                 if (resource.stack_count < filters.amountRange[0] || resource.stack_count > filters.amountRange[1]) {
                     return false;
@@ -1213,7 +1224,9 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
         return qualityMap[quality] || '#6c757d';
     };
 
-    const getQualityLabel = (quality: number | null): string | null => {
+    const getQualityLabel = (quality: number | null): string => {
+        if (quality === null || quality === undefined) return 'none';
+
         const qualityValues: Record<number, string> = {
             0: 'awful',
             1: 'poor',
@@ -1223,7 +1236,8 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
             5: 'masterwork',
             6: 'legendary'
         };
-        return quality ? qualityValues[quality] : null;
+
+        return qualityValues[quality] || 'none';
     };
 
     const quality = resource.quality;
