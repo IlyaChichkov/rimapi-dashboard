@@ -5,7 +5,7 @@ import { ResourcesData, ResourceItem } from '../types';
 import './ResourcesDashboard.css';
 
 interface SortOption {
-    field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category';
+    field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category' | 'type';
     direction: 'asc' | 'desc';
 }
 
@@ -587,6 +587,20 @@ export const ResourcesDashboard: React.FC = () => {
 
             // Sort combined array
             combined.sort((a, b) => {
+                // Handle type sorting (groups vs items)
+                if (sortOption.field === 'type') {
+                    const aType = a.type === 'group' ? 1 : 0;
+                    const bType = b.type === 'group' ? 1 : 0;
+
+                    if (sortOption.direction === 'desc') {
+                        // Groups first: groups (1) come before items (0)
+                        return bType - aType;
+                    } else {
+                        // Items first: items (0) come before groups (1)
+                        return aType - bType;
+                    }
+                }
+
                 let aValue: any, bValue: any;
 
                 switch (sortOption.field) {
@@ -984,20 +998,30 @@ export const ResourcesDashboard: React.FC = () => {
                         }}
                         className="sort-select"
                     >
-                        <option value="name-asc">Name A-Z</option>
-                        <option value="name-desc">Name Z-A</option>
-                        <option value="amount-desc">Amount High-Low</option>
-                        <option value="amount-asc">Amount Low-High</option>
-                        <option value="value-desc">Value High-Low</option>
-                        <option value="value-asc">Value Low-High</option>
+                        <option value="type-desc">Groups First</option>
+                        <option value="type-asc">Items First</option>
+                        <optgroup label="Name">
+                            <option value="name-asc">Name A-Z</option>
+                            <option value="name-desc">Name Z-A</option>
+                        </optgroup>
+                        <optgroup label="Amount">
+                            <option value="amount-desc">Amount High-Low</option>
+                            <option value="amount-asc">Amount Low-High</option>
+                        </optgroup>
+                        <optgroup label="Value">
+                            <option value="value-desc">Value High-Low</option>
+                            <option value="value-asc">Value Low-High</option>
+                        </optgroup>
                         {!groupItems && (
-                            <>
-                                <option value="quality-desc">Quality Best-Worst</option>
-                                <option value="quality-asc">Quality Worst-Best</option>
-                            </>
+                            <optgroup label="Quality">
+                                <option value="quality-desc">Best to Worst</option>
+                                <option value="quality-asc">Worst to Best</option>
+                            </optgroup>
                         )}
-                        <option value="hitPoints-desc">Durability High-Low</option>
-                        <option value="hitPoints-asc">Durability Low-High</option>
+                        <optgroup label="Durability">
+                            <option value="hitPoints-desc">High to Low</option>
+                            <option value="hitPoints-asc">Low to High</option>
+                        </optgroup>
                     </select>
                 </div>
 
