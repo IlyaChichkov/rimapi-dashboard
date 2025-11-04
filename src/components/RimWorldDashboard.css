@@ -562,10 +562,6 @@
   box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
 }
 
-.sort-select:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
 /* Mobile responsive styles for sort controls */
 @media (max-width: 768px) {
   .chart-header-top {

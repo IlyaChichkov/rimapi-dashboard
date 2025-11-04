@@ -231,13 +231,170 @@
   font-size: 0.9rem;
 }
 
+/* Improved Sort Select Styles */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #adb5bd;
+  font-size: 0.9rem;
+}
+
 .sort-select {
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
+  border-radius: 8px;
   color: white;
   font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%23adb5bd' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  min-width: 160px;
+  position: relative;
+}
+
+.sort-select:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+  background-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Style the dropdown options */
+.sort-select option {
+  background: #2d3748 !important;
+  color: white !important;
+  padding: 0.75rem !important;
+  font-size: 0.9rem !important;
+  border: none !important;
+}
+
+
+.sort-select option:active {
+  background: #4dabf7;
+}
+
+.sort-select option:hover {
+  background: #4dabf7;
+  color: white;
+}
+
+.sort-select option:checked {
+  background: linear-gradient(135deg, #4dabf7, #3b8fd9);
+  color: white;
+}
+
+.sort-select option:focus {
+  background: #4dabf7;
+  color: white;
+}
+
+/* Custom scrollbar for the dropdown */
+.sort-select::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sort-select::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.sort-select::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+}
+
+.sort-select::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Firefox specific styles */
+@supports (-moz-appearance: none) {
+  .sort-select {
+    padding-right: 0.75rem;
+  }
+  
+  .sort-select option {
+    background: #2d3748;
+    color: white;
+  }
+}
+
+/* Mobile improvements */
+@media (max-width: 768px) {
+  .sort-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+  
+  .sort-controls span {
+    text-align: center;
+    font-size: 0.8rem;
+  }
+  
+  .sort-select {
+    min-width: auto;
+    width: 100%;
+    font-size: 0.85rem;
+    padding: 0.6rem 2rem 0.6rem 0.75rem;
+  }
+}
+
+/* Dark theme enhancements for better contrast */
+.sort-select:invalid {
+  color: #adb5bd;
+}
+
+.sort-select option[value=""][disabled] {
+  display: none;
+}
+
+/* Group quality options styling */
+.sort-select optgroup {
+  background: #1a202c;
+  color: #4dabf7;
+  font-weight: 600;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.sort-select optgroup option {
+  background: #2d3748;
+  padding-left: 1rem;
+  font-weight: normal;
+}
+
+/* Hover state improvements for better UX */
+.sort-select:hover::after {
+  border-top-color: #4dabf7;
+}
+
+/* Focus-visible for better accessibility */
+.sort-select:focus-visible {
+  outline: 2px solid #4dabf7;
+  outline-offset: 2px;
+}
+
+/* Disabled state styling */
+.sort-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sort-select:disabled:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.2);
 }
 
 .pagination-controls {
@@ -331,7 +488,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 220px;
+  height: 240px; /* Increased from 220px to match group cards */
   position: relative;
 }
 
@@ -396,6 +553,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  justify-content: space-between;
 }
 
 .resource-name {
@@ -410,6 +568,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   min-height: 2.2rem;
+  flex-shrink: 0;
 }
 
 .resource-meta {
@@ -737,7 +896,6 @@
   border: 2px solid rgba(155, 89, 182, 0.3);
   border-left: 6px solid #9b59b6;
   cursor: pointer;
-  height: 240px;
   position: relative;
 }
 
@@ -772,6 +930,7 @@
   flex-direction: column;
   gap: 0.3rem;
   margin: 0.5rem 0;
+  flex-grow: 1;
 }
 
 .group-stat {
