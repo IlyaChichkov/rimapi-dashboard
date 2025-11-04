@@ -32,7 +32,6 @@ interface ResourceCategory {
     color: string;
 }
 
-// New interface for grouped items
 interface ResourceGroup {
     def_name: string;
     label: string;
@@ -73,6 +72,11 @@ export const ResourcesDashboard: React.FC = () => {
     // New grouping state
     const [groupItems, setGroupItems] = useState<boolean>(true);
     const [expandedGroup, setExpandedGroup] = useState<string | null>(null);
+    const [previousGroupState, setPreviousGroupState] = useState<{
+        groupItems: boolean;
+        filters: FilterSet;
+        sortOption: SortOption;
+    } | null>(null);
 
     // Resource categories with metadata
     const resourceCategories: ResourceCategory[] = [
@@ -141,7 +145,7 @@ export const ResourcesDashboard: React.FC = () => {
         return resources;
     }, [resourcesData]);
 
-    // Group items by def_name
+    // Group items by def_name - only groups with more than 1 item
     const groupedResources = useMemo((): ResourceGroup[] => {
         const groups: Record<string, ResourceGroup> = {};
 
@@ -177,7 +181,10 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        return Object.values(groups);
+        // Only return groups with more than 1 item OR multiple stack items
+        return Object.values(groups).filter(group =>
+            group.items.length > 1 || group.totalCount > 1
+        );
     }, [allResources]);
 
     // Helper function for quality sorting
@@ -251,7 +258,6 @@ export const ResourcesDashboard: React.FC = () => {
         return filtered;
     }, [allResources, filters]);
 
-    // Filter groups (for grouped view)
     // Filter groups (for grouped view)
     const filteredGroups = useMemo(() => {
         let filtered = groupedResources;
@@ -428,6 +434,7 @@ export const ResourcesDashboard: React.FC = () => {
         setPagination(prev => ({ ...prev, currentPage: 0 }));
         // Clear expanded group when filters change
         setExpandedGroup(null);
+        setPreviousGroupState(null);
     }, []);
 
     const toggleCategory = useCallback((category: string) => {
@@ -439,6 +446,7 @@ export const ResourcesDashboard: React.FC = () => {
         }));
         setPagination(prev => ({ ...prev, currentPage: 0 }));
         setExpandedGroup(null);
+        setPreviousGroupState(null);
     }, []);
 
     const toggleQuality = useCallback((quality: string) => {
@@ -450,6 +458,7 @@ export const ResourcesDashboard: React.FC = () => {
         }));
         setPagination(prev => ({ ...prev, currentPage: 0 }));
         setExpandedGroup(null);
+        setPreviousGroupState(null);
     }, []);
 
     const clearAllFilters = useCallback(() => {
@@ -464,6 +473,7 @@ export const ResourcesDashboard: React.FC = () => {
         });
         setPagination(prev => ({ ...prev, currentPage: 0 }));
         setExpandedGroup(null);
+        setPreviousGroupState(null);
     }, []);
 
     // Sort handler
@@ -485,6 +495,13 @@ export const ResourcesDashboard: React.FC = () => {
 
     // Group click handler
     const handleGroupClick = useCallback((defName: string) => {
+        // Save current state before changing
+        setPreviousGroupState({
+            groupItems: true, // We're currently in grouped view
+            filters: { ...filters },
+            sortOption: { ...sortOption }
+        });
+
         // Add def_name to search filter and disable grouping
         setFilters(prev => ({
             ...prev,
@@ -493,13 +510,26 @@ export const ResourcesDashboard: React.FC = () => {
         setGroupItems(false);
         setExpandedGroup(defName);
         setPagination(prev => ({ ...prev, currentPage: 0 }));
-    }, []);
+    }, [filters, sortOption]);
+
+    // Back handler
+    const handleBackFromGroup = useCallback(() => {
+        if (previousGroupState) {
+            setGroupItems(previousGroupState.groupItems);
+            setFilters(previousGroupState.filters);
+            setSortOption(previousGroupState.sortOption);
+            setPreviousGroupState(null);
+        }
+        setExpandedGroup(null);
+        setPagination(prev => ({ ...prev, currentPage: 0 }));
+    }, [previousGroupState]);
 
     // Toggle grouping
     const toggleGrouping = useCallback(() => {
         setGroupItems(prev => !prev);
         setPagination(prev => ({ ...prev, currentPage: 0 }));
         setExpandedGroup(null);
+        setPreviousGroupState(null);
     }, []);
 
     // Initial data fetch
@@ -745,6 +775,14 @@ export const ResourcesDashboard: React.FC = () => {
 
             {/* Resources Grid */}
             <div className={`resources-grid ${!pagination.showAll ? 'paged' : 'compact'} ${groupItems ? 'grouped' : ''}`}>
+                {/* Back card when showing expanded group */}
+                {!groupItems && expandedGroup && (
+                    <BackCard
+                        onClick={handleBackFromGroup}
+                        groupName={expandedGroup}
+                    />
+                )}
+
                 {displayedData.map((item) => {
                     if (groupItems) {
                         const group = item as ResourceGroup;
@@ -845,7 +883,27 @@ export const ResourcesDashboard: React.FC = () => {
     );
 };
 
-// Quality Tag Component (unchanged)
+// Back Card Component
+interface BackCardProps {
+    onClick: () => void;
+    groupName: string;
+}
+
+const BackCard: React.FC<BackCardProps> = ({ onClick, groupName }) => {
+    return (
+        <div className="resource-card back-card" onClick={onClick}>
+            <div className="back-card-content">
+                <div className="back-icon">←</div>
+                <div className="back-text">
+                    <h3>Back to Groups</h3>
+                    <p>Return to grouped view</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// Quality Tag Component
 interface QualityTagProps {
     resource: ResourceItem & { category: string };
 }
@@ -897,7 +955,7 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
     )
 };
 
-// Resource Card Component (unchanged)
+// Resource Card Component
 interface ResourceCardProps {
     resource: ResourceItem & { category: string };
     imageUrl?: string;
@@ -985,7 +1043,6 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
                     <span className="resource-category">
                         {categoryInfo?.icon} {categoryInfo?.label || resource.category}
                     </span>
-                    {/* Market Value Only - removed amount badge from here */}
                     <div className="value-badge">
                         ${(resource.market_value * resource.stack_count).toFixed(0)}
                     </div>
@@ -1006,7 +1063,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
     );
 };
 
-// New Group Card Component
+// Group Card Component
 interface GroupCardProps {
     group: ResourceGroup;
     imageUrl?: string;
