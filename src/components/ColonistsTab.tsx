@@ -101,7 +101,7 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                     🎒 Inventory
                 </button>
                 <button
-                    className={`subtab-button ${activeSubTab === 'inventory' ? 'active' : ''}`}
+                    className={`subtab-button ${activeSubTab === 'analyze' ? 'active' : ''}`}
                     onClick={() => setActiveSubTab('analyze')}
                 >
                     🔬 Analyze

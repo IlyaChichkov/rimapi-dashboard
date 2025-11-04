@@ -121,7 +121,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
     return (
         <div className="work-tab">
             <div className="work-tab-header">
-                <h3>⚙️ Work Priorities</h3>
+                <h3>⚙️ Work Priorities (🚧 Still Work In Progress)</h3>
                 <div className="work-stats">
                     <span className="stat">
                         {WORK_TYPES.length} Work Types
