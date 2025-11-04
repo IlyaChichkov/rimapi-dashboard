@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/rimapi-dashboard/static/css/main.d75f2d62.css",
-    "main.js": "/rimapi-dashboard/static/js/main.20d7094f.js",
+    "main.css": "/rimapi-dashboard/static/css/main.57e4749b.css",
+    "main.js": "/rimapi-dashboard/static/js/main.62015fd5.js",
     "static/js/453.a15dd84e.chunk.js": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js",
     "static/media/bg.jpg": "/rimapi-dashboard/static/media/bg.c44fc59048124c880ec8.jpg",
     "index.html": "/rimapi-dashboard/index.html",
-    "main.d75f2d62.css.map": "/rimapi-dashboard/static/css/main.d75f2d62.css.map",
-    "main.20d7094f.js.map": "/rimapi-dashboard/static/js/main.20d7094f.js.map",
+    "main.57e4749b.css.map": "/rimapi-dashboard/static/css/main.57e4749b.css.map",
+    "main.62015fd5.js.map": "/rimapi-dashboard/static/js/main.62015fd5.js.map",
     "453.a15dd84e.chunk.js.map": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.d75f2d62.css",
-    "static/js/main.20d7094f.js"
+    "static/css/main.57e4749b.css",
+    "static/js/main.62015fd5.js"
   ]
 }
