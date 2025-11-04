@@ -206,9 +206,9 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        // Only return groups with more than 1 item OR multiple stack items
+        // Only return groups that have more than one item OR multiple stacks of the same item
         return Object.values(groups).filter(group =>
-            group.items.length > 1 || group.totalCount > 1
+            group.items.length > 1 || group.totalCount > group.items[0].stack_count
         );
     }, [allResources]);
 
