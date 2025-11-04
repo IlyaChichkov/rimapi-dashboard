@@ -1000,3 +1000,41 @@
     order: 0; /* Reset order for mobile */
   }
 }
+
+/* Group Toggle Disabled State */
+.group-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #6c757d !important;
+}
+
+.group-toggle:disabled:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #6c757d !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Optional: Add a tooltip style for better UX */
+.group-toggle[title]:hover:after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 0.5rem;
+}
+
+.group-toggle {
+  position: relative;
+}

@@ -756,10 +756,10 @@ export const ResourcesDashboard: React.FC = () => {
                         onClick={toggleGrouping}
                         className={`group-toggle ${groupItems ? 'active' : ''}`}
                         disabled={groupItems && groupedResources.length === 0}
-                        title={groupItems && groupedResources.length === 0 ? "No items available for grouping" : ""}
+                        title={groupItems && groupedResources.length === 0 ? "No grouped items available" : groupItems ? "Switch to ungrouped view" : "Switch to grouped view"}
                     >
                         {groupItems ? '📦 Grouped' : '📦 Ungrouped'}
-                        {groupItems && groupedResources.length === 0 && ' (None)'}
+                        {groupItems && groupedResources.length === 0 && ' (Empty)'}
                     </button>
 
                     <button
