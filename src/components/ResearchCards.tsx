@@ -32,8 +32,6 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
   research,
   loading
 }) => {
-  if (loading) return <ResearchCardSkeleton type="current" />;
-
   const hasActiveResearch = research.name && research.name !== 'None' && !research.is_finished;
   const isFinished = research.is_finished;
   const canStart = research.can_start_now && research.player_has_any_appropriate_research_bench;
@@ -153,8 +151,6 @@ export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loadin
   research,
   loading
 }) => {
-  if (loading) return <ResearchCardSkeleton type="finished" />;
-
   return (
     <div className="research-card finished-research full-width" role="region" aria-label="Completed Research Projects">
       <div className="research-header">
@@ -187,18 +183,17 @@ export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loadin
   );
 };
 
+// src/components/ResearchCards.tsx - Updated ResearchSummaryCard component
 export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?: boolean }> = ({
   research,
   loading
 }) => {
-  if (loading) return <ResearchCardSkeleton type="summary" />;
-
   const overallProgress = research.total_projects_count > 0
     ? (research.finished_projects_count / research.total_projects_count) * 100
     : 0;
 
   return (
-    <div className="research-card research-summary span-2" role="region" aria-label="Research Overview">
+    <div className="research-card research-summary" role="region" aria-label="Research Overview">
       <div className="research-header">
         <h3>Research Overview</h3>
         <div className="research-count">
@@ -207,8 +202,8 @@ export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?
       </div>
       <div className="research-content">
         <div className="research-summary-layout">
-          {/* Overall Progress Section */}
-          <div className="overall-progress-section">
+          {/* Stats Section - Moved to top */}
+          <div className="stats-section">
             <div className="progress-stats">
               <div className="stat-item">
                 <span className="stat-value">{research.finished_projects_count}</span>
@@ -223,7 +218,10 @@ export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?
                 <span className="stat-label">Total</span>
               </div>
             </div>
+          </div>
 
+          {/* Overall Progress - Moved to bottom */}
+          <div className="overall-progress-section">
             <div className="overall-progress">
               <div className="progress-header">
                 <span className="progress-label">Total Research Progress</span>
@@ -253,8 +251,6 @@ export const TechProgressCard: React.FC<{ research: ResearchSummary; loading?: b
   research,
   loading
 }) => {
-  if (loading) return <ResearchCardSkeleton type="summary" />;
-
   return (
     <div className="research-card tech-progress span-2" role="region" aria-label="Technology Progress by Level">
       <div className="research-header">
@@ -307,6 +303,7 @@ export const TechProgressCard: React.FC<{ research: ResearchSummary; loading?: b
   );
 };
 
+// src/components/ResearchCards.tsx - Updated main ResearchCards component
 const ResearchCards: React.FC<ResearchCardsProps> = ({
   researchProgress,
   researchFinished,

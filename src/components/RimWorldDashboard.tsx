@@ -645,14 +645,12 @@ const ResearchTab: React.FC<ResearchTabProps> = ({
   loading
 }) => {
   return (
-    <div className="research-tab">
-      <ResearchCards
-        researchProgress={researchProgress}
-        researchFinished={researchFinished}
-        researchSummary={researchSummary}
-        loading={loading}
-      />
-    </div>
+    <ResearchCards
+      researchProgress={researchProgress}
+      researchFinished={researchFinished}
+      researchSummary={researchSummary}
+      loading={loading}
+    />
   );
 };
 

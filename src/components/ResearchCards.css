@@ -1,18 +1,19 @@
 /* src/components/ResearchCards.css */
 .research-dashboard {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 4fr));
-  gap: 20px;
-  width: 100%;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  width: calc(100% - 50px);
+  max-width: 1800px;
+  margin: 0 auto;
+  align-items: start;
 }
 
-/* Grid Layout Utilities */
-.span-2 {
-  grid-column: span 2;
-}
-
-.full-width {
-  grid-column: 1 / -1;
+.dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  height: fit-content;
 }
 
 .research-card {
@@ -23,7 +24,7 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  height: fit-content;
+  min-height: fit-content;
 }
 
 .research-card:hover {
@@ -272,23 +273,23 @@
   opacity: 0.7;
 }
 
-/* Research Summary Styles */
+/* Research Summary Layout Updates */
 .research-summary-layout {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.overall-progress-section {
-  display: flex;
-  gap: 30px;
-  align-items: flex-start;
+.stats-section {
+  width: 100%;
 }
 
 .progress-stats {
-  display: flex;
-  gap: 30px;
-  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .stat-item {
@@ -296,14 +297,17 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  flex: 1;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .stat-value {
   color: white;
   font-size: 2em;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
   line-height: 1;
 }
 
@@ -315,16 +319,19 @@
   letter-spacing: 0.5px;
 }
 
+.overall-progress-section {
+  width: 100%;
+}
+
 .overall-progress {
-  flex: 1;
-  min-width: 200px;
+  width: 100%;
 }
 
 .progress-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .progress-label {
@@ -342,6 +349,7 @@
 .progress-bar.large {
   height: 16px;
   border-radius: 8px;
+  width: 100%;
 }
 
 .progress-bar.small {
@@ -353,8 +361,8 @@
 /* Tech Progress Styles */
 .tech-levels-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 15px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .tech-level-item {
@@ -507,15 +515,21 @@
 @media (max-width: 1200px) {
   .research-dashboard {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
   
-  .span-2 {
-    grid-column: span 1;
+  .dashboard-column {
+    gap: 20px;
   }
 }
 
 @media (max-width: 768px) {
   .research-dashboard {
+    gap: 15px;
+    width: calc(100% - 30px);
+  }
+  
+  .dashboard-column {
     gap: 15px;
   }
   
@@ -529,13 +543,13 @@
     gap: 10px;
   }
   
-  .overall-progress-section {
-    flex-direction: column;
-    gap: 20px;
+  .progress-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
   }
   
-  .progress-stats {
-    gap: 15px;
+  .stat-item {
+    padding: 12px 8px;
   }
   
   .stat-value {
@@ -559,25 +573,46 @@
 }
 
 @media (max-width: 480px) {
+  .research-dashboard {
+    width: calc(100% - 20px);
+    gap: 12px;
+  }
+  
   .research-card {
     padding: 15px;
   }
   
   .progress-stats {
-    flex-direction: column;
-    gap: 10px;
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
   
   .stat-item {
     flex-direction: row;
     justify-content: space-between;
     text-align: left;
+    padding: 10px 15px;
+  }
+  
+  .stat-value {
+    margin-bottom: 0;
+    font-size: 1.4em;
   }
   
   .tech-level-stats {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
+  }
+  
+  .research-detail-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .detail-value {
+    text-align: left;
   }
 }
 
@@ -603,4 +638,34 @@ button:focus,
 .research-project-item:focus {
   outline: 2px solid #4dabf7;
   outline-offset: 2px;
+}
+
+/* Animation for tab transitions */
+.research-dashboard {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure consistent spacing with other dashboard components */
+.research-dashboard {
+  padding-bottom: 20px;
+}
+
+/* Match the header width calculation */
+.research-dashboard {
+  width: calc(100% - 50px);
+  max-width: 1800px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
 }
