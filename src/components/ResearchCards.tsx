@@ -6,29 +6,49 @@ import './ResearchCards.css';
 interface ResearchCardsProps {
   researchProgress?: ResearchProgress;
   researchFinished?: ResearchFinished;
+  researchSummary?: ResearchSummary;
   loading?: boolean;
+  error?: string;
 }
 
-export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading?: boolean }> = ({ 
-  research, 
-  loading 
+// Loading Skeleton Components
+const ResearchCardSkeleton: React.FC<{ type: 'summary' | 'current' | 'finished' }> = ({ type }) => {
+  return (
+    <div className={`research-card skeleton ${type}-skeleton`}>
+      <div className="research-header">
+        <div className="skeleton-title"></div>
+        <div className="skeleton-badge"></div>
+      </div>
+      <div className="research-content">
+        <div className="skeleton-content"></div>
+        <div className="skeleton-content short"></div>
+        <div className="skeleton-content"></div>
+      </div>
+    </div>
+  );
+};
+
+export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading?: boolean }> = ({
+  research,
+  loading
 }) => {
+  if (loading) return <ResearchCardSkeleton type="current" />;
+
   const hasActiveResearch = research.name && research.name !== 'None' && !research.is_finished;
   const isFinished = research.is_finished;
   const canStart = research.can_start_now && research.player_has_any_appropriate_research_bench;
 
   return (
-    <div className="research-card current-research">
+    <div className="research-card current-research" role="region" aria-label="Current Research Project">
       <div className="research-header">
         <h3>Current Research</h3>
-        <div className={`research-status ${
-          isFinished ? 'finished' : 
-          hasActiveResearch ? 'active' : 
-          canStart ? 'available' : 'idle'
-        }`}>
-          {isFinished ? '✅ Finished' : 
-           hasActiveResearch ? '🔬 Researching' : 
-           canStart ? '🚀 Available' : '💤 Idle'}
+        <div className={`research-status ${isFinished ? 'finished' :
+          hasActiveResearch ? 'active' :
+            canStart ? 'available' : 'idle'
+          }`} aria-live="polite">
+          {isFinished ? '✅ Finished' :
+            hasActiveResearch ? '🔬 Researching' :
+              canStart ? '🚀 Available' : '💤 Idle'}
         </div>
       </div>
       <div className="research-content">
@@ -37,11 +57,17 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
             <div className="research-project">
               <h4 className="project-name">{formatResearchName(research.name)}</h4>
               <p className="research-description">{research.description}</p>
-              
+
               {!isFinished && (
                 <div className="progress-container">
-                  <div className="progress-bar">
-                    <div 
+                  <div
+                    className="progress-bar"
+                    role="progressbar"
+                    aria-valuenow={Math.round(research.progress_percent * 100)}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                  >
+                    <div
                       className="progress-fill"
                       style={{ width: `${research.progress_percent * 100}%` }}
                     ></div>
@@ -51,9 +77,9 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
                   </span>
                 </div>
               )}
-              
+
               {isFinished && (
-                <div className="completion-badge">
+                <div className="completion-badge" role="status">
                   ✅ Research Complete
                 </div>
               )}
@@ -84,7 +110,7 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
                 </div>
               )}
               {!research.player_has_any_appropriate_research_bench && (
-                <div className="research-warning">
+                <div className="research-warning" role="alert">
                   ⚠️ No research bench available
                 </div>
               )}
@@ -106,7 +132,7 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
               </div>
             </div>
             {!research.player_has_any_appropriate_research_bench && (
-              <div className="research-warning">
+              <div className="research-warning" role="alert">
                 ⚠️ Build appropriate research bench to start
               </div>
             )}
@@ -123,13 +149,14 @@ export const CurrentResearchCard: React.FC<{ research: ResearchProgress; loading
   );
 };
 
-export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loading?: boolean }> = ({ 
-  research, 
-  loading 
+export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loading?: boolean }> = ({
+  research,
+  loading
 }) => {
+  if (loading) return <ResearchCardSkeleton type="finished" />;
 
   return (
-    <div className="research-card finished-research">
+    <div className="research-card finished-research full-width" role="region" aria-label="Completed Research Projects">
       <div className="research-header">
         <h3>Completed Research</h3>
         <div className="research-count">
@@ -140,8 +167,8 @@ export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loadin
         {research.finished_projects.length > 0 ? (
           <div className="projects-grid">
             {research.finished_projects.map((project, index) => (
-              <div key={index} className="research-project-item">
-                <span className="project-icon">✅</span>
+              <div key={index} className="research-project-item" tabIndex={0}>
+                <span className="project-icon" aria-hidden="true">✅</span>
                 <span className="project-name" title={project}>
                   {formatResearchName(project)}
                 </span>
@@ -160,18 +187,18 @@ export const FinishedResearchCard: React.FC<{ research: ResearchFinished; loadin
   );
 };
 
-// Update the ResearchSummaryCard in src/components/ResearchCards.tsx
-export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?: boolean; isLarge?: boolean }> = ({ 
-  research, 
-  loading,
-  isLarge = false
+export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?: boolean }> = ({
+  research,
+  loading
 }) => {
-  const overallProgress = research.total_projects_count > 0 
-    ? (research.finished_projects_count / research.total_projects_count) * 100 
+  if (loading) return <ResearchCardSkeleton type="summary" />;
+
+  const overallProgress = research.total_projects_count > 0
+    ? (research.finished_projects_count / research.total_projects_count) * 100
     : 0;
 
   return (
-    <div className={`research-card research-summary ${isLarge ? 'large-layout' : ''}`}>
+    <div className="research-card research-summary span-2" role="region" aria-label="Research Overview">
       <div className="research-header">
         <h3>Research Overview</h3>
         <div className="research-count">
@@ -180,107 +207,126 @@ export const ResearchSummaryCard: React.FC<{ research: ResearchSummary; loading?
       </div>
       <div className="research-content">
         <div className="research-summary-layout">
-          {/* Left Column - Overall Progress */}
-          <div className="overall-progress-column">
-            <div className="tech-summary">
-              <div className="progress-stats">
-                <div className="stat-item">
-                  <span className="stat-value">{research.finished_projects_count}</span>
-                  <span className="stat-label">Completed</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{research.available_projects_count}</span>
-                  <span className="stat-label">Available</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-value">{research.total_projects_count}</span>
-                  <span className="stat-label">Total</span>
-                </div>
+          {/* Overall Progress Section */}
+          <div className="overall-progress-section">
+            <div className="progress-stats">
+              <div className="stat-item">
+                <span className="stat-value">{research.finished_projects_count}</span>
+                <span className="stat-label">Completed</span>
               </div>
+              <div className="stat-item">
+                <span className="stat-value">{research.available_projects_count}</span>
+                <span className="stat-label">Available</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-value">{research.total_projects_count}</span>
+                <span className="stat-label">Total</span>
+              </div>
+            </div>
 
             <div className="overall-progress">
               <div className="progress-header">
                 <span className="progress-label">Total Research Progress</span>
                 <span className="progress-percent">{overallProgress.toFixed(1)}%</span>
               </div>
-              <div className="progress-bar large">
-                <div 
+              <div
+                className="progress-bar large"
+                role="progressbar"
+                aria-valuenow={overallProgress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+              >
+                <div
                   className="progress-fill"
                   style={{ width: `${overallProgress}%` }}
                 ></div>
               </div>
             </div>
-
-            </div>
           </div>
-
-          {/* Right Column - Tech Level Breakdown */}
-          {Object.keys(research.by_tech_level).length > 0 && (
-            <div className="tech-level-column">
-              <div className="tech-level-breakdown">
-                <h4>Progress by Tech Level</h4>
-                <div className="tech-levels-grid">
-                  {Object.entries(research.by_tech_level).map(([techLevel, data]) => (
-                    <div key={techLevel} className="tech-level-item">
-                      <div className="tech-level-header">
-                        <span className="tech-level-name">{formatTechLevelName(techLevel)}</span>
-                        <span className="tech-level-percent">{data.percent_complete.toFixed(1)}%</span>
-                      </div>
-                      <div className="progress-bar small">
-                        <div 
-                          className="progress-fill"
-                          style={{ width: `${data.percent_complete}%` }}
-                        ></div>
-                      </div>
-                      <div className="tech-level-stats">
-                        <span className="tech-level-completion">
-                          {data.finished}/{data.total}
-                        </span>
-                        <span className="tech-level-projects">
-                          {data.projects.length} projects
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 };
 
-const formatTechLevelName = (techLevel: string): string => {
-  return techLevel
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
-    .trim();
-};
-
-const formatResearchName = (projectName: string): string => {
-  // Convert camelCase to spaced words
-  return projectName
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
-    .trim();
-};
-
-interface ResearchCardsProps {
-  researchProgress?: ResearchProgress;
-  researchFinished?: ResearchFinished;
-  researchSummary?: ResearchSummary;
-  loading?: boolean;
-}
-
-// Update the ResearchCards usage to pass isLarge prop
-const ResearchCards: React.FC<ResearchCardsProps> = ({ 
-  researchProgress, 
-  researchFinished, 
-  researchSummary,
-  loading = false 
+export const TechProgressCard: React.FC<{ research: ResearchSummary; loading?: boolean }> = ({
+  research,
+  loading
 }) => {
+  if (loading) return <ResearchCardSkeleton type="summary" />;
+
+  return (
+    <div className="research-card tech-progress span-2" role="region" aria-label="Technology Progress by Level">
+      <div className="research-header">
+        <h3>Technology Progress</h3>
+        <div className="research-count">
+          {Object.keys(research.by_tech_level).length} Tech Levels
+        </div>
+      </div>
+      <div className="research-content">
+        {Object.keys(research.by_tech_level).length > 0 ? (
+          <div className="tech-levels-grid">
+            {Object.entries(research.by_tech_level).map(([techLevel, data], index) => (
+              <div key={techLevel} className="tech-level-item">
+                <div className="tech-level-header">
+                  <span className="tech-level-name">{formatTechLevelName(techLevel)}</span>
+                  <span className="tech-level-percent">{data.percent_complete.toFixed(1)}%</span>
+                </div>
+                <div
+                  className="progress-bar small"
+                  role="progressbar"
+                  aria-valuenow={data.percent_complete}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="progress-fill"
+                    style={{ width: `${data.percent_complete}%` }}
+                  ></div>
+                </div>
+                <div className="tech-level-stats">
+                  <span className="tech-level-completion">
+                    {data.finished}/{data.total}
+                  </span>
+                  <span className="tech-level-projects">
+                    {data.projects.length} projects
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="no-research">
+            <div className="no-research-icon">🔬</div>
+            <p>No technology data available</p>
+            <span className="no-research-hint">Research progress will appear here</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const ResearchCards: React.FC<ResearchCardsProps> = ({
+  researchProgress,
+  researchFinished,
+  researchSummary,
+  loading = false,
+  error
+}) => {
+  if (error) {
+    return (
+      <div className="research-dashboard error-state" role="alert">
+        <div className="error-card">
+          <div className="error-icon">⚠️</div>
+          <h3>Unable to Load Research Data</h3>
+          <p>{error}</p>
+          <button className="retry-button">Retry</button>
+        </div>
+      </div>
+    );
+  }
+
   const progress = researchProgress || {
     name: "null",
     label: "null",
@@ -298,7 +344,7 @@ const ResearchCards: React.FC<ResearchCardsProps> = ({
     required_by_this: [],
     progress_percent: 0,
   };
-  
+
   const finished = researchFinished || { finished_projects: [] };
   const summary = researchSummary || {
     finished_projects_count: 0,
@@ -309,16 +355,27 @@ const ResearchCards: React.FC<ResearchCardsProps> = ({
   };
 
   return (
-    <>
-      <ResearchSummaryCard 
-        research={summary} 
-        loading={loading} 
-        isLarge={true} 
-      />
+    <div className="research-dashboard">
+      <ResearchSummaryCard research={summary} loading={loading} />
       <CurrentResearchCard research={progress} loading={loading} />
+      <TechProgressCard research={summary} loading={loading} />
       <FinishedResearchCard research={finished} loading={loading} />
-    </>
+    </div>
   );
+};
+
+const formatTechLevelName = (techLevel: string): string => {
+  return techLevel
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
+};
+
+const formatResearchName = (projectName: string): string => {
+  return projectName
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/^./, str => str.toUpperCase())
+    .trim();
 };
 
 export default ResearchCards;

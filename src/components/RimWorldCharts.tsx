@@ -117,6 +117,31 @@ export const ResourcesChart: React.FC<ResourcesChartProps> = ({ resources }) => 
     return <div className="no-data">No resource data available</div>;
   }
 
+  const resourcesChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: '#eff8fdff',
+          font: {
+            weight: 'bold' as const,
+          },
+        },
+      },
+    },
+    // Add this to explicitly disable scales
+    scales: {
+      x: {
+        display: false, // Hide x-axis
+      },
+      y: {
+        display: false, // Hide y-axis
+      },
+    },
+  };
+
   const data = {
     labels: categories.map(c => c.category),
     datasets: [
@@ -135,7 +160,7 @@ export const ResourcesChart: React.FC<ResourcesChartProps> = ({ resources }) => 
     ],
   };
 
-  return <Doughnut data={data} options={chartOptions} />;
+  return <Doughnut data={data} options={resourcesChartOptions} />;
 };
 
 // Chart 3: Power Management
