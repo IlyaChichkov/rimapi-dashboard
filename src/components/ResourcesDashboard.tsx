@@ -45,6 +45,11 @@ interface ResourceGroup {
     items: (ResourceItem & { category: string })[];
 }
 
+// Union type for combined display
+type DisplayItem =
+    | { type: 'group'; data: ResourceGroup; label: string; category: string; totalCount: number; totalValue: number; }
+    | { type: 'individual'; data: ResourceItem & { category: string }; label: string; category: string; totalCount: number; totalValue: number; };
+
 export const ResourcesDashboard: React.FC = () => {
     const [resourcesData, setResourcesData] = useState<ResourcesData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -387,9 +392,148 @@ export const ResourcesDashboard: React.FC = () => {
         return sorted;
     }, [filteredGroups, sortOption]);
 
-    // Determine what to display based on grouping
-    const displayData = groupItems ? sortedGroups : sortedResources;
-    const isGroupView = groupItems;
+    // Determine what to display based on grouping - now includes individual items when grouping is enabled
+    const displayData = useMemo((): DisplayItem[] => {
+        if (groupItems) {
+            // Combine grouped items with individual items that don't need grouping
+            const individualItems = allResources.filter(resource => {
+                // Find if this item belongs to a group
+                const hasGroup = groupedResources.some(group => group.def_name === resource.def_name);
+                // Only include if it doesn't belong to any group (single items)
+                return !hasGroup;
+            });
+
+            // Filter individual items based on current filters
+            const filteredIndividualItems = individualItems.filter(resource => {
+                // Apply basic filters to individual items
+                if (filters.search) {
+                    const term = filters.search.toLowerCase();
+                    if (!resource.label.toLowerCase().includes(term) && !resource.def_name.toLowerCase().includes(term)) {
+                        return false;
+                    }
+                }
+
+                if (filters.categories.length > 0 && !filters.categories.includes(resource.category)) {
+                    return false;
+                }
+
+                if (filters.qualities.length > 0 && (!resource.quality || !filters.qualities.includes(getQualityLabel(resource.quality).toLowerCase()))) {
+                    return false;
+                }
+
+                if (resource.stack_count < filters.amountRange[0] || resource.stack_count > filters.amountRange[1]) {
+                    return false;
+                }
+
+                const itemValue = resource.market_value * resource.stack_count;
+                if (itemValue < filters.valueRange[0] || itemValue > filters.valueRange[1]) {
+                    return false;
+                }
+
+                if (resource.max_hit_points > 0) {
+                    const durabilityPercent = (resource.hit_points / resource.max_hit_points) * 100;
+                    if (durabilityPercent < filters.hitPointsRange[0] || durabilityPercent > filters.hitPointsRange[1]) {
+                        return false;
+                    }
+                }
+
+                if (filters.allowedOnly !== null) {
+                    if (filters.allowedOnly && resource.is_forbidden) return false;
+                    if (!filters.allowedOnly && !resource.is_forbidden) return false;
+                }
+
+                return true;
+            });
+
+            // Convert individual items to display format
+            const individualItemsForDisplay: DisplayItem[] = filteredIndividualItems.map(resource => ({
+                type: 'individual',
+                data: resource,
+                label: resource.label,
+                category: resource.category,
+                totalCount: resource.stack_count,
+                totalValue: resource.market_value * resource.stack_count
+            }));
+
+            // Convert groups to display format
+            const groupsForDisplay: DisplayItem[] = sortedGroups.map(group => ({
+                type: 'group',
+                data: group,
+                label: group.label,
+                category: group.category,
+                totalCount: group.totalCount,
+                totalValue: group.totalValue
+            }));
+
+            // Combine both types
+            const combined = [...groupsForDisplay, ...individualItemsForDisplay];
+
+            // Sort combined array
+            combined.sort((a, b) => {
+                let aValue: any, bValue: any;
+
+                switch (sortOption.field) {
+                    case 'name':
+                        aValue = a.label.toLowerCase();
+                        bValue = b.label.toLowerCase();
+                        break;
+                    case 'amount':
+                        aValue = a.totalCount;
+                        bValue = b.totalCount;
+                        break;
+                    case 'value':
+                        aValue = a.totalValue;
+                        bValue = b.totalValue;
+                        break;
+                    case 'hitPoints':
+                        if (a.type === 'group') {
+                            aValue = a.data.hasDurability ? a.data.minDurability : 100;
+                        } else {
+                            aValue = a.data.max_hit_points > 0 ? (a.data.hit_points / a.data.max_hit_points) * 100 : 100;
+                        }
+                        if (b.type === 'group') {
+                            bValue = b.data.hasDurability ? b.data.minDurability : 100;
+                        } else {
+                            bValue = b.data.max_hit_points > 0 ? (b.data.hit_points / b.data.max_hit_points) * 100 : 100;
+                        }
+                        break;
+                    case 'category':
+                        aValue = a.category;
+                        bValue = b.category;
+                        break;
+                    default:
+                        // For quality, use appropriate value
+                        if (a.type === 'group') {
+                            aValue = a.data.sampleItem.quality || 0;
+                        } else {
+                            aValue = a.data.quality || 0;
+                        }
+                        if (b.type === 'group') {
+                            bValue = b.data.sampleItem.quality || 0;
+                        } else {
+                            bValue = b.data.quality || 0;
+                        }
+                        break;
+                }
+
+                if (aValue < bValue) return sortOption.direction === 'asc' ? -1 : 1;
+                if (aValue > bValue) return sortOption.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            return combined;
+        } else {
+            // Return individual items only for ungrouped view
+            return sortedResources.map(resource => ({
+                type: 'individual',
+                data: resource,
+                label: resource.label,
+                category: resource.category,
+                totalCount: resource.stack_count,
+                totalValue: resource.market_value * resource.stack_count
+            }));
+        }
+    }, [groupItems, sortedGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
 
     // Paginate display data
     const displayedData = useMemo(() => {
@@ -423,10 +567,10 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        const filteredCount = groupItems ? filteredGroups.length : filteredResources.length;
+        const filteredCount = displayData.length;
 
         return { totalValue, totalItems, categoriesCount, filteredCount };
-    }, [resourcesData, filteredResources.length, filteredGroups.length, groupItems]);
+    }, [resourcesData, displayData.length]);
 
     // Filter handlers
     const updateFilter = useCallback((key: keyof FilterSet, value: any) => {
@@ -547,13 +691,13 @@ export const ResourcesDashboard: React.FC = () => {
             const defNamesToLoad = new Set<string>();
 
             displayedData.forEach(item => {
-                if (isGroupView) {
-                    const group = item as ResourceGroup;
+                if (item.type === 'group') {
+                    const group = item.data as ResourceGroup;
                     if (!imageCache[group.def_name] && !group.category.includes("corpses")) {
                         defNamesToLoad.add(group.def_name);
                     }
                 } else {
-                    const resource = item as ResourceItem & { category: string };
+                    const resource = item.data as ResourceItem & { category: string };
                     if (!imageCache[resource.def_name] && !resource.category.includes("corpses")) {
                         defNamesToLoad.add(resource.def_name);
                     }
@@ -568,7 +712,7 @@ export const ResourcesDashboard: React.FC = () => {
         return () => {
             isMounted = false;
         };
-    }, [displayedData, imageCache, isGroupView]);
+    }, [displayedData, imageCache]);
 
     if (error) {
         return (
@@ -600,7 +744,7 @@ export const ResourcesDashboard: React.FC = () => {
                         <div className="stat-item">
                             <span className="stat-value">{stats.filteredCount}</span>
                             <span className="stat-label">
-                                {groupItems ? 'Item Types' : 'Filtered Items'}
+                                {groupItems ? 'Items Displayed' : 'Filtered Items'}
                             </span>
                         </div>
                     </div>
@@ -768,7 +912,7 @@ export const ResourcesDashboard: React.FC = () => {
                     )}
 
                     <span className="items-count">
-                        Showing {displayedData.length} of {displayData.length} {groupItems ? 'item types' : 'items'}
+                        Showing {displayedData.length} of {displayData.length} {groupItems ? 'items' : 'items'}
                     </span>
                 </div>
             </div>
@@ -783,12 +927,12 @@ export const ResourcesDashboard: React.FC = () => {
                     />
                 )}
 
-                {displayedData.map((item) => {
-                    if (groupItems) {
-                        const group = item as ResourceGroup;
+                {displayedData.map((item, index) => {
+                    if (item.type === 'group') {
+                        const group = item.data as ResourceGroup;
                         return (
                             <GroupCard
-                                key={group.def_name}
+                                key={`group-${group.def_name}-${index}`}
                                 group={group}
                                 imageUrl={imageCache[group.def_name]}
                                 categoryInfo={resourceCategories.find(cat => cat.key === group.category)}
@@ -797,10 +941,10 @@ export const ResourcesDashboard: React.FC = () => {
                             />
                         );
                     } else {
-                        const resource = item as ResourceItem & { category: string };
+                        const resource = item.data as ResourceItem & { category: string };
                         return (
                             <ResourceCard
-                                key={`${resource.thing_id}-${resource.category}-${resource.stack_count}`}
+                                key={`individual-${resource.thing_id}-${index}`}
                                 resource={resource}
                                 imageUrl={imageCache[resource.def_name]}
                                 categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
