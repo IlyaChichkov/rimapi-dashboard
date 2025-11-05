@@ -236,7 +236,7 @@ export interface ResourcesStoredResponse {
 }
 
 export interface ItemImageResponse {
-  result: 'Success' | 'Error';
+  result: 'success' | 'error';
   image_base64?: string;
 }
 

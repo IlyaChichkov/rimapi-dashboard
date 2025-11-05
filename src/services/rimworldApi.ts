@@ -35,7 +35,6 @@ const fetchApiPost = async <T>(endpoint: string, options: RequestInit = {}): Pro
   };
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
-  console.log(`Fetch: ${API_BASE_URL}${endpoint}`, options.method || 'GET');
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -45,11 +44,9 @@ const fetchApiPost = async <T>(endpoint: string, options: RequestInit = {}): Pro
   const contentType = response.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     const data = await response.json();
-    console.log(`Data: `, data);
     return data;
   } else {
     // For empty responses or non-JSON responses
-    console.log(`Response status: ${response.status}`);
     return null;
   }
 };
@@ -60,14 +57,12 @@ const fetchApi = async <T>(endpoint: string): Promise<T | null> => {
       
     }
   });
-  console.log(`Fetch: ${API_BASE_URL}${endpoint}`)
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   
   var data = await response.json()
-  console.log(`Data: `, data)
   return data;
 };
 
@@ -218,7 +213,6 @@ const validateResearchFinished = (data: any): ResearchFinished => {
 
 export const selectItem = async (itemId: number, position: Position): Promise<void> => {
   try {
-    console.log('select item: ', position)
     await fetchApiPost(`/deselect?type=all`, { method: 'POST' });
     await fetchApiPost(`/select?type=item&id=${itemId}`, { method: 'POST' });
 
@@ -250,8 +244,6 @@ export const selectAndViewColonist = async (colonistId: number, colonistName: st
     // Change camera zoom to close level
     await fetchApiPost(`/camera/change/zoom?zoom=8`, { method: 'POST' });
     await fetchApiPost(`/open-tab?type=health`, { method: 'POST' });
-    
-    console.log(`Navigated to colonist ${colonistName} at position (${colonistData.position.x}, ${colonistData.position.z})`);
   } catch (error) {
     console.error('Failed to navigate to colonist:', error);
     throw error;
@@ -331,5 +323,10 @@ export const rimworldApi = {
   assignItemToPawn: async (itemId: string, itemType: string, pawnId: string): Promise<{ success: boolean }> => {
     await fetchApiPost(`/jobs/make/equip?item_type=${itemType}&map_id=0&pawn_id=${pawnId}&item_id=${itemId}`, { method: 'POST' });
       return { success: true };
-  }
+  },
+
+  getPawnPortraitImage: async (pawnId: string): Promise<ItemImageResponse> => {
+    const data = await fetchApi<ItemImageResponse>(`/pawn/portrait/image?pawn_id=${pawnId}&width=64&height=64&direction=south`)
+    return data as ItemImageResponse;
+  },
 };

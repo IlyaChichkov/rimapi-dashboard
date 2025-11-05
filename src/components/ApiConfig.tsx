@@ -30,7 +30,7 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Basic URL validation
     try {
       const url = new URL(inputUrl);
@@ -55,7 +55,7 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
   const handleUseDefault = async () => {
     const defaultUrl = 'http://localhost:8765/api/v1';
     setInputUrl(defaultUrl);
-    
+
     // Test default connection
     const isConnected = await testConnection(defaultUrl);
     if (isConnected) {
@@ -107,15 +107,15 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
           <div className="quick-connect">
             <span className="quick-connect-label">Quick Connect:</span>
             <div className="quick-buttons">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => handleQuickConnect('http://localhost:8765/api/v1')}
                 className="quick-btn"
               >
                 localhost:8765
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => handleQuickConnect('http://127.0.0.1:8765/api/v1')}
                 className="quick-btn"
               >
@@ -125,8 +125,8 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
           </div>
 
           <div className="action-buttons">
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               className="connect-btn"
               disabled={isTesting}
             >
@@ -141,8 +141,8 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
                 </>
               )}
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               onClick={handleUseDefault}
               className="default-btn"
               disabled={isTesting}

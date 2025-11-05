@@ -1,7 +1,7 @@
 // src/components/ColonistsOverviewTab.tsx
 import React from 'react';
 import { Colonist, ColonistDetailed } from '../types';
-import { selectAndViewColonist } from '../services/rimworldApi';
+import { rimworldApi, selectAndViewColonist } from '../services/rimworldApi';
 import {
     useReactTable,
     getCoreRowModel,
@@ -32,6 +32,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
+    const [imageCache, setImageCache] = React.useState<Record<string, string>>({});
 
     interface FilterOption {
         value: string;
@@ -39,12 +40,30 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         type: 'trait' | 'skill' | 'job';
     }
 
+    const fetchColonistImage = async (colonistId: string) => {
+        if (imageCache[colonistId]) return;
+
+        try {
+            const imageData = await rimworldApi.getPawnPortraitImage(colonistId);
+            if (imageData.result === 'success' && imageData.image_base64) {
+                setImageCache(prev => ({
+                    ...prev,
+                    [colonistId]: `data:image/png;base64,${imageData.image_base64}`
+                }));
+                console.warn(imageData.image_base64);
+            }
+        } catch (err) {
+            console.warn(`Failed to fetch image for ${colonistId}:`, err);
+        }
+    };
+
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
         colonistsDetailed.forEach((colonist: ColonistDetailed) => {
             colonist.colonist_work_info.traits.forEach(trait => {
                 traits.add(trait);
             });
+            fetchColonistImage(colonist.colonist.id.toString());
         });
         return Array.from(traits).sort();
     }, [colonistsDetailed]);
@@ -139,24 +158,42 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 cell: ({ row }) => {
                     const colonist = row.original.colonist;
                     const traits = row.original.colonist_work_info.traits;
+                    const imageUrl = imageCache[colonist.id.toString()];
+
                     return (
                         <div className="colonist-info">
-                            <div className="colonist-name-row">
-                                <span className="colonist-name">{colonist.name}</span>
-                                {traits.length > 0 && (
-                                    <div className="traits-tooltip">
-                                        <span className="traits-icon">🧬</span>
-                                        <div className="traits-popup">
-                                            {traits.map((trait, index) => (
-                                                <div key={index} className="trait-item">{trait}</div>
-                                            ))}
-                                        </div>
+                            <div className="colonist-portrait-row">
+                                <div className="colonist-portrait">
+                                    {imageUrl ? (
+                                        <img
+                                            src={imageUrl}
+                                            alt={`Portrait of ${colonist.name}`}
+                                            className="portrait-image"
+                                        />
+                                    ) : null}
+                                    <div className={`portrait-placeholder ${imageUrl ? 'hidden' : ''}`}>
+                                        👤
                                     </div>
-                                )}
-                            </div>
-                            <div className="colonist-details">
-                                <span className="colonist-gender">{colonist.gender}</span>
-                                <span className="colonist-age">{colonist.age}y</span>
+                                </div>
+                                <div className="colonist-details">
+                                    <div className="colonist-name-row">
+                                        <span className="colonist-name">{colonist.name}</span>
+                                        {traits.length > 0 && (
+                                            <div className="traits-tooltip">
+                                                <span className="traits-icon">🧬</span>
+                                                <div className="traits-popup">
+                                                    {traits.map((trait, index) => (
+                                                        <div key={index} className="trait-item">{trait}</div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="colonist-meta">
+                                        <span className="colonist-gender">{colonist.gender}</span>
+                                        <span className="colonist-age">{colonist.age}y</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     );
@@ -362,7 +399,6 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     // NeedBar component for needs display
     const NeedBar: React.FC<{ label: string; value: number }> = ({ label, value }) => {
         const barWidth = Math.max(0, Math.min(100, value * 100));
-        console.log('barWidth:', barWidth)
         return (
             <div className="need-bar">
                 <div className="need-label">{label}:</div>

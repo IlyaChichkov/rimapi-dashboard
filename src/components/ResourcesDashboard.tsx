@@ -149,7 +149,7 @@ export const ResourcesDashboard: React.FC = () => {
 
         try {
             const imageData = await rimworldApi.getItemImage(defName);
-            if (imageData.result === 'Success' && imageData.image_base64) {
+            if (imageData.result === 'success' && imageData.image_base64) {
                 setImageCache(prev => ({
                     ...prev,
                     [defName]: `data:image/png;base64,${imageData.image_base64}`
