@@ -17,6 +17,7 @@ import Footer from './Footer';
 import MedicalAlertsCard from './MedicalAlertsCard';
 import ModsTab from './ModsTab';
 import ResourcesDashboard from './ResourcesDashboard';
+import { useToast } from './ToastContext';
 
 const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 5) return 1;    // Normal size
@@ -88,6 +89,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = React.useState<string[]>([]);
+
+  const { addToast } = useToast();
 
   // Add this function to sort colonists
   const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'health' | 'mood') => {

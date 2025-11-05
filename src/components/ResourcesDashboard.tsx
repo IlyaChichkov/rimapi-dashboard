@@ -118,7 +118,7 @@ export const ResourcesDashboard: React.FC = () => {
     ];
 
     // Available quality options
-    const qualityOptions = ['awful', 'poor', 'normal', 'good', 'excellent', 'masterwork', 'legendary'];
+    const qualityOptions = ['awful', 'poor', 'normal', 'good', 'excellent', 'masterwork', 'legendary', 'none'];
 
     // Fetch resources data
     const fetchResources = async () => {
@@ -169,6 +169,32 @@ export const ResourcesDashboard: React.FC = () => {
         });
         return resources;
     }, [resourcesData]);
+    useEffect(() => {
+        if (resourcesData) {
+            const allItems = Object.values(resourcesData).flat();
+            const missingItem = allItems.find(item => item && item.def_name === "VFEP_WarcasketGun_Autorifle");
+
+            if (missingItem) {
+                console.log('Found missing item:', missingItem);
+                console.log('Quality:', missingItem.quality, 'Label:', getQualityLabel(missingItem.quality));
+                console.log('Categories:', missingItem.categories);
+
+                // Check if it passes filters
+                const passesQuality = filters.qualities.length === 0 ||
+                    (missingItem.quality !== null && missingItem.quality !== undefined &&
+                        filters.qualities.includes(getQualityLabel(missingItem.quality)));
+
+                const passesCategory = filters.categories.length === 0 ||
+                    (missingItem.categories && missingItem.categories.some(cat => filters.categories.includes(cat)));
+
+                console.log('Passes quality filter:', passesQuality);
+                console.log('Passes category filter:', passesCategory);
+                console.log('Current filters:', filters);
+            } else {
+                console.log('Item not found in raw data');
+            }
+        }
+    }, [resourcesData, filters]);
 
     // Group items by def_name - only groups with more than 1 item
     const groupedResources = useMemo((): ResourceGroup[] => {
@@ -206,15 +232,23 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        // Only return groups that have more than one item OR multiple stacks of the same item
-        return Object.values(groups).filter(group =>
-            group.items.length > 1 || group.totalCount > group.items[0].stack_count
-        );
+        // TEMPORARY: Return all groups for debugging
+        console.log('All groups created:', Object.values(groups));
+        return Object.values(groups);
+
+        // Original logic (commented out for now):
+        // return Object.values(groups).filter(group => 
+        //     group.items.length > 1 || group.totalCount > group.items[0].stack_count
+        // );
     }, [allResources]);
+
 
     // Helper function for quality sorting
     const getQualityLabel = (quality: number | null): string => {
+        if (quality === null || quality === undefined) return 'none';
+
         const qualityValues: Record<number, string> = {
+            [-1]: 'awful', // no quality item
             0: 'awful',
             1: 'poor',
             2: 'normal',
@@ -223,7 +257,9 @@ export const ResourcesDashboard: React.FC = () => {
             5: 'masterwork',
             6: 'legendary'
         };
-        return quality ? qualityValues[quality] : 'none';
+
+        const label = qualityValues[quality];
+        return label && label.toLowerCase() || 'none';
     };
 
     // Filter resources (individual items)
@@ -241,19 +277,21 @@ export const ResourcesDashboard: React.FC = () => {
 
         // Category filter
         if (filters.categories.length > 0) {
-            filtered = filtered.filter(resource =>
-                filters.categories.includes(resource.category)
-            );
+            filtered = filtered.filter(resource => {
+                if (!resource.categories || !Array.isArray(resource.categories)) return false;
+                return resource.categories.some(category => filters.categories.includes(category));
+            });
         }
 
         // Quality filter
         if (filters.qualities.length > 0) {
             filtered = filtered.filter(resource => {
-                if (!resource.quality) return false;
+                if (resource.quality === null || resource.quality === undefined) return false;
                 const qualityLabel = getQualityLabel(resource.quality);
-                return qualityLabel && filters.qualities.includes(qualityLabel.toLowerCase());
+                return qualityLabel && qualityLabel !== 'none' && filters.qualities.includes(qualityLabel);
             });
         }
+
 
         // Amount filter
         filtered = filtered.filter(resource =>
