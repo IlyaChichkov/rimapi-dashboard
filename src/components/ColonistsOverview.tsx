@@ -13,6 +13,7 @@ import {
     ColumnFiltersState,
 } from '@tanstack/react-table';
 import './ColonistsOverview.css';
+import { useImageCache } from './ImageCacheContext';
 
 interface ColonistsOverviewProps {
     colonistsDetailed?: any[];
@@ -32,30 +33,13 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
-    const [imageCache, setImageCache] = React.useState<Record<string, string>>({});
+    const { imageCache, fetchColonistImage } = useImageCache();
 
     interface FilterOption {
         value: string;
         label: string;
         type: 'trait' | 'skill' | 'job';
     }
-
-    const fetchColonistImage = async (colonistId: string) => {
-        if (imageCache[colonistId]) return;
-
-        try {
-            const imageData = await rimworldApi.getPawnPortraitImage(colonistId);
-            if (imageData.result === 'success' && imageData.image_base64) {
-                setImageCache(prev => ({
-                    ...prev,
-                    [colonistId]: `data:image/png;base64,${imageData.image_base64}`
-                }));
-                console.warn(imageData.image_base64);
-            }
-        } catch (err) {
-            console.warn(`Failed to fetch image for ${colonistId}:`, err);
-        }
-    };
 
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
@@ -158,7 +142,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 cell: ({ row }) => {
                     const colonist = row.original.colonist;
                     const traits = row.original.colonist_work_info.traits;
-                    const imageUrl = imageCache[colonist.id.toString()];
+                    const imageUrl = imageCache[colonist.id];
 
                     return (
                         <div className="colonist-info">
@@ -325,7 +309,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 enableSorting: false,
             },
         ],
-        []
+        [imageCache]
     );
 
     const table = useReactTable({
