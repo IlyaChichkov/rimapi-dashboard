@@ -1,7 +1,7 @@
 // src/components/ResourcesDashboard.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { rimworldApi, selectItem } from '../services/rimworldApi';
-import { ResourcesData, ResourceItem } from '../types';
+import { ResourcesData, ResourceItem, Colonist } from '../types';
 import './ResourcesDashboard.css';
 
 interface SortOption {
@@ -50,7 +50,6 @@ interface ResourceGroup {
     filteredMaxDurability?: number;
     filteredHasDurability?: boolean;
 }
-
 
 const cleanResourceName = (name: string): string => {
     // Remove patterns like " x75", " x100", etc. (quantity indicators)
@@ -232,14 +231,12 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        // TEMPORARY: Return all groups for debugging
-        console.log('All groups created:', Object.values(groups));
-        return Object.values(groups);
+        return Object.values(groups).filter(group => {
+            const hasMultipleInstances = group.items.length > 1;
+            console.log(`Group ${group.def_name}: items=${group.items.length}, totalCount=${group.totalCount}, shouldGroup=${hasMultipleInstances}`);
+            return hasMultipleInstances;
+        });
 
-        // Original logic (commented out for now):
-        // return Object.values(groups).filter(group => 
-        //     group.items.length > 1 || group.totalCount > group.items[0].stack_count
-        // );
     }, [allResources]);
 
 
@@ -1487,6 +1484,5 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
         </div>
     );
 };
-
 
 export default ResourcesDashboard;
