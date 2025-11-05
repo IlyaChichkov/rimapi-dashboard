@@ -4,6 +4,7 @@ import { rimworldApi, selectItem } from '../services/rimworldApi';
 import { ResourcesData, ResourceItem, Colonist, ColonistDetailed } from '../types';
 import './ResourcesDashboard.css';
 import { useToast } from './ToastContext';
+import { useImageCache } from './ImageCacheContext';
 
 interface SortOption {
     field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category' | 'type';
@@ -1434,6 +1435,8 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
+    const { addToast } = useToast();
+
     // Get the context menu state
     const isContextMenuOpen = contextMenuOpen === resource.thing_id.toString();
 
@@ -1486,7 +1489,23 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
                 className="view-action-btn"
                 onClick={(e) => {
                     e.stopPropagation();
-                    selectItem(resource.thing_id, resource.position)
+
+                    try {
+                        selectItem(resource.thing_id, resource.position)
+                        addToast({
+                            type: 'success',
+                            title: `Done`,
+                            message: `Focused camera view on item: ${resource.label}`,
+                            duration: 3000
+                        });
+                    } catch (error) {
+                        addToast({
+                            type: 'error',
+                            title: 'Failed to assign item',
+                            message: error instanceof Error ? error.message : 'Unknown error occurred',
+                            duration: 5000
+                        });
+                    }
                 }}
                 title="View item details"
             >
@@ -1571,7 +1590,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
                 onAssign={handleAssign}
                 onDetails={handleDetails}
             />
-        </div>
+        </div >
     );
 };
 
@@ -1722,93 +1741,134 @@ const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
     loading,
     onAssign
 }) => {
-    const [imageCache, setImageCache] = React.useState<Record<string, string>>({});
-
-    const fetchColonistImage = async (colonistId: string) => {
-        if (imageCache[colonistId]) return;
-
-        try {
-            const imageData = await rimworldApi.getPawnPortraitImage(colonistId);
-            if (imageData.result === 'success' && imageData.image_base64) {
-                setImageCache(prev => ({
-                    ...prev,
-                    [colonistId]: `data:image/png;base64,${imageData.image_base64}`
-                }));
-            }
-        } catch (err) {
-            console.warn(`Failed to fetch image for ${colonistId}:`, err);
-        }
-    };
+    const { imageCache, fetchColonistImage } = useImageCache();
+    const [searchTerm, setSearchTerm] = React.useState('');
 
     const sortedPawns = [...pawns].sort((a, b) =>
         a.name.localeCompare(b.name)
     );
 
-    // Fetch images when modal opens and pawns are loaded
+    // Filter pawns based on search term
+    const filteredPawns = sortedPawns.filter(pawn =>
+        pawn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pawn.gender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pawn.age.toString().includes(searchTerm)
+    );
+
     React.useEffect(() => {
         if (isOpen && !loading) {
             sortedPawns.forEach(pawn => {
                 fetchColonistImage(pawn.id.toString());
             });
         }
-    }, [isOpen, loading, sortedPawns]);
+    }, [isOpen, loading, sortedPawns, fetchColonistImage]);
+
+    // Clear search when modal closes
+    React.useEffect(() => {
+        if (!isOpen) {
+            setSearchTerm('');
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="assign-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
+        <div className="assign-modal-overlay" onClick={onClose}>
+            <div className="assign-modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="assign-modal-header">
                     <h3>Assign {item?.label} to Colonist</h3>
-                    <button className="modal-close-btn" onClick={onClose}>×</button>
+                    <button className="assign-modal-close-btn" onClick={onClose}>×</button>
                 </div>
 
-                <div className="modal-content">
-                    {loading ? (
-                        <div className="loading-pawns">Loading colonists...</div>
-                    ) : (
-                        <div className="pawns-grid-container">
-                            <div className="pawns-grid">
-                                {sortedPawns.map(pawn => {
-                                    const colonistId = pawn.id.toString();
-                                    const imageUrl = imageCache[colonistId];
+                <div className="assign-modal-body">
+                    {/* Search Bar */}
+                    <div className="assign-search-container">
+                        <div className="assign-search-bar">
+                            <input
+                                type="text"
+                                placeholder="Search colonists by name, age, or gender..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="assign-search-input"
+                            />
+                            <span className="assign-search-icon">🔍</span>
+                            {searchTerm && (
+                                <button
+                                    className="assign-clear-search-btn"
+                                    onClick={() => setSearchTerm('')}
+                                    title="Clear search"
+                                >
+                                    ×
+                                </button>
+                            )}
+                        </div>
+                        <div className="assign-search-results-info">
+                            {searchTerm && (
+                                <span>
+                                    Showing {filteredPawns.length} of {sortedPawns.length} colonists
+                                </span>
+                            )}
+                        </div>
+                    </div>
 
-                                    return (
-                                        <div key={pawn.id} className="pawn-card">
-                                            <div className="pawn-avatar">
-                                                {imageUrl ? (
-                                                    <img
-                                                        src={imageUrl}
-                                                        alt={pawn.name}
-                                                        className="pawn-portrait"
-                                                        onError={(e) => {
-                                                            // Fallback if image fails to load
-                                                            e.currentTarget.style.display = 'none';
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <div className="pawn-placeholder">
-                                                        {pawn.name.charAt(0).toUpperCase()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="pawn-info">
-                                                <div className="pawn-name">{pawn.name}</div>
-                                                <div className="pawn-details">
-                                                    <span className="pawn-age">{pawn.age}</span>
-                                                    <span className="pawn-gender">{pawn.gender}</span>
+                    {loading ? (
+                        <div className="assign-loading-pawns">Loading colonists...</div>
+                    ) : (
+                        <div className="assign-pawns-container">
+                            {filteredPawns.length === 0 ? (
+                                <div className="assign-no-results">
+                                    <div className="assign-no-results-icon">🔍</div>
+                                    <p>No colonists found matching "{searchTerm}"</p>
+                                    <button
+                                        className="assign-clear-search-btn large"
+                                        onClick={() => setSearchTerm('')}
+                                    >
+                                        Clear search
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="assign-pawns-grid">
+                                    {filteredPawns.map(pawn => {
+                                        const colonistId = pawn.id.toString();
+                                        const imageUrl = imageCache[colonistId];
+
+                                        return (
+                                            <div key={pawn.id} className="assign-pawn-card">
+                                                <div className="assign-pawn-avatar">
+                                                    {imageUrl ? (
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={pawn.name}
+                                                            className="assign-pawn-portrait"
+                                                            onError={(e) => {
+                                                                // Fallback if image fails to load
+                                                                e.currentTarget.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="assign-pawn-placeholder">
+                                                            {pawn.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
                                                 </div>
+                                                <div className="assign-pawn-info">
+                                                    <div className="assign-pawn-name">{pawn.name}</div>
+                                                    <div className="assign-pawn-details">
+                                                        <span className="assign-pawn-age">{pawn.age}</span>
+                                                        <span className="assign-pawn-gender">{pawn.gender}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="assign-pawn-action-btn"
+                                                    onClick={() => onAssign(colonistId)}
+                                                >
+                                                    Assign
+                                                </button>
                                             </div>
-                                            <button
-                                                className="assign-pawn-btn"
-                                                onClick={() => onAssign(colonistId)}
-                                            >
-                                                Assign
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
