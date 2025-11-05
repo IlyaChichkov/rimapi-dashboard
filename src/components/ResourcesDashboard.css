@@ -1345,3 +1345,250 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+/* Assign Modal Styles */
+.assign-modal {
+    background: #2d3748;
+    border-radius: 12px;
+    padding: 1.5rem;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #4dabf7;
+    font-size: 1.25rem;
+}
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: #adb5bd;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.modal-content {
+    flex: 1;
+    overflow: auto;
+}
+
+.loading-pawns {
+    text-align: center;
+    padding: 2rem;
+    color: #adb5bd;
+}
+
+/* Pawns Grid Layout */
+.pawns-grid-container {
+    overflow-y: auto;
+}
+
+.pawns-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    padding: 0.5rem;
+}
+
+.pawn-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+}
+
+.pawn-card:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Pawn Avatar */
+.pawn-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.pawn-portrait {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.pawn-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #4dabf7, #3b8fd9);
+    color: white;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+/* Pawn Info */
+.pawn-info {
+    flex: 1;
+    min-width: 0; /* Prevent text overflow */
+}
+
+.pawn-name {
+    font-weight: 600;
+    color: white;
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pawn-details {
+    display: flex;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: #adb5bd;
+}
+
+.pawn-age,
+.pawn-gender {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+/* Assign Button */
+.assign-pawn-btn {
+    background: linear-gradient(135deg, #74b816, #5c940d);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    min-width: 80px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.assign-pawn-btn:hover {
+    background: linear-gradient(135deg, #82c91e, #66a80f);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(116, 184, 22, 0.3);
+}
+
+.assign-pawn-btn:active {
+    transform: translateY(0);
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .assign-modal {
+        margin: 1rem;
+        max-width: none;
+        width: calc(100% - 2rem);
+    }
+    
+    .pawns-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .pawn-card {
+        padding: 0.75rem;
+        gap: 0.75rem;
+    }
+    
+    .pawn-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .pawn-name {
+        font-size: 0.9rem;
+    }
+    
+    .pawn-details {
+        font-size: 0.8rem;
+    }
+    
+    .assign-pawn-btn {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+        min-width: 70px;
+    }
+}
+
+@media (max-width: 480px) {
+    .pawns-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .pawn-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .pawn-info {
+        width: 100%;
+    }
+    
+    .pawn-details {
+        justify-content: center;
+    }
+}

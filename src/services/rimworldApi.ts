@@ -311,7 +311,7 @@ export const rimworldApi = {
   },
 
   getPawns: async (): Promise<Colonist[]> => {
-      const response = await fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age,health,mood');
+      const response = await fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age');
       return validateColonists(response);
   },
   

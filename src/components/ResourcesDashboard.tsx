@@ -1,7 +1,7 @@
 // src/components/ResourcesDashboard.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { rimworldApi, selectItem } from '../services/rimworldApi';
-import { ResourcesData, ResourceItem, Colonist } from '../types';
+import { ResourcesData, ResourceItem, Colonist, ColonistDetailed } from '../types';
 import './ResourcesDashboard.css';
 import { useToast } from './ToastContext';
 
@@ -165,8 +165,8 @@ export const ResourcesDashboard: React.FC = () => {
             if (assignModalOpen && selectedItem) {
                 setLoadingPawns(true);
                 try {
-                    const colonists = await rimworldApi.getPawns();
-                    setPawns(colonists);
+                    const colonistsDetailed = await rimworldApi.getPawns();
+                    setPawns(colonistsDetailed);
                 } catch (error) {
                     console.error('Failed to fetch colonists:', error);
                 } finally {
@@ -1704,6 +1704,7 @@ const CardContextMenu: React.FC<CardContextMenuProps> = ({
     );
 };
 
+
 interface AssignToPawnModalProps {
     isOpen: boolean;
     onClose: () => void;
@@ -1721,9 +1722,36 @@ const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
     loading,
     onAssign
 }) => {
+    const [imageCache, setImageCache] = React.useState<Record<string, string>>({});
+
+    const fetchColonistImage = async (colonistId: string) => {
+        if (imageCache[colonistId]) return;
+
+        try {
+            const imageData = await rimworldApi.getPawnPortraitImage(colonistId);
+            if (imageData.result === 'success' && imageData.image_base64) {
+                setImageCache(prev => ({
+                    ...prev,
+                    [colonistId]: `data:image/png;base64,${imageData.image_base64}`
+                }));
+            }
+        } catch (err) {
+            console.warn(`Failed to fetch image for ${colonistId}:`, err);
+        }
+    };
+
     const sortedPawns = [...pawns].sort((a, b) =>
         a.name.localeCompare(b.name)
     );
+
+    // Fetch images when modal opens and pawns are loaded
+    React.useEffect(() => {
+        if (isOpen && !loading) {
+            sortedPawns.forEach(pawn => {
+                fetchColonistImage(pawn.id.toString());
+            });
+        }
+    }, [isOpen, loading, sortedPawns]);
 
     if (!isOpen) return null;
 
@@ -1739,34 +1767,48 @@ const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
                     {loading ? (
                         <div className="loading-pawns">Loading colonists...</div>
                     ) : (
-                        <div className="pawns-table-container">
-                            <table className="pawns-table">
-                                <thead>
-                                    <tr>
-                                        <th>Name</th>
-                                        <th>Age</th>
-                                        <th>Gender</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedPawns.map(pawn => (
-                                        <tr key={pawn.id}>
-                                            <td className="pawn-name">{pawn.name}</td>
-                                            <td className="pawn-age">{pawn.age}</td>
-                                            <td className="pawn-gender">{pawn.gender}</td>
-                                            <td className="pawn-action">
-                                                <button
-                                                    className="assign-pawn-btn"
-                                                    onClick={() => onAssign(pawn.id.toString())}
-                                                >
-                                                    Assign
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="pawns-grid-container">
+                            <div className="pawns-grid">
+                                {sortedPawns.map(pawn => {
+                                    const colonistId = pawn.id.toString();
+                                    const imageUrl = imageCache[colonistId];
+
+                                    return (
+                                        <div key={pawn.id} className="pawn-card">
+                                            <div className="pawn-avatar">
+                                                {imageUrl ? (
+                                                    <img
+                                                        src={imageUrl}
+                                                        alt={pawn.name}
+                                                        className="pawn-portrait"
+                                                        onError={(e) => {
+                                                            // Fallback if image fails to load
+                                                            e.currentTarget.style.display = 'none';
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <div className="pawn-placeholder">
+                                                        {pawn.name.charAt(0).toUpperCase()}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="pawn-info">
+                                                <div className="pawn-name">{pawn.name}</div>
+                                                <div className="pawn-details">
+                                                    <span className="pawn-age">{pawn.age}</span>
+                                                    <span className="pawn-gender">{pawn.gender}</span>
+                                                </div>
+                                            </div>
+                                            <button
+                                                className="assign-pawn-btn"
+                                                onClick={() => onAssign(colonistId)}
+                                            >
+                                                Assign
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>
