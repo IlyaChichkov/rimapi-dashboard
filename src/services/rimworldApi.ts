@@ -317,4 +317,19 @@ export const rimworldApi = {
     const data = await fetchApi<ItemImageResponse>(`/item/image?name=${encodeURIComponent(defName)}`)
     return data as ItemImageResponse;
   },
+
+  getPawns: async (): Promise<Colonist[]> => {
+      const response = await fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age,health,mood');
+      return validateColonists(response);
+  },
+  
+  getItemDetails: async (itemId: string, pawnId: string): Promise<{ success: boolean }> => {
+      // This should call your backend API to assign item to pawn
+      return { success: true };
+  },
+  
+  assignItemToPawn: async (itemId: string, itemType: string, pawnId: string): Promise<{ success: boolean }> => {
+    await fetchApiPost(`/jobs/make/equip?item_type=${itemType}&map_id=0&pawn_id=${pawnId}&item_id=${itemId}`, { method: 'POST' });
+      return { success: true };
+  }
 };

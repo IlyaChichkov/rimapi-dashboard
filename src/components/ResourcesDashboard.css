@@ -605,6 +605,7 @@
   white-space: nowrap;
   text-transform: capitalize;
   min-height: 10px;
+  margin-top: auto;
 }
 
 .value-badge {
@@ -1037,4 +1038,310 @@
 
 .group-toggle {
   position: relative;
+}
+
+.context-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.context-item-name {
+  margin: 0;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.context-close-btn {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.context-close-btn:hover {
+  color: white;
+}
+
+.context-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  justify-content: flex-end;
+}
+
+.context-action-btn {
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.context-action-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.assign-btn:hover {
+  background: rgba(77, 171, 247, 0.3);
+  border-color: #4dabf7;
+}
+
+.details-btn:hover {
+  background: rgba(155, 89, 182, 0.3);
+  border-color: #9b59b6;
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+  backdrop-filter: blur(5px);
+}
+
+.assign-modal {
+  background: #2d3748;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 800px;
+  width: 100%;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.modal-header h3 {
+  margin: 0;
+  color: white;
+  font-size: 1.2rem;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  color: #adb5bd;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close-btn:hover {
+  color: white;
+}
+
+.modal-content {
+  flex: 1;
+  overflow: auto;
+  padding: 1.5rem;
+}
+
+.loading-pawns {
+  text-align: center;
+  color: #adb5bd;
+  padding: 2rem;
+}
+
+.pawns-table-container {
+  overflow-x: auto;
+}
+
+.pawns-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: white;
+}
+
+.pawns-table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 600;
+  color: #4dabf7;
+}
+
+.pawns-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.pawns-table tr:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.pawn-name {
+  font-weight: 600;
+}
+
+.pawn-age, .pawn-gender {
+  color: #adb5bd;
+}
+
+.pawn-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.skill-chip {
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+.assign-pawn-btn {
+  padding: 0.4rem 0.8rem;
+  background: rgba(77, 171, 247, 0.2);
+  border: 1px solid #4dabf7;
+  border-radius: 4px;
+  color: #4dabf7;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.8rem;
+}
+
+.assign-pawn-btn:hover {
+  background: rgba(77, 171, 247, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .pawns-table {
+    font-size: 0.8rem;
+  }
+  
+  .pawns-table th,
+  .pawns-table td {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .modal-overlay {
+    padding: 0.5rem;
+  }
+  
+  .assign-modal {
+    max-height: 90vh;
+  }
+}
+
+/* Context Menu Styles - Only animate movement */
+.card-context-menu {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 10px;
+  padding: 1rem;
+  display: flex;
+  background: rgba(30, 30, 30, 0.116);
+  flex-direction: column;
+  transform: translateY(100%); /* Start below the card */
+  transition: transform 0.3s ease;
+  z-index: 20;
+  backdrop-filter: blur(10px);
+  /* Always visible */
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.card-context-menu.open {
+  transform: translateY(0); /* Slide up to cover card */
+}
+
+/* Ensure the card container can show the sliding menu */
+.resource-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 0.75rem;
+  transition: all 0.2s ease;
+  overflow: hidden; /* This might be hiding the menu during animation */
+  display: flex;
+  flex-direction: column;
+  height: 240px;
+}
+
+/* Allow the context menu to overflow during animation */
+.resource-card.context-menu-open {
+  overflow: visible; /* Change to visible when menu is open */
+}
+
+/* Or better: always allow overflow for the menu */
+.resource-card {
+  overflow: visible; /* Change this from 'hidden' to 'visible' */
+}
+
+/* If you need to keep overflow hidden for other content, use this approach: */
+.resource-card {
+  overflow: hidden; /* Keep hidden for normal content */
+}
+
+.resource-card .card-context-menu {
+  /* The menu can overflow the card */
+}
+
+
+.card-context-menu.open {
+  transform: translateY(0);
+}
+
+/* Context menu content should also animate */
+.context-menu-header,
+.context-menu-actions {
+  opacity: 0;
+  transform: translateY(0px);
+  transition: opacity 0.3s ease 0.1s; /* Delay the content animation */
+}
+
+.card-context-menu.open .context-menu-header,
+.card-context-menu.open .context-menu-actions {
+  opacity: 1;
+  transform: translateY(0);
 }

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { rimworldApi, selectItem } from '../services/rimworldApi';
 import { ResourcesData, ResourceItem, Colonist } from '../types';
 import './ResourcesDashboard.css';
+import { useToast } from './ToastContext';
 
 interface SortOption {
     field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category' | 'type';
@@ -74,6 +75,14 @@ export const ResourcesDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [imageCache, setImageCache] = useState<Record<string, string>>({});
+
+    const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
+    const [assignModalOpen, setAssignModalOpen] = useState<boolean>(false);
+    const [selectedItem, setSelectedItem] = useState<ResourceItem | null>(null);
+    const [pawns, setPawns] = useState<Colonist[]>([]);
+    const [loadingPawns, setLoadingPawns] = useState<boolean>(false);
+
+    const { addToast } = useToast();
 
     // State management
     const [sortOption, setSortOption] = useState<SortOption>({ field: 'name', direction: 'asc' });
@@ -150,6 +159,87 @@ export const ResourcesDashboard: React.FC = () => {
             console.warn(`Failed to fetch image for ${defName}:`, err);
         }
     };
+
+    useEffect(() => {
+        const fetchPawnsForModal = async () => {
+            if (assignModalOpen && selectedItem) {
+                setLoadingPawns(true);
+                try {
+                    const colonists = await rimworldApi.getPawns();
+                    setPawns(colonists);
+                } catch (error) {
+                    console.error('Failed to fetch colonists:', error);
+                } finally {
+                    setLoadingPawns(false);
+                }
+            }
+        };
+
+        fetchPawnsForModal();
+    }, [assignModalOpen, selectedItem]);
+
+    const handleAssignToPawn = async (pawnId: string) => {
+        if (!selectedItem) return;
+
+        try {
+            const assignableCategories: { [key: string]: string[] } = {
+                'weapon': ['weapon'],
+                'apparel': ['apparel', 'armor', 'headgear', 'gear']
+            };
+
+            const itemCategory = Object.keys(assignableCategories).find(category =>
+                selectedItem.categories?.some(itemCat =>
+                    assignableCategories[category].some(validCat =>
+                        itemCat.toLowerCase().includes(validCat.toLowerCase())
+                    )
+                )
+            );
+
+            const result = await rimworldApi.assignItemToPawn(
+                selectedItem.thing_id.toString(),
+                itemCategory ?? "none",
+                pawnId
+            );
+            if (result.success) {
+                setAssignModalOpen(false);
+                setSelectedItem(null);
+                fetchResources();
+
+                addToast({
+                    type: 'success',
+                    title: `Done`,
+                    message: `Assigned equip ${itemCategory} job to pawn`,
+                    duration: 3000
+                });
+            }
+        } catch (error) {
+            setAssignModalOpen(false);
+            setSelectedItem(null);
+
+            addToast({
+                type: 'error',
+                title: 'Failed to assign item',
+                message: error instanceof Error ? error.message : 'Unknown error occurred',
+                duration: 5000
+            });
+        }
+    };
+
+    const handleCloseModal = () => {
+        setAssignModalOpen(false);
+        setSelectedItem(null);
+    };
+
+    // Add click outside handler for context menu
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setContextMenuOpen(null);
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
 
     // Process and aggregate resource data
     const allResources = useMemo(() => {
@@ -710,7 +800,7 @@ export const ResourcesDashboard: React.FC = () => {
                 totalValue: resource.market_value * resource.stack_count
             }));
         }
-    }, [groupItems, filteredGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
+    }, [groupItems, sortedGroups, filteredGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
 
     // Paginate display data
     const displayedData = useMemo(() => {
@@ -890,6 +980,15 @@ export const ResourcesDashboard: React.FC = () => {
             isMounted = false;
         };
     }, [displayedData, imageCache]);
+
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setContextMenuOpen(null);
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [setContextMenuOpen]);
 
     if (error) {
         return (
@@ -1138,6 +1237,10 @@ export const ResourcesDashboard: React.FC = () => {
                                 resource={resource}
                                 imageUrl={imageCache[resource.def_name]}
                                 categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
+                                contextMenuOpen={contextMenuOpen}
+                                setContextMenuOpen={setContextMenuOpen}
+                                setSelectedItem={setSelectedItem}
+                                setAssignModalOpen={setAssignModalOpen}
                             />
                         );
                     }
@@ -1213,6 +1316,16 @@ export const ResourcesDashboard: React.FC = () => {
             >
                 {loading ? '🔄' : '🔄'} Refresh
             </button>
+
+            {/* Assign Modal */}
+            <AssignToPawnModal
+                isOpen={assignModalOpen}
+                onClose={handleCloseModal}
+                item={selectedItem}
+                pawns={pawns}
+                loading={loadingPawns}
+                onAssign={handleAssignToPawn}
+            />
         </div>
     );
 };
@@ -1276,11 +1389,17 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
     };
 
     const quality = resource.quality;
+    const qualityLabel = getQualityLabel(quality);
 
-    if (quality === null || quality === undefined || !getQualityLabel(quality)) {
+    const shouldShowQuality = quality !== null &&
+        quality !== undefined &&
+        qualityLabel !== null &&
+        qualityLabel !== 'none';
+
+    if (!shouldShowQuality) {
         return (
             <div className="empty-quality-badge"></div>
-        )
+        );
     }
 
     return (
@@ -1297,11 +1416,52 @@ interface ResourceCardProps {
     resource: ResourceItem & { category: string };
     imageUrl?: string;
     categoryInfo?: ResourceCategory;
+    contextMenuOpen: string | null;
+    setContextMenuOpen: (id: string | null) => void;
+    setSelectedItem: (item: ResourceItem | null) => void;
+    setAssignModalOpen: (open: boolean) => void;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categoryInfo }) => {
+const ResourceCard: React.FC<ResourceCardProps> = ({
+    resource,
+    imageUrl,
+    categoryInfo,
+    contextMenuOpen,
+    setContextMenuOpen,
+    setSelectedItem,
+    setAssignModalOpen
+}) => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+
+    // Get the context menu state
+    const isContextMenuOpen = contextMenuOpen === resource.thing_id.toString();
+
+    const handleCardClick = (e: React.MouseEvent) => {
+        console.log('Card clicked, current state:', isContextMenuOpen);
+        e.stopPropagation(); // Prevent event from bubbling up
+        if (isContextMenuOpen) {
+            setContextMenuOpen(null);
+        } else {
+            setContextMenuOpen(resource.thing_id.toString());
+        }
+    };
+
+    const handleAssign = () => {
+        setSelectedItem(resource);
+        setAssignModalOpen(true);
+        setContextMenuOpen(null);
+    };
+
+    const handleDetails = () => {
+        // Placeholder for details modal
+        console.log('Show details for:', resource.thing_id);
+        setContextMenuOpen(null);
+    };
+
+    const handleCloseContextMenu = () => {
+        setContextMenuOpen(null);
+    };
 
     const getDurabilityPercent = () => {
         if (resource.max_hit_points === 0) return 100;
@@ -1317,11 +1477,17 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
         durabilityPercent > 25 ? '#f08c00' : '#e03131';
 
     return (
-        <div className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''}`}>
+        <div
+            className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''} ${isContextMenuOpen ? 'context-menu-open' : ''}`}
+            onClick={handleCardClick}
+        >
             {/* View Action Button */}
             <button
                 className="view-action-btn"
-                onClick={() => selectItem(resource.thing_id, resource.position)}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    selectItem(resource.thing_id, resource.position)
+                }}
                 title="View item details"
             >
                 👁️
@@ -1396,6 +1562,15 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
                     </button>
                 )}
             </div>
+
+            {/* Context Menu */}
+            <CardContextMenu
+                item={resource}
+                isOpen={isContextMenuOpen}
+                onClose={handleCloseContextMenu}
+                onAssign={handleAssign}
+                onDetails={handleDetails}
+            />
         </div>
     );
 };
@@ -1479,6 +1654,121 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
                 {/* Click Hint - Use filtered items count */}
                 <div className="group-click-hint">
                     Click to view {displayItems.length} individual items
+                </div>
+            </div>
+        </div>
+    );
+};
+
+interface CardContextMenuProps {
+    item: ResourceItem & { category: string };
+    isOpen: boolean;
+    onClose: () => void;
+    onAssign: () => void;
+    onDetails: () => void;
+}
+
+const CardContextMenu: React.FC<CardContextMenuProps> = ({
+    item,
+    isOpen,
+    onClose,
+    onAssign,
+    onDetails
+}) => {
+    const assignableCategories = ['weapon', 'apparel', 'armor', 'headgear', 'gear'];
+    const isAssignable = assignableCategories.some(category =>
+        item.category.includes(category)
+    );
+
+    return (
+        <div
+            className={`card-context-menu ${isOpen ? 'open' : ''}`}
+            onClick={onClose}
+        >
+            <div className="context-menu-header">
+                <h4 className="context-item-name">{item.label}</h4>
+                <button className="context-close-btn" onClick={onClose}>×</button>
+            </div>
+
+            <div className="context-menu-actions">
+                {isAssignable && (
+                    <button className="context-action-btn assign-btn" onClick={onAssign}>
+                        Equip
+                    </button>
+                )}
+                {/*<button className="context-action-btn details-btn" onClick={onDetails}>
+                    ℹ️ Details
+                </button>*/}
+            </div>
+        </div>
+    );
+};
+
+interface AssignToPawnModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    item: ResourceItem | null;
+    pawns: Colonist[];
+    loading: boolean;
+    onAssign: (pawnId: string) => void;
+}
+
+const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
+    isOpen,
+    onClose,
+    item,
+    pawns,
+    loading,
+    onAssign
+}) => {
+    const sortedPawns = [...pawns].sort((a, b) =>
+        a.name.localeCompare(b.name)
+    );
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="assign-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-header">
+                    <h3>Assign {item?.label} to Colonist</h3>
+                    <button className="modal-close-btn" onClick={onClose}>×</button>
+                </div>
+
+                <div className="modal-content">
+                    {loading ? (
+                        <div className="loading-pawns">Loading colonists...</div>
+                    ) : (
+                        <div className="pawns-table-container">
+                            <table className="pawns-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Age</th>
+                                        <th>Gender</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedPawns.map(pawn => (
+                                        <tr key={pawn.id}>
+                                            <td className="pawn-name">{pawn.name}</td>
+                                            <td className="pawn-age">{pawn.age}</td>
+                                            <td className="pawn-gender">{pawn.gender}</td>
+                                            <td className="pawn-action">
+                                                <button
+                                                    className="assign-pawn-btn"
+                                                    onClick={() => onAssign(pawn.id.toString())}
+                                                >
+                                                    Assign
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
