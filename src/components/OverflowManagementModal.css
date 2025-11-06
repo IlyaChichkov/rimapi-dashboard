@@ -705,19 +705,6 @@
     }
 }
 
-/* Colonist card */
-.colonist-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    transition: all 0.2s ease;
-    cursor: pointer;
-    min-height: 110px;
-}
 .colonist-card:hover {
     background: rgba(255,255,255,0.08);
     border-color: rgba(255,255,255,0.2);
@@ -733,8 +720,8 @@
     gap: 10px;
 }
 .card-portrait {
-    width: 42px;
-    height: 42px;
+    width: 64px;
+    height: 64px;
     border-radius: 6px;
     object-fit: cover;
     background: rgba(255,255,255,0.06);
@@ -816,3 +803,123 @@
 
 /* Remove the legacy list styles impact in this view */
 .left-panel .colonists-list { display: none; }
+
+.card-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* TOP row layout */
+.card-row.top .card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.card-row.top .card-right .priority-badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  position: static;
+}
+
+/* BOTTOM row layout */
+.card-row.bottom .card-chips {
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.card-row.bottom .card-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Keep portrait and text sizing tidy */
+.card-portrait {
+  width: 42px;
+  height: 42px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+
+.card-name {
+  font-weight: 700;
+  color: #fff;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+.card-sub {
+  font-size: 0.75rem;
+  color: #9aa0a6;
+  line-height: 1.2;
+}
+
+/* Ensure the old .card-actions rules don't override row placement */
+.card-actions {
+  justify-content: flex-end;
+}
+
+.card-actions .remove-btn {
+  padding: 4px 8px;
+  background: rgba(255, 107, 107, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+.card-actions .remove-btn:hover {
+  background: rgba(255, 107, 107, 0.3);
+}
+
+/* Force grid to equalize heights automatically */
+.colonists-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-items: stretch; /* ensures equal height cards */
+}
+
+@media (min-width: 1000px) {
+  .colonists-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.colonist-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* evenly distribute top/bottom rows */
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 12px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  min-height: 110px;   /* baseline height */
+  height: 100%;        /* stretch to uniform grid height */
+  box-sizing: border-box;
+}
+
+/* Optional (for smoother resizing / name wrapping) */
+.colonist-card .card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}

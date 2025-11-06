@@ -1,9 +1,11 @@
 // src/components/WorkTab.tsx
 import React from 'react';
-import { ColonistDetailed, Skill as SkillType } from '../types';
+import { Colonist, ColonistDetailed, Skill as SkillType } from '../types';
 import './WorkTab.css';
 import OverflowManagementModal from './OverflowManagementModal';
 import { useImageCache } from './ImageCacheContext';
+import { rimworldApi } from '../services/rimworldApi';
+import { useToast } from './ToastContext';
 
 interface WorkTabProps {
     colonistsDetailed?: ColonistDetailed[];
@@ -77,6 +79,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
     const [searchQuery, setSearchQuery] = React.useState('');
 
     const { imageCache, fetchColonistImage } = useImageCache();
+    const { addToast } = useToast();
 
     const handleOverflowClick = (workType: WorkType, list: Assignment[]) => {
         setSelectedWorkType(workType);
@@ -159,37 +162,144 @@ const WorkTab: React.FC<WorkTabProps> = ({
         setAssignments(initial);
     }, [colonistsDetailed, fetchColonistImage]);
 
-    const handlePriorityChange = (workTypeId: string, colonistId: number, newPriority: number) => {
-        // Placeholder for future API integration
-        console.log(`Change priority for colonist ${colonistId} in ${workTypeId} to ${newPriority}`);
-        setAssignments(prev => ({
-            ...prev,
-            [workTypeId]: prev[workTypeId].map(a =>
+    const handlePriorityChange = async (workTypeId: string, colonistId: number, newPriority: number) => {
+        // Determine the server-facing work name (falls back to id if not found)
+        const workName = WORK_TYPES.find(w => w.id === workTypeId)?.name ?? workTypeId;
+
+        // --- optimistic update ---
+        setAssignments(prev => {
+            const next = { ...prev };
+            next[workTypeId] = (prev[workTypeId] || []).map(a =>
                 a.colonist.id === colonistId ? { ...a, priority: newPriority } : a
-            )
-        }));
+            );
+            return next;
+        });
+
+        try {
+            await rimworldApi.setColonistWorkPriority(colonistId, workName, newPriority);
+        } catch (err) {
+            console.error("Failed to update work priority:", err);
+
+            // --- rollback on failure ---
+            setAssignments(prev => {
+                const next = { ...prev };
+                next[workTypeId] = (prev[workTypeId] || []).map(a =>
+                    a.colonist.id === colonistId ? { ...a, priority: (a.priority + 9) % 10 } : a
+                );
+                return next;
+            });
+        }
     };
 
     const handleAddColonist = (workTypeId: string) => {
         console.log(`Add colonist to ${workTypeId}`);
     };
 
-    const handleRemoveColonist = (workTypeId: string, colonistId: number) => {
-        setAssignments(prev => ({
-            ...prev,
-            [workTypeId]: prev[workTypeId].filter(a => a.colonist.id !== colonistId)
-        }));
+    const handleRemoveColonist = async (workTypeId: string, colonist: Colonist) => {
+        try {
+            // Immediately reflect change in UI
+            setAssignments(prev => ({
+                ...prev,
+                [workTypeId]: prev[workTypeId]?.filter(a => a.colonist.id !== colonist.id) ?? [],
+            }));
+
+            // Send to backend: set priority = 0 (disabled)
+            await rimworldApi.setColonistWorkPriority(colonist.id, workTypeId, 0);
+
+            addToast({
+                type: 'success',
+                title: `Done`,
+                message: `${colonist.name} don't do ${workTypeId} job any more`,
+                duration: 3000
+            });
+        } catch (error) {
+            console.error('Failed to disable work priority:', error);
+
+            addToast({
+                type: 'error',
+                title: 'Failed to assign item',
+                message: error instanceof Error ? error.message : 'Unknown error occurred',
+                duration: 5000
+            });
+        }
     };
 
-    const handleOptimizeBySkills = () => {
+    const handleOptimizeBySkills = async () => {
+        if (!colonistsDetailed || colonistsDetailed.length === 0) return;
         console.log('Optimizing work assignments by skills...');
-        // future: deterministic assignment using WORKTYPE_TO_SKILLS
+
+        const newAssignments = { ...assignments };
+        let changesCount = 0;
+
+        for (const workTypeId of Object.keys(WORKTYPE_TO_SKILLS)) {
+            const relevantSkills = WORKTYPE_TO_SKILLS[workTypeId];
+            if (!relevantSkills.length) continue;
+
+            // pick colonist with highest relevant skill
+            let bestColonist: ColonistDetailed | null = null;
+            let bestLevel = -1;
+
+            for (const cd of colonistsDetailed) {
+                const { skills } = cd.colonist_work_info;
+                const highestRelevant = skills
+                    .filter((s) => relevantSkills.includes(s.name))
+                    .reduce((max, s) => Math.max(max, s.level), -1);
+
+                if (highestRelevant > bestLevel) {
+                    bestLevel = highestRelevant;
+                    bestColonist = cd;
+                }
+            }
+
+            if (bestColonist) {
+                const c = bestColonist.colonist;
+
+                await rimworldApi.setColonistWorkPriority(c.id, workTypeId, 1);
+                changesCount++;
+            }
+        }
+
+        setAssignments(newAssignments);
+        console.log('Optimization by skills complete.');
+
+        addToast({
+            type: 'success',
+            title: `Optimization by skills complete`,
+            message: `Made ${changesCount} changes`,
+            duration: 3000
+        });
     };
 
-    const handleSetDefaultPriorities = () => {
+    const handleSetDefaultPriorities = async () => {
+        if (!colonistsDetailed || colonistsDetailed.length === 0) return;
         console.log('Setting default priorities for skilled colonists...');
-        // future: set priority 3 where skill > 5
+
+        const newAssignments = { ...assignments };
+
+        for (const cd of colonistsDetailed) {
+            const c = cd.colonist;
+            for (const skill of cd.colonist_work_info.skills) {
+                if (skill.level > 5) {
+                    // find matching work types
+                    for (const [workTypeId, skills] of Object.entries(WORKTYPE_TO_SKILLS)) {
+                        if (skills.includes(skill.name)) {
+                            await rimworldApi.setColonistWorkPriority(c.id, workTypeId, 3);
+                        }
+                    }
+                }
+            }
+        }
+
+        setAssignments(newAssignments);
+        console.log('Default priorities assigned where skill > 5.');
     };
+
+
+    React.useEffect(() => {
+        if (showOverflowModal && selectedWorkType) {
+            setSelectedColonists(assignments[selectedWorkType.id] || []);
+        }
+    }, [assignments, showOverflowModal, selectedWorkType]);
 
     return (
         <div className="work-tab">
@@ -297,7 +407,7 @@ function getSkillLevel(skills: SkillType[] | undefined, names: string[]): number
     if (!skills || names.length === 0) return null;
     let best: number | null = null;
     for (const n of names) {
-        const s = skills.find(sk => sk.name === n || sk.skill === n); // be permissive
+        const s = skills.find(sk => sk.name === n);
         if (s) {
             best = best === null ? s.level : Math.max(best, s.level);
         }
@@ -331,7 +441,7 @@ interface WorkTypeCardProps {
     assignments: Assignment[];
     onPriorityChange: (workTypeId: string, colonistId: number, newPriority: number) => void;
     onAddColonist: (workTypeId: string) => void;
-    onRemoveColonist: (workTypeId: string, colonistId: number) => void;
+    onRemoveColonist: (workTypeId: string, colonist: Colonist) => void;
     onOverflowClick: (workType: WorkType, assignments: Assignment[]) => void;
     isHighlighted?: boolean;
     imageCache: Record<string, string | undefined>;
@@ -374,7 +484,7 @@ const WorkTypeCard: React.FC<WorkTypeCardProps> = ({
                         assignment={assignment}
                         workTypeId={workType.id}
                         onPriorityChange={onPriorityChange}
-                        onRemove={() => onRemoveColonist(workType.id, assignment.colonist.id)}
+                        onRemove={() => onRemoveColonist(workType.id, assignment.colonist)}
                         imageUrl={imageCache[String(assignment.colonist.id)]}
                         ensureImage={() =>
                             fetchColonistImage ? fetchColonistImage(String(assignment.colonist.id)) : Promise.resolve()

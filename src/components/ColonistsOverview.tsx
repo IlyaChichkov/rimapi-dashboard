@@ -44,10 +44,9 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
         colonistsDetailed.forEach((colonist: ColonistDetailed) => {
-            colonist.colonist_work_info.traits.forEach(trait => {
-                traits.add(trait);
+            colonist.colonist_work_info.traits.forEach((trait) => {
+                traits.add(trait.label || trait.name);
             });
-            fetchColonistImage(colonist.colonist.id.toString());
         });
         return Array.from(traits).sort();
     }, [colonistsDetailed]);
@@ -124,8 +123,8 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
             // Trait filter
             if (traitFilter.length > 0) {
                 const colonistTraits = colonist.colonist_work_info.traits;
-                const hasMatchingTrait = traitFilter.some(trait =>
-                    colonistTraits.includes(trait)
+                const hasMatchingTrait = traitFilter.some((needle) =>
+                    colonistTraits.some((t) => t.label === needle || t.name === needle)
                 );
                 if (!hasMatchingTrait) return false;
             }
@@ -189,7 +188,9 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                                                 <span className="traits-icon">🧬</span>
                                                 <div className="traits-popup">
                                                     {traits.map((trait, index) => (
-                                                        <div key={index} className="trait-item">{trait}</div>
+                                                        <div key={trait.name ?? index} className="trait-item">
+                                                            {typeof trait === 'string' ? trait : (trait.label || trait.name)}
+                                                        </div>
                                                     ))}
                                                 </div>
                                             </div>

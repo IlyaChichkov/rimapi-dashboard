@@ -1,6 +1,6 @@
 // src/components/ColonistsSkillsDashboard.tsx
 import React from 'react';
-import { ColonistDetailed } from '../types';
+import { Colonist, ColonistDetailed, Trait } from '../types';
 import {
     useReactTable,
     getCoreRowModel,
@@ -15,11 +15,11 @@ import './ColonistsSkillsDashboard.css';
 import { useImageCache } from './ImageCacheContext';
 
 interface SkillsMatrixRow {
-    colonist: any;
+    colonist: Colonist;
     skills: Record<string, number>;
     passions: Record<string, number>;
     xpData: Record<string, { currentXP: number; xpForNextLevel: number }>;
-    traits: string[];
+    traits: Trait[];
     currentJob: string;
 }
 

@@ -342,4 +342,12 @@ export const rimworldApi = {
     );
     return data as ItemImageResponse;
   },
+  
+  async setColonistWorkPriority(id: number, work: string, priority: number): Promise<void> {
+    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
+    await request<void>(`/colonist/work-priority?id=${id}&work=${capitalize(work)}&priority=${priority}`, {
+      method: "POST",
+    });
+  },
+
 };

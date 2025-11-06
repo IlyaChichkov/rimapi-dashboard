@@ -32,12 +32,6 @@ export interface Colonist {
   health: number;
   mood: number;
   hunger: number;
-  skills?: Skill[];
-}
-
-export interface Skill {
-  skill: string;
-  level: number;
 }
 
 export interface ResourceSummary {
@@ -121,11 +115,18 @@ export interface ResearchSummary {
   };
 }
 
-// Add to src/types.ts
+export interface Trait {
+  name: string;
+  label: string;
+  description: string;
+  disabled_work_tags: number;
+  suppressed: boolean;
+}
 
 export interface Skill {
   name: string;
   level: number;
+  description: string;
   min_level: number;
   max_level: number;
   level_descriptor: string;
@@ -137,17 +138,19 @@ export interface Skill {
   xp_since_last_level: number;
   aptitude: number;
   passion: number;
+  disabled_work_tags: number;
 }
 
 export interface WorkPriority {
   work_type: string;
   priority: number;
+  is_totally_disabled: boolean;
 }
 
 export interface ColonistWorkInfo {
   skills: Skill[];
   current_job: string;
-  traits: string[];
+  traits: Trait[];
   work_priorities: WorkPriority[];
 }
 
