@@ -713,3 +713,20 @@
     max-width: 80px;
   }
 }
+
+/* Distinguish exclude chips visually */
+.filter-chip.chip-exclude {
+  background: #4a2d2d;      /* subtle red-tinted bg */
+  color: #ff6b6b;           /* align with your 'critical' accent */
+  border-color: #ff6b6b;
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.15);
+}
+
+/* Make table tags, severity badge, and clickable labels feel interactive */
+.tags-container .tag,
+.severity-badge,
+.body-part,
+.colonist-name {
+  cursor: pointer;
+}
+
