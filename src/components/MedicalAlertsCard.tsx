@@ -43,7 +43,15 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
   // State for filters
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
-  const [filterChips, setFilterChips] = React.useState<FilterChip[]>([]);
+  const [filterChips, setFilterChips] = React.useState<FilterChip[]>([
+    {
+      id: 'tag-treated-default',
+      type: 'tag',
+      value: 'treated',
+      label: 'treated',
+      mode: 'exclude',
+    },
+  ]);
   const [searchInput, setSearchInput] = React.useState('');
 
   React.useEffect(() => {
@@ -691,85 +699,97 @@ const MedicalAlertsCard: React.FC<MedicalAlertsCardProps> = ({
         </div>
       </div>
 
-      {/* Enhanced Filter Controls */}
-      <div className="filter-controls">
-        {/* Quick Filters */}
-        <div className="filter-group">
-          <label>Quick Filters:</label>
-          <div className="filter-buttons">
-            {filterOptions.quickFilters.map(filter => (
-              <button
-                key={`${filter.type}-${filter.value}`}
-                className="filter-btn quick-filter"
-                onClick={() => handleQuickFilter(filter.type, filter.value, filter.label)}
-                title="Left click to include"
-              >
-                {filter.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Search and Chip Input */}
-        <div className="filter-group">
-          <label>Add Filter:</label>
-          <form onSubmit={handleSearchSubmit} className="chip-input-container">
-            <input
-              type="text"
-              placeholder="Type colonist, condition, tag, body part... then press Enter"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="search-input"
-              list="filter-suggestions"
-            />
-            <datalist id="filter-suggestions">
-              {filterOptions.colonists.map(name => (
-                <option key={name} value={`${name}`} />
-              ))}
-              {['critical', 'serious', 'warning', 'info'].map(severity => (
-                <option key={severity} value={`${severity}`} />
-              ))}
-              {['bleeding', 'infection', 'fracture', 'burn', 'chronic', 'emergency'].map(tag => (
-                <option key={tag} value={`${tag}`} />
-              ))}
-            </datalist>
-            <button type="submit" className="add-chip-btn" title="Add as include filter">
-              Add
-            </button>
-          </form>
-        </div>
-
-        {/* Active Filter Chips */}
-        {filterChips.length > 0 && (
+      <div className="filter-controls-wrapper">
+        {/* Enhanced Filter Controls */}
+        <div className="filter-controls">
+          {/* Quick Filters */}
           <div className="filter-group">
-            <label>Active Filters:</label>
-            <div className="chips-container">
-              {filterChips.map(chip => (
-                <div
-                  key={chip.id}
-                  className={`filter-chip chip-${chip.type} ${chip.mode === 'exclude' ? 'chip-exclude' : ''}`}
-                  title={chip.mode === 'exclude' ? 'Exclude filter' : 'Include filter'}
+            <label>Quick Filters:</label>
+            <div className="filter-buttons">
+              {filterOptions.quickFilters.map(filter => (
+                <button
+                  key={`${filter.type}-${filter.value}`}
+                  className="filter-btn quick-filter"
+                  onClick={() => handleQuickFilter(filter.type, filter.value, filter.label)}
+                  title="Left click to include"
                 >
-                  <span className="chip-type">
-                    {chip.mode === 'exclude' ? 'EXCLUDE' : 'INCLUDE'} {chip.type}:
-                  </span>
-                  <span className="chip-value">{chip.label}</span>
-                  <button
-                    onClick={() => removeFilterChip(chip.id)}
-                    className="chip-remove"
-                    aria-label="Remove filter"
-                    title="Remove filter"
-                  >
-                    ×
-                  </button>
-                </div>
+                  {filter.label}
+                </button>
               ))}
-              <button onClick={clearAllFilters} className="clear-all-chips">
-                Clear All
-              </button>
             </div>
           </div>
-        )}
+
+          {/* Search and Chip Input */}
+          <div className="filter-group">
+            <label>Add Filter:</label>
+            <form onSubmit={handleSearchSubmit} className="chip-input-container">
+              <input
+                type="text"
+                placeholder="Type colonist, condition, tag, body part... then press Enter"
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                className="search-input"
+                list="filter-suggestions"
+              />
+              <datalist id="filter-suggestions">
+                {filterOptions.colonists.map(name => (
+                  <option key={name} value={`${name}`} />
+                ))}
+                {['critical', 'serious', 'warning', 'info'].map(severity => (
+                  <option key={severity} value={`${severity}`} />
+                ))}
+                {['bleeding', 'infection', 'fracture', 'burn', 'chronic', 'emergency'].map(tag => (
+                  <option key={tag} value={`${tag}`} />
+                ))}
+              </datalist>
+              <button type="submit" className="add-chip-btn" title="Add as include filter">
+                Add
+              </button>
+            </form>
+          </div>
+
+          {/* Active Filter Chips */}
+          {filterChips.length > 0 && (
+            <div className="filter-group">
+              <label>Active Filters:</label>
+              <div className="chips-container">
+                {filterChips.map(chip => (
+                  <div
+                    key={chip.id}
+                    className={`filter-chip chip-${chip.type} ${chip.mode === 'exclude' ? 'chip-exclude' : ''}`}
+                    title={chip.mode === 'exclude' ? 'Exclude filter' : 'Include filter'}
+                  >
+                    <span className="chip-type">
+                      {chip.mode === 'exclude' ? 'EXCLUDE' : 'INCLUDE'} {chip.type}:
+                    </span>
+                    <span className="chip-value">{chip.label}</span>
+                    <button
+                      onClick={() => removeFilterChip(chip.id)}
+                      className="chip-remove"
+                      aria-label="Remove filter"
+                      title="Remove filter"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+                <button onClick={clearAllFilters} className="clear-all-chips">
+                  Clear All
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        {/* === New Tip Section === */}
+        <div className="filter-tip">
+          <h4>ℹ️ Tips</h4>
+          <ul>
+            <li>Left-click a <strong>tag</strong>, <strong>colonist</strong>, or <strong>severity</strong> to include it as a filter.</li>
+            <li>Right-click or <kbd>Alt + Click</kbd> to exclude that value.</li>
+            <li>You can combine multiple filters and even negatives for precise results.</li>
+            <li>Use the “Add Filter” box to search any keyword.</li>
+          </ul>
+        </div>
       </div>
 
       <div className="medical-content">

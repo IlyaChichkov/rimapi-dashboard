@@ -440,6 +440,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  flex: 1 1 auto;
 }
 
 .filter-group {
@@ -604,18 +605,26 @@
 }
 
 .clear-all-chips {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 4px 8px;
-  background: #495057;
-  color: white;
-  border: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #555;
+  background: #3d3d3d;
+  color: #e0e0e0;
   cursor: pointer;
-  font-size: 0.7rem;
-  transition: background 0.2s ease;
+  height: 100%; /* makes height consistent with .filter-chip */
+  transition: all 0.2s ease;
+  line-height: 1;
 }
 
 .clear-all-chips:hover {
-  background: #6c757d;
+  background: #4d4d4d;
+  color: #fff;
 }
 
 /* Scrollbar styling for table container */
@@ -730,3 +739,52 @@
   cursor: pointer;
 }
 
+/* Layout wrapper for filters + tip */
+.filter-controls-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: stretch; /* 🧩 key change: makes both children same height */
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* Tip panel styling */
+.filter-tip {
+  flex: 1;
+  min-width: 240px;
+  background: #262626;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  color: #bbb;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  border-top: 1px solid #444;
+  margin-bottom: 16px;
+}
+
+.filter-tip h4 {
+  margin: 0 0 8px 0;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.filter-tip ul {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.filter-tip li {
+  margin-bottom: 4px;
+}
+
+.filter-tip kbd {
+  background: #3d3d3d;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 0.75rem;
+  color: #eee;
+}
