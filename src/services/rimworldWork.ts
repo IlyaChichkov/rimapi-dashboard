@@ -54,6 +54,7 @@ export function bestRelevantLevel(
 // Tweak bands here and all callers benefit.
 export function priorityFromLevelRelativeToAvg(level: number, avg: number): number {
   if (level <= 0) return 0;                 // disabled/missing
+  if (level <= 2) return 0;                 // disabled/missing
   if (level >= avg + 4) return 1;           // great at it
   if (level >= avg + 1) return 2;           // above average
   if (level >= Math.max(1, avg - 2)) return 3; // around average
@@ -125,22 +126,25 @@ export async function optimizeAllWorkTypes({
   assignments,
   workTypes,
   getCurrentPriorityFor,
+  setPriority,
   setWorkPrioritiesBulk,
+  fetchWorkList, // <-- Pass the new function to fetch work list
 }: {
   colonistsDetailed: ColonistDetailed[];
   assignments: Record<string, Assignment[]>;
   workTypes: WorkTypeLite[];
   getCurrentPriorityFor: (workTypeId: string, colonistId: number) => number;
   setPriority: (colonistId: number, workName: string, priority: number) => Promise<void>;
-  setWorkPrioritiesBulk: (
-    workPriorities: { id: number; work: string; priority: number }[]
-  ) => Promise<void>; // <-- this is the new argument for bulk update
+  setWorkPrioritiesBulk: (workPriorities: { id: number; work: string; priority: number }[]) => Promise<void>;
+  fetchWorkList: () => Promise<string[]>; // <-- New function to fetch work list
 }): Promise<{ nextAssignments: Record<string, Assignment[]>; changes: number }> {
   let changes = 0;
   const next: Record<string, Assignment[]> = { ...assignments };
 
+  // Fetch the full list of available work types
+  const allWorkTypes = await fetchWorkList();
+
   const bulkWorkPriorities: { id: number; work: string; priority: number }[] = [];
-    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
 
   for (const wt of workTypes) {
     const relevant = getRelevantSkillNamesForWorkType(wt.id);
@@ -157,7 +161,7 @@ export async function optimizeAllWorkTypes({
         // Add to bulk list
         bulkWorkPriorities.push({
           id: cd.colonist.id,
-          work: capitalize(wt.name),
+          work: wt.name,
           priority: newPriority,
         });
 
@@ -175,6 +179,36 @@ export async function optimizeAllWorkTypes({
     }
 
     next[wt.id] = sortAssignmentsBySkill(updated, wt.id);
+  }
+
+  // Now, ensure that any work type the colonist has skills for is included,
+  // even if they aren't currently assigned.
+  for (const cd of colonistsDetailed) {
+    const { skills } = cd.colonist_work_info;
+
+    // Find work types the colonist has skills for
+    const potentialWorkTypes = allWorkTypes.filter(workType => {
+      const relevantSkills = WORKTYPE_TO_SKILLS[workType.toLowerCase()] || [];
+      const bestSkillLevel = bestRelevantLevel(skills, relevantSkills);
+      return bestSkillLevel > 0; // Only consider if the colonist has a relevant skill
+    });
+
+    // For each of these work types, check if they are assigned or not
+    for (const workType of potentialWorkTypes) {
+      const currentPriority = getCurrentPriorityFor(workType, cd.colonist.id);
+      if (currentPriority === 0) {
+        // If priority is currently 0 (not assigned), set a new priority
+        const newPriority = priorityFromLevelRelativeToAvg(bestRelevantLevel(skills, WORKTYPE_TO_SKILLS[workType.toLowerCase()] || []), 0); // use a default avg of 0
+        if (newPriority > 0) {
+          bulkWorkPriorities.push({
+            id: cd.colonist.id,
+            work: workType,
+            priority: newPriority,
+          });
+          changes++;
+        }
+      }
+    }
   }
 
   // After collecting all changes, send them in one batch

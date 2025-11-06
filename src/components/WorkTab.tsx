@@ -13,6 +13,7 @@ import {
     sortAssignmentsBySkill,
     optimizeAllWorkTypes,
     getRelevantSkillNamesForWorkType,
+    bestRelevantLevel,
 } from '../services/rimworldWork';
 
 interface WorkTabProps {
@@ -64,6 +65,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
         setSelectedColonists(list);
         setShowOverflowModal(true);
     };
+
     React.useEffect(() => {
         const detailedById = new Map<number, ColonistDetailed>();
         colonistsDetailed.forEach(cd => detailedById.set(cd.colonist.id, cd));
@@ -202,10 +204,16 @@ const WorkTab: React.FC<WorkTabProps> = ({
         }
     };
 
+    // src/components/WorkTab.tsx
     const handleOptimizeBySkills = async () => {
         if (!colonistsDetailed || colonistsDetailed.length === 0) return;
 
-        const workTypesLite: WorkTypeLite[] = WORK_TYPES.map(w => ({ id: w.id, name: w.name, icon: w.icon, category: w.category }));
+        const workTypesLite: WorkTypeLite[] = WORK_TYPES.map(w => ({
+            id: w.id,
+            name: w.name,
+            icon: w.icon,
+            category: w.category, // Added category here
+        }));
 
         const getCurrentPriorityFor = (workTypeId: string, colonistId: number) => {
             const arr = assignments[workTypeId] || [];
@@ -218,9 +226,11 @@ const WorkTab: React.FC<WorkTabProps> = ({
             assignments,
             workTypes: workTypesLite,
             getCurrentPriorityFor,
-            setPriority: (colonistId, workName, priority) =>
-                rimworldApi.setColonistWorkPriority(colonistId, workName, priority),
-            setWorkPrioritiesBulk: rimworldApi.setColonistsWorkPriorities, // <-- Pass bulk function here
+            setPriority: async (colonistId, workName, newPriority) => {
+                await rimworldApi.setColonistWorkPriority(colonistId, workName, newPriority);
+            },
+            setWorkPrioritiesBulk: rimworldApi.setColonistsWorkPriorities, // Corrected bulk function
+            fetchWorkList: rimworldApi.fetchWorkList, // Fetch the full list of work types
         });
 
         setAssignments(nextAssignments);

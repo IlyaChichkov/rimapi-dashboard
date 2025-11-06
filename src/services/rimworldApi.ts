@@ -360,5 +360,9 @@ export const rimworldApi = {
     });
   },
 
+  async fetchWorkList (): Promise<string[]> {
+    const data = await getJson<{ Work: string[] }>('/work-list');
+    return data?.Work || [];
+  },
 };
 
