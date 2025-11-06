@@ -94,6 +94,28 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         ));
     };
 
+    const [filtersOpen, setFiltersOpen] = React.useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('colonists_filters_open');
+            return saved ? JSON.parse(saved) : true;
+        } catch {
+            return true;
+        }
+    });
+
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('colonists_filters_open', JSON.stringify(filtersOpen));
+        } catch { }
+    }, [filtersOpen]);
+
+    // counts for badge
+    const activeFiltersCount =
+        (traitFilter?.length || 0) +
+        (jobFilter?.length || 0) +
+        (skillFilters?.length || 0) +
+        ((globalFilter?.trim()?.length || 0) > 0 ? 1 : 0);
+
     // Add this function to handle custom filtering
     const filteredData = React.useMemo(() => {
         if (!colonistsDetailed.length) return [];
@@ -405,146 +427,161 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                         Showing: {filteredData.length}/{colonistsDetailed.length}
                     </span>
                 </div>
+                <div className="controls">
+                    <button
+                        className={`filters-toggle ${hasActiveFilters ? 'active' : ''}`}
+                        aria-expanded={filtersOpen}
+                        aria-controls="colonists-filter-controls"
+                        onClick={() => setFiltersOpen(v => !v)}
+                        title={filtersOpen ? 'Hide filters' : 'Show filters'}
+                    >
+                        Filters
+                        {activeFiltersCount > 0 && <span className="filters-badge">{activeFiltersCount}</span>}
+                        <span className="chevron" aria-hidden>{filtersOpen ? '▾' : '▸'}</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="filter-controls">
-                <div className="filter-group">
-                    <label>Traits:</label>
-                    <select
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                handleTraitFilter(e.target.value);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="filter-select"
-                    >
-                        <option value="">Add trait filter...</option>
-                        {availableTraits.map(trait => (
-                            <option key={trait} value={trait}>{trait}</option>
-                        ))}
-                    </select>
-                    <div className="active-filters">
-                        {traitFilter.map(trait => (
-                            <span key={trait} className="active-filter-tag">
-                                {trait}
-                                <button onClick={() => handleTraitFilter(trait)}>❌</button>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="filter-group">
-                    <label>Skills:</label>
-                    <div className="skill-filter-controls">
+            <div className={`filters-collapsible ${filtersOpen ? 'open' : 'closed'}`}>
+                {filtersOpen ? (<div id="colonists-filter-controls" className="filter-controls">
+                    <div className="filter-group">
+                        <label>Traits:</label>
                         <select
                             value=""
                             onChange={(e) => {
                                 if (e.target.value) {
-                                    handleAddSkillFilter(e.target.value);
+                                    handleTraitFilter(e.target.value);
                                     e.target.value = '';
                                 }
                             }}
                             className="filter-select"
                         >
-                            <option value="">Add skill filter...</option>
-                            {SKILL_OPTIONS.map(skill => (
-                                <option key={skill.value} value={skill.value}>{skill.label}</option>
+                            <option value="">Add trait filter...</option>
+                            {availableTraits.map(trait => (
+                                <option key={trait} value={trait}>{trait}</option>
                             ))}
                         </select>
+                        <div className="active-filters">
+                            {traitFilter.map(trait => (
+                                <span key={trait} className="active-filter-tag">
+                                    {trait}
+                                    <button onClick={() => handleTraitFilter(trait)}>❌</button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                    <div className="active-filters">
-                        {skillFilters.map((filter, index) => (
-                            <div key={index} className="skill-filter-tag">
-                                <span className="skill-filter-name">{filter.name}:</span>
-                                <select
-                                    value={filter.minLevel}
-                                    onChange={(e) => handleUpdateSkillFilter(index, { minLevel: Number(e.target.value) })}
-                                    className="level-select"
-                                >
-                                    {Array.from({ length: 21 }, (_, i) => (
-                                        <option key={i} value={i}>≥{i}</option>
-                                    ))}
-                                </select>
-                                <span className="range-separator">-</span>
-                                <select
-                                    value={filter.maxLevel}
-                                    onChange={(e) => handleUpdateSkillFilter(index, { maxLevel: Number(e.target.value) })}
-                                    className="level-select"
-                                >
-                                    {Array.from({ length: 21 }, (_, i) => (
-                                        <option key={i} value={i}>≤{i}</option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={() => handleRemoveSkillFilter(index)}
-                                    className="remove-filter-btn"
-                                >
-                                    ❌
-                                </button>
-                            </div>
-                        ))}
+
+                    <div className="filter-group">
+                        <label>Skills:</label>
+                        <div className="skill-filter-controls">
+                            <select
+                                value=""
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        handleAddSkillFilter(e.target.value);
+                                        e.target.value = '';
+                                    }
+                                }}
+                                className="filter-select"
+                            >
+                                <option value="">Add skill filter...</option>
+                                {SKILL_OPTIONS.map(skill => (
+                                    <option key={skill.value} value={skill.value}>{skill.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="active-filters">
+                            {skillFilters.map((filter, index) => (
+                                <div key={index} className="skill-filter-tag">
+                                    <span className="skill-filter-name">{filter.name}:</span>
+                                    <select
+                                        value={filter.minLevel}
+                                        onChange={(e) => handleUpdateSkillFilter(index, { minLevel: Number(e.target.value) })}
+                                        className="level-select"
+                                    >
+                                        {Array.from({ length: 21 }, (_, i) => (
+                                            <option key={i} value={i}>≥{i}</option>
+                                        ))}
+                                    </select>
+                                    <span className="range-separator">-</span>
+                                    <select
+                                        value={filter.maxLevel}
+                                        onChange={(e) => handleUpdateSkillFilter(index, { maxLevel: Number(e.target.value) })}
+                                        className="level-select"
+                                    >
+                                        {Array.from({ length: 21 }, (_, i) => (
+                                            <option key={i} value={i}>≤{i}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => handleRemoveSkillFilter(index)}
+                                        className="remove-filter-btn"
+                                    >
+                                        ❌
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="filter-group">
-                    <label>Jobs:</label>
-                    <select
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                handleJobFilter(e.target.value);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="filter-select"
-                    >
-                        <option value="">Add job filter...</option>
-                        <option value="FleeAndCower">Flee and Cower</option>
-                        <option value="Patient">Patient</option>
-                        <option value="Firefighter">Firefighter</option>
-                        <option value="Doctor">Doctor</option>
-                        <option value="Cooking">Cooking</option>
-                        <option value="Construction">Construction</option>
-                        <option value="Mining">Mining</option>
-                        <option value="Growing">Growing</option>
-                        <option value="Research">Research</option>
-                        <option value="Warden">Warden</option>
-                        <option value="Handling">Handling</option>
-                        <option value="Crafting">Crafting</option>
-                        <option value="Art">Art</option>
-                        <option value="Smithing">Smithing</option>
-                        <option value="Tailoring">Tailoring</option>
-                        <option value="Hauling">Hauling</option>
-                        <option value="Cleaning">Cleaning</option>
-                    </select>
-                    <div className="active-filters">
-                        {jobFilter.map(job => (
-                            <span key={job} className="active-filter-tag">
-                                {job}
-                                <button onClick={() => handleJobFilter(job)}>❌</button>
-                            </span>
-                        ))}
+                    <div className="filter-group">
+                        <label>Jobs:</label>
+                        <select
+                            value=""
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    handleJobFilter(e.target.value);
+                                    e.target.value = '';
+                                }
+                            }}
+                            className="filter-select"
+                        >
+                            <option value="">Add job filter...</option>
+                            <option value="FleeAndCower">Flee and Cower</option>
+                            <option value="Patient">Patient</option>
+                            <option value="Firefighter">Firefighter</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Construction">Construction</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Growing">Growing</option>
+                            <option value="Research">Research</option>
+                            <option value="Warden">Warden</option>
+                            <option value="Handling">Handling</option>
+                            <option value="Crafting">Crafting</option>
+                            <option value="Art">Art</option>
+                            <option value="Smithing">Smithing</option>
+                            <option value="Tailoring">Tailoring</option>
+                            <option value="Hauling">Hauling</option>
+                            <option value="Cleaning">Cleaning</option>
+                        </select>
+                        <div className="active-filters">
+                            {jobFilter.map(job => (
+                                <span key={job} className="active-filter-tag">
+                                    {job}
+                                    <button onClick={() => handleJobFilter(job)}>❌</button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="filter-group">
-                    <label>Search:</label>
-                    <input
-                        type="text"
-                        placeholder="Search names, jobs..."
-                        value={globalFilter ?? ''}
-                        onChange={e => setGlobalFilter(e.target.value)}
-                        className="search-input"
-                    />
-                </div>
+                    <div className="filter-group">
+                        <label>Search:</label>
+                        <input
+                            type="text"
+                            placeholder="Search names, jobs..."
+                            value={globalFilter ?? ''}
+                            onChange={e => setGlobalFilter(e.target.value)}
+                            className="search-input"
+                        />
+                    </div>
 
-                {hasActiveFilters && (
-                    <button className="clear-filters-btn" onClick={clearAllFilters}>
-                        Clear All Filters
-                    </button>
-                )}
+                    {hasActiveFilters && (
+                        <button className="clear-filters-btn" onClick={clearAllFilters}>
+                            Clear All Filters
+                        </button>
+                    )}
+                </div>) : <div></div>}
             </div>
 
             <div className="table-container">

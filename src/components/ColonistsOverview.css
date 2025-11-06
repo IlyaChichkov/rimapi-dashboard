@@ -314,19 +314,19 @@
   font-size: 1.1rem;
 }
 
-
-/* Filter Controls */
+/* Container parity */
 .filter-controls {
-  background: #2d2d2d;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
+  background: #2d2d2d;         /* already matching */
+  border: 1px solid #444;       /* already matching */
+  border-radius: 8px;           /* already matching */
+  padding: 16px;                /* already matching */
+  margin-bottom: 16px;          /* already matching */
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;                    /* ↑ from 12px for breathing room */
 }
 
+/* Group layout parity */
 .filter-group {
   display: flex;
   align-items: flex-start;
@@ -336,98 +336,127 @@
 .filter-group label {
   font-weight: 600;
   color: #e0e0e0;
-  min-width: 60px;
+  min-width: 100px;             /* match medical controls label width */
   font-size: 0.875rem;
-  margin-top: 4px;
+  padding-top: 4px;             /* align with inputs */
+  margin: 0;                    /* remove previous margin-top */
 }
 
-.filter-buttons {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  flex: 1;
-}
-
-.filter-btn {
-  padding: 6px 12px;
-  border: 1px solid #555;
-  border-radius: 6px;
-  background: transparent;
-  color: #e0e0e0;
-  cursor: pointer;
-  font-size: 0.8rem;
-  transition: all 0.2s ease;
-}
-
-.filter-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.filter-btn.active {
-  background: rgba(77, 171, 247, 0.2);
-  color: #4dabf7;
-  border-color: #4dabf7;
-  font-weight: 600;
-}
-
-.filter-btn.trait.active {
-  background: rgba(32, 201, 151, 0.2);
-  color: #20c997;
-  border-color: #20c997;
-}
-
-.filter-select {
+/* Inputs/selects consistent with medical */
+.filter-select,
+.search-input {
   padding: 6px 12px;
   border: 1px solid #555;
   border-radius: 6px;
   background: #1e1e1e;
   color: #e0e0e0;
   font-size: 0.8rem;
-  min-width: 150px;
 }
 
+.filter-select:focus,
+.search-input:focus {
+  outline: none;
+  border-color: #4dabf7;
+}
+
+/* Active chips match medical filter chips */
+.active-filters {
+  display: flex;
+  gap: 8px;                     /* slightly larger gap to match medical */
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Trait and Job chips styled like medical .filter-chip */
 .active-filter-tag {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 8px;
-  background: #3b5bdb;
-  color: white;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #74c0fc;    /* neutral blue like medical neutral chips */
+  background: #2d3d4a;          /* colonist/tag chip base */
+  color: #74c0fc;
   white-space: nowrap;
 }
 
+/* Remove icon like medical */
 .active-filter-tag button {
   background: none;
   border: none;
-  color: white;
+  color: inherit;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1rem;
   line-height: 1;
   padding: 0;
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0.85;
+}
+.active-filter-tag button:hover {
+  opacity: 1;
 }
 
-.clear-filters-btn {
-  padding: 8px 16px;
-  background: #495057;
-  color: white;
-  border: none;
+/* Skill filter tag—align to medical chip visuals */
+.skill-filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;                     /* align with .active-filter-tag */
+  padding: 4px 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
   border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  align-self: flex-start;
-  transition: background 0.2s ease;
-  margin-top: 8px;
+  font-size: 0.75rem;
+  border: 1px solid rgba(77, 171, 247, 0.3);
 }
 
+/* Level selects inside chip—compact like medical */
+.level-select {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  color: #e0e0e0;
+  padding: 2px 4px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  min-width: 48px;
+}
+
+/* Clear button styled like medical “chip button” */
+.clear-filters-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 8px;             /* same as chip */
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid #555;
+  background: #3d3d3d;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+  margin-top: 0;                /* sit inline with chips */
+}
 .clear-filters-btn:hover {
-  background: #6c757d;
+  background: #4d4d4d;
+  color: #fff;
+}
+
+/* Optional: if you show exclude chips in this tab later */
+.filter-chip.chip-exclude,
+.active-filter-tag.exclude {
+  background: #4a2d2d;
+  color: #ff6b6b;
+  border-color: #ff6b6b;
+  box-shadow: inset 0 0 0 1px rgba(255, 107, 107, 0.15);
 }
 
 /* Header Stats */
@@ -825,3 +854,82 @@
         background-position: -200% 0;
     }
 }
+/* Toggle button in header */
+.filters-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid #555;
+  border-radius: 6px;
+  background: #3d3d3d;
+  color: #e0e0e0;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.filters-toggle:hover {
+  background: #4d4d4d;
+  border-color: #666;
+}
+
+.filters-toggle.active {
+  border-color: #4dabf7;
+  color: #cfe8ff;
+}
+
+.filters-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 999px;
+  background: #2b3d5a;
+  color: #4dabf7;
+  border: 1px solid #3b5bdb;
+}
+
+/* tiny chevron */
+.filters-toggle .chevron {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* Collapsible wrapper with smooth open/close */
+.filters-collapsible {
+  overflow: hidden;
+  transition: grid-template-rows 220ms ease, opacity 200ms ease, transform 200ms ease;
+  display: grid;
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.filters-collapsible.closed {
+  grid-template-rows: 0fr; /* animates height to zero */
+  opacity: 0.0;
+  transform: translateY(-4px);
+}
+
+/* Ensure inner content doesn’t affect grid animation */
+.filters-collapsible > .filter-controls {
+  min-height: 0;
+}
+
+/* Responsive: keep the toggle near header controls */
+@media (max-width: 768px) {
+  .tab-header {
+    gap: 10px;
+  }
+  .controls {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+  }
+}
+
