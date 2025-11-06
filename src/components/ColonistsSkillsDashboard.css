@@ -700,3 +700,55 @@
 .skills-row::after {
     content: none;
 }
+
+/* Portraits near colonist name */
+.skills-colonist-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.skills-portrait {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.skills-portrait.loading {
+  background: linear-gradient(90deg, rgba(255,255,255,0.08) 25%, rgba(255,255,255,0.16) 50%, rgba(255,255,255,0.08) 75%);
+  background-size: 200% 100%;
+  animation: skills-portrait-loading 1.5s infinite;
+}
+
+@keyframes skills-portrait-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.skills-portrait-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.skills-portrait-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  color: #adb5bd;
+}
+
+.skills-colonist-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+

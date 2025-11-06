@@ -12,6 +12,7 @@ import {
     ColumnFiltersState,
 } from '@tanstack/react-table';
 import './ColonistsSkillsDashboard.css';
+import { useImageCache } from './ImageCacheContext';
 
 interface SkillsMatrixRow {
     colonist: any;
@@ -83,6 +84,17 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
     const [globalFilter, setGlobalFilter] = React.useState('');
     const [skillFilter, setSkillFilter] = React.useState<string>('');
     const [selectedRowId, setSelectedRowId] = React.useState<string | null>(null);
+
+    const { imageCache, fetchColonistImage } = useImageCache();
+    React.useEffect(() => {
+        colonistsDetailed.forEach(c => {
+            const id = c.colonist?.id;
+            if (id != null && !imageCache[id]) {
+                fetchColonistImage(String(id));
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colonistsDetailed, fetchColonistImage, imageCache]);
 
     const handleRowClick = (rowId: string) => {
         setSelectedRowId(selectedRowId === rowId ? null : rowId);
@@ -234,18 +246,38 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
             accessorKey: 'colonist.name',
             header: 'Colonist',
             cell: ({ row }: { row: any }) => {
-                const colonist = row.original.colonist;
+                const c = row.original.colonist;
+                const id = c?.id;
+                const imageUrl = id != null ? imageCache[id] : undefined;
+
                 return (
                     <div className="skills-colonist-info">
-                        <div className="colonist-name">{colonist.name}</div>
-                        <div className="colonist-details">
-                            {colonist.gender} • {colonist.age}y
+                        <div className="skills-colonist-row">
+                            <div className={`skills-portrait ${!imageUrl ? 'loading' : ''}`}>
+                                {imageUrl ? (
+                                    <img
+                                        src={imageUrl}
+                                        alt={`${c.name} portrait`}
+                                        className="skills-portrait-img"
+                                        loading="lazy"
+                                        decoding="async"
+                                    />
+                                ) : (
+                                    <div className="skills-portrait-placeholder" aria-hidden>👤</div>
+                                )}
+                            </div>
+                            <div className="skills-colonist-meta">
+                                <div className="colonist-name">{c.name}</div>
+                                <div className="colonist-details">
+                                    {c.gender} • {c.age}y
+                                </div>
+                                <div className="current-job">{row.original.currentJob}</div>
+                            </div>
                         </div>
-                        <div className="current-job">{row.original.currentJob}</div>
                     </div>
                 );
             },
-            size: 150,
+            size: 220,
         },
         ...SKILLS_LIST.map(skillName => ({
             accessorKey: `skills.${skillName}`,
