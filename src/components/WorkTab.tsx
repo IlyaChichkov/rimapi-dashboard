@@ -74,6 +74,8 @@ const WorkTab: React.FC<WorkTabProps> = ({
     const [selectedWorkType, setSelectedWorkType] = React.useState<WorkType | null>(null);
     const [selectedColonists, setSelectedColonists] = React.useState<Assignment[]>([]);
 
+    const [searchQuery, setSearchQuery] = React.useState('');
+
     const { imageCache, fetchColonistImage } = useImageCache();
 
     const handleOverflowClick = (workType: WorkType, list: Assignment[]) => {
@@ -81,6 +83,52 @@ const WorkTab: React.FC<WorkTabProps> = ({
         setSelectedColonists(list);
         setShowOverflowModal(true);
     };
+    React.useEffect(() => {
+        const detailedById = new Map<number, ColonistDetailed>();
+        colonistsDetailed.forEach(cd => detailedById.set(cd.colonist.id, cd));
+
+        const initial: Record<string, Assignment[]> = {};
+        WORK_TYPES.forEach(work => { initial[work.id] = []; });
+
+        colonistsDetailed.forEach(cd => {
+            cd.colonist_work_info.work_priorities.forEach(wp => {
+                if (wp.priority > 0) {
+                    const workType = WORK_TYPES.find(w => w.name === wp.work_type);
+                    if (workType) {
+                        initial[workType.id].push({
+                            colonist: cd.colonist,
+                            priority: wp.priority,
+                            skills: cd.colonist_work_info.skills,
+                            detailed: detailedById.get(cd.colonist.id),
+                        });
+                        fetchColonistImage?.(String(cd.colonist.id)).catch(() => void 0);
+                    }
+                }
+            });
+        });
+
+        setAssignments(initial);
+    }, [colonistsDetailed, fetchColonistImage]);
+
+    // --- filtering helpers ---
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    const filterAssignmentsForWork = React.useCallback((
+        list: Assignment[],
+        workTypeName: string
+    ): { matchesCard: boolean; filtered: Assignment[] } => {
+        if (!normalizedQuery) {
+            return { matchesCard: true, filtered: list };
+        }
+        const workNameMatches = workTypeName.toLowerCase().includes(normalizedQuery);
+        const filteredByColonist = list.filter(a =>
+            a.colonist.name.toLowerCase().includes(normalizedQuery)
+        );
+        const matchesCard = workNameMatches || filteredByColonist.length > 0;
+        const filtered = workNameMatches ? list : filteredByColonist;
+        return { matchesCard, filtered };
+    }, [normalizedQuery]);
+
 
     // Initialize assignments from colonists data
     React.useEffect(() => {
@@ -153,22 +201,44 @@ const WorkTab: React.FC<WorkTabProps> = ({
                 </div>
             </div>
 
-            {/* Auto-assign buttons */}
-            <div className="auto-assign-buttons">
-                <button
-                    className="auto-assign-btn"
-                    onClick={handleOptimizeBySkills}
-                    title="Assign colonists to jobs based on their highest skills"
-                >
-                    Optimize By Skills
-                </button>
-                <button
-                    className="auto-assign-btn"
-                    onClick={handleSetDefaultPriorities}
-                    title="Set priority to 3 for jobs where colonist has skill > 5"
-                >
-                    Set Default
-                </button>
+            <div className="work-controls" onClick={(e) => e.stopPropagation()}>
+                <div className="search-bar">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search work or colonists…"
+                        aria-label="Search work types or colonists"
+                        className="search-input"
+                    />
+                    {searchQuery && (
+                        <button
+                            className="search-clear"
+                            onClick={() => setSearchQuery('')}
+                            aria-label="Clear search"
+                            title="Clear"
+                        >
+                            ×
+                        </button>
+                    )}
+                </div>
+
+                <div className="auto-assign-buttons">
+                    <button
+                        className="auto-assign-btn"
+                        onClick={handleOptimizeBySkills}
+                        title="Assign colonists to jobs based on their highest skills"
+                    >
+                        Optimize By Skills
+                    </button>
+                    <button
+                        className="auto-assign-btn"
+                        onClick={handleSetDefaultPriorities}
+                        title="Set priority to 3 for jobs where colonist has skill > 5"
+                    >
+                        Set Default
+                    </button>
+                </div>
             </div>
 
             <div className="work-grid">
@@ -176,8 +246,12 @@ const WorkTab: React.FC<WorkTabProps> = ({
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map(workType => {
                         const list = (assignments[workType.id] || []);
-                        // sort (least qualified first)
                         const sorted = sortAssignmentsBySkill(list, workType.id);
+
+                        // apply search filtering to the sorted list
+                        const { matchesCard, filtered } = filterAssignmentsForWork(sorted, workType.name);
+                        if (!matchesCard) return null;
+
                         const isHighlighted = !!(selectedColonist &&
                             list.some(a => a.colonist.id === selectedColonist.colonist.id));
 
@@ -185,14 +259,15 @@ const WorkTab: React.FC<WorkTabProps> = ({
                             <WorkTypeCard
                                 key={workType.id}
                                 workType={workType}
-                                assignments={sorted}
+                                // PASS the filtered (and sorted) assignments
+                                assignments={filtered}
                                 onPriorityChange={handlePriorityChange}
                                 onAddColonist={handleAddColonist}
                                 onRemoveColonist={handleRemoveColonist}
                                 onOverflowClick={handleOverflowClick}
                                 isHighlighted={isHighlighted}
-                                imageCache={imageCache}
-                                fetchColonistImage={fetchColonistImage}
+                                imageCache={imageCache as Record<string, string | undefined>}
+                                fetchColonistImage={(id) => fetchColonistImage ? fetchColonistImage(String(id)) : Promise.resolve()}
                             />
                         );
                     })}

@@ -451,3 +451,74 @@
     flex: 0 0 auto;
 }
 
+/* Controls container */
+.work-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 8px 20px;
+    flex-wrap: wrap;
+}
+
+/* Search bar */
+.search-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 280px;
+    max-width: 520px;
+}
+
+.search-input {
+    flex: 1 1 auto;
+    background: transparent;
+    border: none;
+    color: #fff;
+    outline: none;
+    font-size: 0.95rem;
+    font-family: inherit;
+}
+
+.search-input::placeholder {
+    color: #9aa0a6;
+}
+
+.search-clear {
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #d1d5db;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    cursor: pointer;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.search-clear:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+/* Keep buttons looking consistent inside controls row */
+.work-controls .auto-assign-buttons {
+    margin: 0; /* override previous margin-bottom to align with search */
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .work-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+    .search-bar {
+        max-width: 100%;
+    }
+}
+
