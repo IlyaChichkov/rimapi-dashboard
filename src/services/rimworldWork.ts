@@ -31,7 +31,7 @@ export type Assignment = {
   detailed?: ColonistDetailed;
 };
 
-export type WorkTypeLite = { id: string; name: string };
+export type WorkTypeLite = { id: string; name: string; icon: string, category: string };
 
 export function getRelevantSkillNamesForWorkType(workTypeId: string): string[] {
   return WORKTYPE_TO_SKILLS[workTypeId] || [];
@@ -124,17 +124,23 @@ export async function optimizeAllWorkTypes({
   colonistsDetailed,
   assignments,
   workTypes,
-  getCurrentPriorityFor: getCurrentPriorityFor, // (workTypeId, colonistId) -> current number
-  setPriority, // (colonistId, workName, newPriority) => Promise<void>
+  getCurrentPriorityFor,
+  setWorkPrioritiesBulk,
 }: {
   colonistsDetailed: ColonistDetailed[];
   assignments: Record<string, Assignment[]>;
   workTypes: WorkTypeLite[];
   getCurrentPriorityFor: (workTypeId: string, colonistId: number) => number;
   setPriority: (colonistId: number, workName: string, priority: number) => Promise<void>;
+  setWorkPrioritiesBulk: (
+    workPriorities: { id: number; work: string; priority: number }[]
+  ) => Promise<void>; // <-- this is the new argument for bulk update
 }): Promise<{ nextAssignments: Record<string, Assignment[]>; changes: number }> {
   let changes = 0;
   const next: Record<string, Assignment[]> = { ...assignments };
+
+  const bulkWorkPriorities: { id: number; work: string; priority: number }[] = [];
+    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
 
   for (const wt of workTypes) {
     const relevant = getRelevantSkillNamesForWorkType(wt.id);
@@ -148,9 +154,16 @@ export async function optimizeAllWorkTypes({
       const current = getCurrentPriorityFor(wt.id, cd.colonist.id);
 
       if (current !== newPriority) {
-        await setPriority(cd.colonist.id, wt.name, newPriority);
+        // Add to bulk list
+        bulkWorkPriorities.push({
+          id: cd.colonist.id,
+          work: capitalize(wt.name),
+          priority: newPriority,
+        });
+
         changes++;
       }
+
       if (newPriority > 0) {
         updated.push({
           colonist: cd.colonist,
@@ -160,7 +173,13 @@ export async function optimizeAllWorkTypes({
         });
       }
     }
+
     next[wt.id] = sortAssignmentsBySkill(updated, wt.id);
+  }
+
+  // After collecting all changes, send them in one batch
+  if (bulkWorkPriorities.length > 0) {
+    await setWorkPrioritiesBulk(bulkWorkPriorities);
   }
 
   return { nextAssignments: next, changes };

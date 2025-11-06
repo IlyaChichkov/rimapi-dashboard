@@ -350,4 +350,15 @@ export const rimworldApi = {
     });
   },
 
+  async setColonistsWorkPriorities (
+    workPriorities: { id: number; work: string; priority: number }[]
+  ): Promise<void> {
+    await request<void>('/colonists/work-priority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(workPriorities),
+    });
+  },
+
 };
+

@@ -6,6 +6,14 @@ import OverflowManagementModal from './OverflowManagementModal';
 import { useImageCache } from './ImageCacheContext';
 import { rimworldApi } from '../services/rimworldApi';
 import { useToast } from './ToastContext';
+import {
+    WORKTYPE_TO_SKILLS,
+    Assignment,
+    WorkTypeLite,
+    sortAssignmentsBySkill,
+    optimizeAllWorkTypes,
+    getRelevantSkillNamesForWorkType,
+} from '../services/rimworldWork';
 
 interface WorkTabProps {
     colonistsDetailed?: ColonistDetailed[];
@@ -13,19 +21,7 @@ interface WorkTabProps {
     selectedColonist?: ColonistDetailed; // For navigation from overview
 }
 
-type WorkType = {
-    id: string;
-    name: string;
-    icon: string;
-    category: string;
-};
-
-type Assignment = {
-    colonist: ColonistDetailed['colonist'];
-    priority: number;
-    skills: ColonistDetailed['colonist_work_info']['skills'];
-    detailed?: ColonistDetailed; // store reference for traits/other lookups
-};
+type WorkType = WorkTypeLite;
 
 const WORK_TYPES: WorkType[] = [
     { id: 'firefighter', name: 'Firefighter', icon: '🔥', category: 'defense' },
@@ -45,24 +41,6 @@ const WORK_TYPES: WorkType[] = [
     { id: 'hauling', name: 'Hauling', icon: '📦', category: 'logistics' },
     { id: 'cleaning', name: 'Cleaning', icon: '🧹', category: 'logistics' },
 ];
-
-// Work type -> relevant skill(s)
-// (easy to tweak later; hauling/cleaning/patient/firefighter have no direct skill in vanilla)
-const WORKTYPE_TO_SKILLS: Record<string, string[]> = {
-    doctor: ['Medicine'],
-    construction: ['Construction'],
-    mining: ['Mining'],
-    growing: ['Plants', 'Growing'], // support either key
-    cooking: ['Cooking'],
-    research: ['Intellectual'],
-    warden: ['Social'],
-    handling: ['Animals'],
-    crafting: ['Crafting'],
-    smithing: ['Crafting'],
-    tailoring: ['Crafting'],
-    art: ['Artistic'],
-    // firefighter/patient/hauling/cleaning: no skill
-};
 
 const LOW_SKILL_THRESHOLD = 3; // highlight when skill <= 3
 
@@ -226,47 +204,32 @@ const WorkTab: React.FC<WorkTabProps> = ({
 
     const handleOptimizeBySkills = async () => {
         if (!colonistsDetailed || colonistsDetailed.length === 0) return;
-        console.log('Optimizing work assignments by skills...');
 
-        const newAssignments = { ...assignments };
-        let changesCount = 0;
+        const workTypesLite: WorkTypeLite[] = WORK_TYPES.map(w => ({ id: w.id, name: w.name, icon: w.icon, category: w.category }));
 
-        for (const workTypeId of Object.keys(WORKTYPE_TO_SKILLS)) {
-            const relevantSkills = WORKTYPE_TO_SKILLS[workTypeId];
-            if (!relevantSkills.length) continue;
+        const getCurrentPriorityFor = (workTypeId: string, colonistId: number) => {
+            const arr = assignments[workTypeId] || [];
+            const found = arr.find(a => a.colonist.id === colonistId);
+            return found ? found.priority : 0;
+        };
 
-            // pick colonist with highest relevant skill
-            let bestColonist: ColonistDetailed | null = null;
-            let bestLevel = -1;
+        const { nextAssignments, changes } = await optimizeAllWorkTypes({
+            colonistsDetailed,
+            assignments,
+            workTypes: workTypesLite,
+            getCurrentPriorityFor,
+            setPriority: (colonistId, workName, priority) =>
+                rimworldApi.setColonistWorkPriority(colonistId, workName, priority),
+            setWorkPrioritiesBulk: rimworldApi.setColonistsWorkPriorities, // <-- Pass bulk function here
+        });
 
-            for (const cd of colonistsDetailed) {
-                const { skills } = cd.colonist_work_info;
-                const highestRelevant = skills
-                    .filter((s) => relevantSkills.includes(s.name))
-                    .reduce((max, s) => Math.max(max, s.level), -1);
+        setAssignments(nextAssignments);
 
-                if (highestRelevant > bestLevel) {
-                    bestLevel = highestRelevant;
-                    bestColonist = cd;
-                }
-            }
-
-            if (bestColonist) {
-                const c = bestColonist.colonist;
-
-                await rimworldApi.setColonistWorkPriority(c.id, workTypeId, 1);
-                changesCount++;
-            }
-        }
-
-        setAssignments(newAssignments);
-        console.log('Optimization by skills complete.');
-
-        addToast({
+        addToast?.({
             type: 'success',
-            title: `Optimization by skills complete`,
-            message: `Made ${changesCount} changes`,
-            duration: 3000
+            title: 'Optimization complete',
+            message: `Made ${changes} change${changes === 1 ? '' : 's'}`,
+            duration: 3000,
         });
     };
 
@@ -399,10 +362,6 @@ const WorkTab: React.FC<WorkTabProps> = ({
 
 // ---------- helpers ----------
 
-function getRelevantSkillNamesForWorkType(workTypeId: string): string[] {
-    return WORKTYPE_TO_SKILLS[workTypeId] || [];
-}
-
 function getSkillLevel(skills: SkillType[] | undefined, names: string[]): number | null {
     if (!skills || names.length === 0) return null;
     let best: number | null = null;
@@ -419,19 +378,6 @@ function isWorkTypeDisabledByTraits(_detailed: ColonistDetailed | undefined, _wo
     // Placeholder for future dev: inspect detailed.colonist_work_info.traits for incapabilities (e.g., "Incapable of Violence")
     // return true/false accordingly.
     return false;
-}
-
-function sortAssignmentsBySkill(list: Assignment[], workTypeId: string): Assignment[] {
-    const skills = getRelevantSkillNamesForWorkType(workTypeId);
-    if (skills.length === 0) return [...list]; // nothing to sort by
-    return [...list].sort((a, b) => {
-        const la = getSkillLevel(a.skills, skills);
-        const lb = getSkillLevel(b.skills, skills);
-        // nulls treated as worst
-        const va = la === null ? -1 : la;
-        const vb = lb === null ? -1 : lb;
-        return va - vb; // ascending -> least qualified first
-    });
 }
 
 // ---------- Work Type Card ----------
