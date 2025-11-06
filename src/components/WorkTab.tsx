@@ -50,15 +50,48 @@ const WorkTab: React.FC<WorkTabProps> = ({
     loading = false,
     selectedColonist
 }) => {
+
     const [assignments, setAssignments] = React.useState<Record<string, Assignment[]>>({});
     const [showOverflowModal, setShowOverflowModal] = React.useState(false);
-    const [selectedWorkType, setSelectedWorkType] = React.useState<WorkType | null>(null);
+    const [selectedWorkType, setSelectedWorkType] = React.useState<WorkTypeLite | null>(null);
     const [selectedColonists, setSelectedColonists] = React.useState<Assignment[]>([]);
-
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [workTypes, setWorkTypes] = React.useState<WorkTypeLite[]>([]);  // Added state for work types
 
     const { imageCache, fetchColonistImage } = useImageCache();
     const { addToast } = useToast();
+
+    // Fetch work types from the API
+    React.useEffect(() => {
+        const fetchWorkTypes = async () => {
+            try {
+                const workTypesFromApi = await rimworldApi.fetchWorkList();
+
+                // Map the work names from the API response to the WorkTypeLite structure with emoji and category
+                const workTypesWithDetails = workTypesFromApi.map(work => {
+                    const workType = WORK_TYPES.find(w => w.id.toLowerCase() == work.toLowerCase());
+                    return {
+                        id: work,
+                        name: work,
+                        icon: workType ? workType.icon : '⚙️', // Default icon if not found
+                        category: workType ? workType.category : 'general', // Default category if not found
+                    };
+                });
+
+                setWorkTypes(workTypesWithDetails);  // Update state with fetched work types
+            } catch (error) {
+                console.error("Failed to fetch work types:", error);
+                addToast({
+                    type: 'error',
+                    title: 'Error',
+                    message: 'Failed to fetch work types.',
+                    duration: 5000,
+                });
+            }
+        };
+
+        fetchWorkTypes();
+    }, [addToast]);
 
     const handleOverflowClick = (workType: WorkType, list: Assignment[]) => {
         setSelectedWorkType(workType);
@@ -71,12 +104,12 @@ const WorkTab: React.FC<WorkTabProps> = ({
         colonistsDetailed.forEach(cd => detailedById.set(cd.colonist.id, cd));
 
         const initial: Record<string, Assignment[]> = {};
-        WORK_TYPES.forEach(work => { initial[work.id] = []; });
+        workTypes.forEach(work => { initial[work.id] = []; });
 
         colonistsDetailed.forEach(cd => {
             cd.colonist_work_info.work_priorities.forEach(wp => {
                 if (wp.priority > 0) {
-                    const workType = WORK_TYPES.find(w => w.name === wp.work_type);
+                    const workType = workTypes.find(w => w.name === wp.work_type);
                     if (workType) {
                         initial[workType.id].push({
                             colonist: cd.colonist,
@@ -91,7 +124,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
         });
 
         setAssignments(initial);
-    }, [colonistsDetailed, fetchColonistImage]);
+    }, [colonistsDetailed, workTypes, fetchColonistImage]);
 
     // --- filtering helpers ---
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -112,39 +145,9 @@ const WorkTab: React.FC<WorkTabProps> = ({
         return { matchesCard, filtered };
     }, [normalizedQuery]);
 
-
-    // Initialize assignments from colonists data
-    React.useEffect(() => {
-        const detailedById = new Map<number, ColonistDetailed>();
-        colonistsDetailed.forEach(cd => detailedById.set(cd.colonist.id, cd));
-
-        const initial: Record<string, Assignment[]> = {};
-        WORK_TYPES.forEach(work => { initial[work.id] = []; });
-
-        colonistsDetailed.forEach(cd => {
-            cd.colonist_work_info.work_priorities.forEach(wp => {
-                if (wp.priority > 0) {
-                    const workType = WORK_TYPES.find(w => w.name === wp.work_type);
-                    if (workType) {
-                        initial[workType.id].push({
-                            colonist: cd.colonist,
-                            priority: wp.priority,
-                            skills: cd.colonist_work_info.skills,
-                            detailed: detailedById.get(cd.colonist.id),
-                        });
-                        // Warm the portrait cache in background
-                        fetchColonistImage?.(String(cd.colonist.id)).catch(() => void 0);
-                    }
-                }
-            });
-        });
-
-        setAssignments(initial);
-    }, [colonistsDetailed, fetchColonistImage]);
-
     const handlePriorityChange = async (workTypeId: string, colonistId: number, newPriority: number) => {
         // Determine the server-facing work name (falls back to id if not found)
-        const workName = WORK_TYPES.find(w => w.id === workTypeId)?.name ?? workTypeId;
+        const workName = workTypes.find(w => w.id === workTypeId)?.name ?? workTypeId;
 
         // --- optimistic update ---
         setAssignments(prev => {
@@ -208,7 +211,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
     const handleOptimizeBySkills = async () => {
         if (!colonistsDetailed || colonistsDetailed.length === 0) return;
 
-        const workTypesLite: WorkTypeLite[] = WORK_TYPES.map(w => ({
+        const workTypesLite: WorkTypeLite[] = workTypes.map(w => ({
             id: w.id,
             name: w.name,
             icon: w.icon,
@@ -279,7 +282,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
             <div className="work-tab-header">
                 <h3>⚙️ Work Priorities (🚧 Still Work In Progress)</h3>
                 <div className="work-stats">
-                    <span className="stat">{WORK_TYPES.length} Work Types</span>
+                    <span className="stat">{workTypes.length} Work Types</span>
                     <span className="stat">{Object.values(assignments).flat().length} Assignments</span>
                 </div>
             </div>
@@ -325,30 +328,27 @@ const WorkTab: React.FC<WorkTabProps> = ({
             </div>
 
             <div className="work-grid">
-                {WORK_TYPES
+                {workTypes
                     .sort((a, b) => a.name.localeCompare(b.name))
                     .map(workType => {
                         const list = (assignments[workType.id] || []);
                         const sorted = sortAssignmentsBySkill(list, workType.id);
-
-                        // apply search filtering to the sorted list
                         const { matchesCard, filtered } = filterAssignmentsForWork(sorted, workType.name);
-                        if (!matchesCard) return null;
 
-                        const isHighlighted = !!(selectedColonist &&
-                            list.some(a => a.colonist.id === selectedColonist.colonist.id));
+                        if (!matchesCard) return null;
 
                         return (
                             <WorkTypeCard
                                 key={workType.id}
                                 workType={workType}
-                                // PASS the filtered (and sorted) assignments
                                 assignments={filtered}
                                 onPriorityChange={handlePriorityChange}
                                 onAddColonist={handleAddColonist}
                                 onRemoveColonist={handleRemoveColonist}
                                 onOverflowClick={handleOverflowClick}
-                                isHighlighted={isHighlighted}
+                                isHighlighted={selectedColonist &&
+                                    list.some(a => a.colonist.id === selectedColonist.colonist.id)
+                                }
                                 imageCache={imageCache as Record<string, string | undefined>}
                                 fetchColonistImage={(id) => fetchColonistImage ? fetchColonistImage(String(id)) : Promise.resolve()}
                             />
@@ -415,7 +415,7 @@ const WorkTypeCard: React.FC<WorkTypeCardProps> = ({
     imageCache,
     fetchColonistImage
 }) => {
-    const maxColonists = 8; // 2x4 grid
+    const maxColonists = 9; // 2x4 grid
     const count = assignments.length;
 
     return (
@@ -498,7 +498,7 @@ const ColonistAssignmentCard: React.FC<ColonistAssignmentCardProps> = ({
     const level = getSkillLevel(assignment.skills, relevantSkills);
     const disabledByTrait = isWorkTypeDisabledByTraits(assignment.detailed, workTypeId);
 
-    const isLowSkill = (level ?? -1) <= LOW_SKILL_THRESHOLD && relevantSkills.length > 0 && !disabledByTrait;
+    const isLowSkill = (level ?? -1) < LOW_SKILL_THRESHOLD && relevantSkills.length > 0 && !disabledByTrait;
 
     React.useEffect(() => {
         if (!imageUrl && ensureImage) {
