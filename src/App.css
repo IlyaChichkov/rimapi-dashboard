@@ -76,3 +76,17 @@
 .scrollbar-container::-webkit-scrollbar-corner {
     background: transparent;
 }
+
+/* Buttons */
+
+.gray-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}

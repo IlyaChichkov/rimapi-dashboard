@@ -250,23 +250,11 @@
 }
 
 /* Action Buttons */
-.action-buttons {
-  display: flex;
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 4px;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  padding: 6px;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 .action-btn:hover {
