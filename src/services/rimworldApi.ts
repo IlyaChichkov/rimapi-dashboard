@@ -359,6 +359,11 @@ export const rimworldApi = {
     });
   },
 
+  async fetchColonistInventory (colonistId: number) {
+    const data = await getJson<{ items: any[] }>(`/colonist/inventory?id=${colonistId}`);
+    return data.items;  // Returning just the inventory items
+  },
+
   async fetchWorkList (): Promise<string[]> {
     const data = await getJson<{ work: string[] }>('/work-list');
     return data?.work || [];

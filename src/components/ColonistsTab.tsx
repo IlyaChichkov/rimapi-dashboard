@@ -60,7 +60,11 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                     />
                 );
             case 'inventory':
-                return <InventoryTab />;
+                return <InventoryTab
+                    colonistsDetailed={props.colonistsDetailed || []}
+                    selectedColonist={selectedColonist}
+                    setSelectedColonist={setSelectedColonist}
+                />;
             case 'analyze':
                 return <AnalyzeTabPlaceholder />;
             default:
