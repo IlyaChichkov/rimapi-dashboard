@@ -37,6 +37,16 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const [globalFilter, setGlobalFilter] = React.useState('');
     const { imageCache, fetchColonistImage } = useImageCache();
 
+    React.useEffect(() => {
+        colonistsDetailed.forEach(c => {
+            const id = c.colonist?.id;
+            if (id != null && !imageCache[id]) {
+                fetchColonistImage(String(id));
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colonistsDetailed, fetchColonistImage, imageCache]);
+
     interface FilterOption {
         value: string;
         label: string;
