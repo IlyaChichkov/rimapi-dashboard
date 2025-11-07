@@ -1,320 +1,372 @@
 // src/services/rimworldApi.ts
 import {
-  RimWorldData, GameState, Colonist, ResourceSummary,
-  CreaturesSummary, PowerInfo, DatetimeCategory, WeatherCategory,
+  RimWorldData,
+  GameState,
+  Colonist,
+  ResourceSummary,
+  CreaturesSummary,
+  PowerInfo,
+  DatetimeCategory,
+  WeatherCategory,
   ResearchProgress,
   ResearchFinished,
   ResearchSummary,
   ColonistDetailed,
   ModInfo,
-  ResourcesStoredResponse,
   ItemImageResponse,
   ResourcesData,
-  Position
-} from '../types';
+  Position,
+} from "../types";
 
-let API_BASE_URL = 'http://localhost:8765/api/v1';
+// -----------------------------
+// Config
+// -----------------------------
+let API_BASE_URL = "http://localhost:8765/api/v1";
 
 export const setApiBaseUrl = (url: string) => {
-  API_BASE_URL = url;
+  API_BASE_URL = url.replace(/\/+$/, ""); // trim trailing slash
 };
 
-export const getApiBaseUrl = () => {
-  return API_BASE_URL;
+export const getApiBaseUrl = () => API_BASE_URL;
+
+// -----------------------------
+// Fetch helpers
+// -----------------------------
+const DEFAULT_TIMEOUT_MS = 10_000;
+
+const withTimeout = (timeoutMs = DEFAULT_TIMEOUT_MS) => {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  return { signal: controller.signal, cancel: () => clearTimeout(id) };
 };
 
-const fetchApiPost = async <T>(endpoint: string, options: RequestInit = {}): Promise<T | null> => {
-  // For POST requests, use a simpler approach without Content-Type to avoid preflight
-  const fetchOptions: RequestInit = {
-    ...options,
-    headers: {
-      ...(options.method !== 'POST' ? { 'Content-Type': 'application/json' } : {}),
-      ...options.headers,
-    },
-    mode: 'cors', // Ensure CORS mode
-  };
+async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
+  const { signal, cancel } = withTimeout();
+  try {
+    const res = await fetch(`${API_BASE_URL}${endpoint}`, {
+      // Don’t set Content-Type by default to avoid POST preflight.
+      // Add only what you need explicitly via init.headers.
+      mode: "cors",
+      signal,
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+      },
+    });
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
-  console.log(`Fetch: ${API_BASE_URL}${endpoint}`, options.method || 'GET');
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  
-  // For POST requests that might not return JSON, check content type
-  const contentType = response.headers.get('content-type');
-  if (contentType && contentType.includes('application/json')) {
-    const data = await response.json();
-    console.log(`Data: `, data);
-    return data;
-  } else {
-    // For empty responses or non-JSON responses
-    console.log(`Response status: ${response.status}`);
-    return null;
-  }
-};
-
-const fetchApi = async <T>(endpoint: string): Promise<T | null> => {
-  const response = await fetch(`${API_BASE_URL}${endpoint}`,{
-    headers: {
-      
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} ${res.statusText} - ${text || "No body"}`);
     }
-  });
-  console.log(`Fetch: ${API_BASE_URL}${endpoint}`)
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  
-  var data = await response.json()
-  console.log(`Data: `, data)
-  return data;
-};
 
-const validateGameState = (data: any): GameState => {
-  if (!data) return {};
+    const ct = res.headers.get("content-type") || "";
+    if (ct.includes("application/json")) {
+      return (await res.json()) as T;
+    }
+
+    return undefined as T;
+  } finally {
+    cancel();
+  }
+}
+
+const getJson = <T>(endpoint: string) => request<T>(endpoint);
+const postNoBody = (endpoint: string) =>
+  request<void>(endpoint, { method: "POST" });
+
+// -----------------------------
+// Validators / normalizers
+// -----------------------------
+const ensureArray = <T>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
+
+const validateGameState = (data: unknown): GameState => {
+  const d = (data ?? {}) as Record<string, any>;
   return {
-    game_time: data.game_time || 'Unknown',
-    time_speed: data.time_speed || 'Unknown',
-    weather: data.weather || 'Unknown',
-    temperature: data.temperature || 0,
-    storyteller: data.storyteller || 'Unknown',
-    difficulty: data.difficulty || 'Unknown'
+    game_time: d.game_time ?? "Unknown",
+    time_speed: d.time_speed ?? "Unknown",
+    weather: d.weather ?? "Unknown",
+    temperature: d.temperature ?? 0,
+    storyteller: d.storyteller ?? "Unknown",
+    difficulty: d.difficulty ?? "Unknown",
   };
 };
 
-const validateColonists = (data: any): Colonist[] => {
-  if (!data) {
-    return [];
-  }
-  return data.filter((col: any) => col && col.id && col.name);
+const validateColonists = (data: unknown): Colonist[] => {
+  const arr = ensureArray<Colonist>(data);
+  return arr.filter((c: any) => c && c.id);
 };
 
-const validateColonistsDetailed = (data: any): ColonistDetailed[] => {
-  if (!data || !Array.isArray(data)) {
-    return [];
-  }
-  
-  return data.filter((col: any) => col && col.colonist && col.colonist_medical_info);
+const validateColonistsDetailed = (data: unknown): ColonistDetailed[] => {
+  const arr = ensureArray<ColonistDetailed>(data);
+  return arr.filter((c: any) => c && c.colonist && c.colonist_medical_info);
 };
 
-const validateModsInfo = (data: any): ModInfo[] => {
-  if (!data || !Array.isArray(data)) {
-    return [];
-  }
-  
-  return data.filter((mod: any) => mod && mod.name && mod.package_id);
+const validateModsInfo = (data: unknown): ModInfo[] => {
+  const arr = ensureArray<ModInfo>(data);
+  return arr.filter((m: any) => m && m.name && m.package_id);
 };
 
-const validateResources = (data: any): ResourceSummary => {
-  if (!data) return { categories: [] };
-  
-  const totalItems = data.total_items || data.totalItems || 0;
-  const totalMarketValue = data.total_market_value || data.totalMarketValue || 0;
-  
-  const categories = (data.categories || []).map((category: any) => ({
+const validateResources = (data: unknown): ResourceSummary => {
+  const d = (data ?? {}) as Record<string, any>;
+  const categories = ensureArray<any>(d.categories).map((category) => ({
     category: category.category,
-    count: category.count,
-    market_value: category.market_value || category.marketValue || 0
+    count: category.count ?? 0,
+    market_value: category.market_value ?? category.marketValue ?? 0,
   }));
 
   return {
-    total_items: totalItems,
-    total_market_value: totalMarketValue,
-    categories: categories
+    total_items: d.total_items ?? d.totalItems ?? 0,
+    total_market_value: d.total_market_value ?? d.totalMarketValue ?? 0,
+    categories,
   };
 };
 
-const validateCreatures = (data: any): CreaturesSummary => {
-  if (!data) return {};
+const validateCreatures = (data: unknown): CreaturesSummary => {
+  const d = (data ?? {}) as Record<string, any>;
   return {
-    colonists_count: data.colonists_count || data.colonistsCount || 0,
-    prisoners_count: data.prisoners_count || data.prisonersCount || 0,
-    enemies_count: data.enemies_count || data.enemiesCount || 0,
-    animals_count: data.animals_count || data.animalsCount || 0,
-    insectoids_count: data.insectoids_count || data.insectoidsCount || 0,
-    mechanoids_count: data.mechanoids_count || data.mechanoidsCount || 0
+    colonists_count: d.colonists_count ?? d.colonistsCount ?? 0,
+    prisoners_count: d.prisoners_count ?? d.prisonersCount ?? 0,
+    enemies_count: d.enemies_count ?? d.enemiesCount ?? 0,
+    animals_count: d.animals_count ?? d.animalsCount ?? 0,
+    insectoids_count: d.insectoids_count ?? d.insectoidsCount ?? 0,
+    mechanoids_count: d.mechanoids_count ?? d.mechanoidsCount ?? 0,
   };
 };
 
-const validatePower = (data: any): PowerInfo => {
-  if (!data) return {};
+const validatePower = (data: unknown): PowerInfo => {
+  const d = (data ?? {}) as Record<string, any>;
   return {
-    current_power: data.current_power || 0,
-    total_possible_power: data.total_possible_power || 0,
-    currently_stored_power: data.currently_stored_power || 0,
-    total_power_storage: data.total_power_storage || 0,
-    total_consumption: data.total_consumption || 0,
-    consumption_power_on: data.consumption_power_on || 0
+    current_power: d.current_power ?? 0,
+    total_possible_power: d.total_possible_power ?? 0,
+    currently_stored_power: d.currently_stored_power ?? 0,
+    total_power_storage: d.total_power_storage ?? 0,
+    total_consumption: d.total_consumption ?? 0,
+    consumption_power_on: d.consumption_power_on ?? 0,
   };
 };
 
-const validateResearchSummary = (data: any): ResearchSummary => {
+const validateResearchSummary = (data: unknown): ResearchSummary => {
+  const d = (data ?? {}) as Record<string, any>;
+  return {
+    finished_projects_count: d.finished_projects_count ?? 0,
+    total_projects_count: d.total_projects_count ?? 0,
+    available_projects_count: d.available_projects_count ?? 0,
+    by_tech_level: d.by_tech_level ?? {},
+    by_tab: d.by_tab ?? {},
+  };
+};
+
+const validateResearchProgress = (data: unknown): ResearchProgress => {
   if (!data) {
     return {
-      finished_projects_count: 0,
-      total_projects_count: 0,
-      available_projects_count: 0,
-      by_tech_level: {},
-      by_tab: {}
-    };
-  }
-  
-  return {
-    finished_projects_count: data.finished_projects_count || 0,
-    total_projects_count: data.total_projects_count || 0,
-    available_projects_count: data.available_projects_count || 0,
-    by_tech_level: data.by_tech_level || {},
-    by_tab: data.by_tab || {}
-  };
-};
-
-const validateResearchProgress = (data: any): ResearchProgress => {
-  if (!data) {
-    return {
-      name: 'None',
-      label: 'None',
+      name: "None",
+      label: "None",
       progress: 0,
       research_points: 0,
-      description: 'No active research',
+      description: "No active research",
       is_finished: false,
       can_start_now: false,
       player_has_any_appropriate_research_bench: false,
       required_analyzed_thing_count: 0,
       analyzed_things_completed: 0,
-      tech_level: 'Unknown',
-      prerequisites: data.prerequisites || [], // Handle null
-      hidden_prerequisites: data.hidden_prerequisites || [], // Handle null
-      required_by_this: data.required_by_this || [], // Handle null
-      progress_percent: 0
+      tech_level: "Unknown",
+      prerequisites: [],
+      hidden_prerequisites: [],
+      required_by_this: [],
+      progress_percent: 0,
     };
   }
-  
+
+  const d = data as Record<string, any>;
   return {
-    name: data.name || 'None',
-    label: data.label || 'None',
-    progress: data.progress || 0,
-    research_points: data.research_points || 0,
-    description: data.description || 'No description available',
-    is_finished: data.is_finished || false,
-    can_start_now: data.can_start_now || false,
-    player_has_any_appropriate_research_bench: data.player_has_any_appropriate_research_bench || false,
-    required_analyzed_thing_count: data.required_analyzed_thing_count || 0,
-    analyzed_things_completed: data.analyzed_things_completed || 0,
-    tech_level: data.tech_level || 'Unknown',
-    prerequisites: data.prerequisites || [], // Handle null
-    hidden_prerequisites: data.hidden_prerequisites || [], // Handle null
-    required_by_this: data.required_by_this || [], // Handle null
-    progress_percent: data.progress_percent || 0
+    name: d.name ?? "None",
+    label: d.label ?? "None",
+    progress: d.progress ?? 0,
+    research_points: d.research_points ?? 0,
+    description: d.description ?? "No description available",
+    is_finished: Boolean(d.is_finished),
+    can_start_now: Boolean(d.can_start_now),
+    player_has_any_appropriate_research_bench:
+      Boolean(d.player_has_any_appropriate_research_bench),
+    required_analyzed_thing_count: d.required_analyzed_thing_count ?? 0,
+    analyzed_things_completed: d.analyzed_things_completed ?? 0,
+    tech_level: d.tech_level ?? "Unknown",
+    prerequisites: d.prerequisites ?? [],
+    hidden_prerequisites: d.hidden_prerequisites ?? [],
+    required_by_this: d.required_by_this ?? [],
+    progress_percent: d.progress_percent ?? 0,
   };
 };
 
-const validateResearchFinished = (data: any): ResearchFinished => {
-  if (!data) return { finished_projects: [] };
-  return {
-    finished_projects: data.finished_projects || []
-  };
+const validateResearchFinished = (data: unknown): ResearchFinished => {
+  const d = (data ?? {}) as Record<string, any>;
+  return { finished_projects: d.finished_projects ?? [] };
 };
 
+// -----------------------------
+// High-level actions
+// -----------------------------
 export const selectItem = async (itemId: number, position: Position): Promise<void> => {
   try {
-    console.log('select item: ', position)
-    await fetchApiPost(`/deselect?type=all`, { method: 'POST' });
-    await fetchApiPost(`/select?type=item&id=${itemId}`, { method: 'POST' });
-
-    await fetchApiPost(`/camera/change/position?x=${position.x}&y=${position.z}`, { method: 'POST' });
-    await fetchApiPost(`/camera/change/zoom?zoom=20`, { method: 'POST' });
-  } catch (error) {
-    console.error('Failed to navigate to colonist:', error);
-    throw error;
+    await postNoBody(`/deselect?type=all`);
+    await postNoBody(`/select?type=item&id=${itemId}`);
+    // RimWorld uses X/Z plane; API expects x & y where y is Z.
+    await postNoBody(`/camera/change/position?x=${position.x}&y=${position.z}`);
+    await postNoBody(`/camera/change/zoom?zoom=18`);
+  } catch (err) {
+    console.error("Failed to select item:", err);
+    throw err;
   }
 };
 
-export const selectAndViewColonist = async (colonistId: number, colonistName: string): Promise<void> => {
+export const selectAndViewColonist = async (
+  colonistId: number,
+  _colonistName: string, // kept for API compatibility
+): Promise<void> => {
   try {
-    // First, get the colonist's current position
-    const colonistData = await fetchApi<{ position: { x: number; y: number, z: number } }>(`/colonist?id=${colonistId}&fields=position`);
-    
-    if (!colonistData || !colonistData.position) {
-      throw new Error('Failed to get colonist position');
+    const colonistData = await getJson<{ position?: { x: number; y: number; z: number } }>(
+      `/colonist?id=${colonistId}&fields=position`,
+    );
+
+    if (!colonistData?.position) {
+      throw new Error("Failed to get colonist position");
     }
 
-    await fetchApiPost(`/deselect?type=all`, { method: 'POST' });
-    
-    // Select the colonist
-    await fetchApiPost(`/select?type=pawn&id=${colonistId}`, { method: 'POST' });
-    
-    // Move camera to colonist position
-    await fetchApiPost(`/camera/change/position?x=${colonistData.position.x}&y=${colonistData.position.z}`, { method: 'POST' });
-    
-    // Change camera zoom to close level
-    await fetchApiPost(`/camera/change/zoom?zoom=8`, { method: 'POST' });
-    await fetchApiPost(`/open-tab?type=health`, { method: 'POST' });
-    
-    console.log(`Navigated to colonist ${colonistName} at position (${colonistData.position.x}, ${colonistData.position.z})`);
-  } catch (error) {
-    console.error('Failed to navigate to colonist:', error);
-    throw error;
+    await postNoBody(`/deselect?type=all`);
+    await postNoBody(`/select?type=pawn&id=${colonistId}`);
+    await postNoBody(`/camera/change/zoom?zoom=14`);
+    await postNoBody(
+      `/camera/change/position?x=${colonistData.position.x}&y=${colonistData.position.z}`,
+    );
+    await postNoBody(`/open-tab?type=health`);
+  } catch (err) {
+    console.error("Failed to navigate to colonist:", err);
+    throw err;
   }
 };
 
+// -----------------------------
+// Aggregated fetch
+// -----------------------------
 export const fetchRimWorldData = async (): Promise<RimWorldData> => {
   const timestamp = Date.now();
 
   const [
     gameState,
-    colonistsData,
-    colonistsDetailed,
-    resources,
-    creatures,
-    power,
+    colonistsResp,
+    colonistsDetailedRaw,
+    resourcesRaw,
+    creaturesRaw,
+    powerRaw,
     map_datetime,
     weather,
-    researchProgress,
-    researchFinished,
-    researchSummary,
-    modsInfo,
+    researchProgressRaw,
+    researchFinishedRaw,
+    researchSummaryRaw,
+    modsInfoRaw,
   ] = await Promise.all([
-    fetchApi<GameState>('/game/state'),
-    fetchApi<{ colonists: Colonist[] }>('/colonists?fields=id,name,gender,age,health,mood'),
-    fetchApi<ColonistDetailed[]>('/colonists/detailed'),
-    fetchApi<ResourceSummary>('/resources/summary?map_id=0'),
-    fetchApi<CreaturesSummary>('/map/creatures/summary?map_id=0'),
-    fetchApi<PowerInfo>(`/map/power/info?map_id=0&_=${timestamp}`),
-    fetchApi<DatetimeCategory>('/datetime?at=current_map'),
-    fetchApi<WeatherCategory>('/map/weather?map_id=0'),
-    fetchApi<ResearchProgress>('/research/progress'),
-    fetchApi<ResearchFinished>('/research/finished'),
-    fetchApi<ResearchSummary>('/research/summary'),
-    fetchApi<ModInfo[]>('/mods/info')
+    getJson<GameState>("/game/state"),
+    getJson<Colonist[]>("/colonists?fields=id,name,gender,age,health,mood"),
+    getJson<ColonistDetailed[]>("/colonists/detailed"),
+    getJson<ResourceSummary>("/resources/summary?map_id=0"),
+    getJson<CreaturesSummary>("/map/creatures/summary?map_id=0"),
+    getJson<PowerInfo>(`/map/power/info?map_id=0&_=${timestamp}`),
+    getJson<DatetimeCategory>("/datetime?at=current_map"),
+    getJson<WeatherCategory>("/map/weather?map_id=0"),
+    getJson<ResearchProgress>("/research/progress"),
+    getJson<ResearchFinished>("/research/finished"),
+    getJson<ResearchSummary>("/research/summary"),
+    getJson<ModInfo[]>("/mods/info"),
   ]);
 
   return {
     gameState: validateGameState(gameState),
-    colonists: validateColonists(colonistsData),
-    colonistsDetailed: validateColonistsDetailed(colonistsDetailed),
-    resources: validateResources(resources),
-    creatures: validateCreatures(creatures),
-    power: validatePower(power),
-    map_datetime: map_datetime,
-    weather: weather,
-    researchProgress: validateResearchProgress(researchProgress),
-    researchFinished: validateResearchFinished(researchFinished),
-    researchSummary: validateResearchSummary(researchSummary),
-    modsInfo: validateModsInfo(modsInfo),
+    colonists: colonistsResp,
+    colonistsDetailed: validateColonistsDetailed(colonistsDetailedRaw),
+    resources: validateResources(resourcesRaw),
+    creatures: validateCreatures(creaturesRaw),
+    power: validatePower(powerRaw),
+    map_datetime,
+    weather,
+    researchProgress: validateResearchProgress(researchProgressRaw),
+    researchFinished: validateResearchFinished(researchFinishedRaw),
+    researchSummary: validateResearchSummary(researchSummaryRaw),
+    modsInfo: validateModsInfo(modsInfoRaw),
   };
 };
 
-
+// -----------------------------
+// Thin endpoint wrappers
+// -----------------------------
 export const rimworldApi = {
-  
-  getResourcesStored: async (mapId: number = 0): Promise<ResourcesData> => {
-    const data = await fetchApi<ResourcesData>(`/resources/stored?map_id=${mapId}`)
+  async getResourcesStored(mapId: number = 0): Promise<ResourcesData> {
+    const data = await getJson<ResourcesData>(`/resources/stored?map_id=${mapId}`);
     return data as ResourcesData;
   },
 
-  getItemImage: async (defName: string): Promise<ItemImageResponse> => {
-    const data = await fetchApi<ItemImageResponse>(`/item/image?name=${encodeURIComponent(defName)}`)
+  async getItemImage(defName: string): Promise<ItemImageResponse> {
+    const name = encodeURIComponent(defName);
+    const data = await getJson<ItemImageResponse>(`/item/image?name=${name}`);
     return data as ItemImageResponse;
   },
+
+  async getPawns(): Promise<Colonist[]> {
+    const response = await getJson<{ colonists: Colonist[] }>(
+      "/colonists?fields=id,name,gender,age",
+    );
+    return validateColonists(response);
+  },
+
+  // Placeholder for future backend call
+  async getItemDetails(_itemId: string, _pawnId: string): Promise<{ success: boolean }> {
+    return { success: true };
+  },
+
+  async assignItemToPawn(
+    itemId: string,
+    itemType: string,
+    pawnId: string,
+  ): Promise<{ success: boolean }> {
+    await postNoBody(
+      `/jobs/make/equip?item_type=${encodeURIComponent(itemType)}&map_id=0&pawn_id=${encodeURIComponent(
+        pawnId,
+      )}&item_id=${encodeURIComponent(itemId)}`,
+    );
+    return { success: true };
+  },
+
+  async getPawnPortraitImage(pawnId: string): Promise<ItemImageResponse> {
+    const data = await getJson<ItemImageResponse>(
+      `/pawn/portrait/image?pawn_id=${encodeURIComponent(pawnId)}&width=64&height=64&direction=south`,
+    );
+    return data as ItemImageResponse;
+  },
+  
+  async setColonistWorkPriority(id: number, work: string, priority: number): Promise<void> {
+    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
+    await request<void>(`/colonist/work-priority?id=${id}&work=${capitalize(work)}&priority=${priority}`, {
+      method: "POST",
+    });
+  },
+
+  async setColonistsWorkPriorities (
+    workPriorities: { id: number; work: string; priority: number }[]
+  ): Promise<void> {
+    await request<void>('/colonists/work-priority', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(workPriorities),
+    });
+  },
+
+  async fetchColonistInventory (colonistId: number) {
+    const data = await getJson<{ items: any[] }>(`/colonist/inventory?id=${colonistId}`);
+    return data.items;  // Returning just the inventory items
+  },
+
+  async fetchWorkList (): Promise<string[]> {
+    const data = await getJson<{ work: string[] }>('/work-list');
+    return data?.work || [];
+  },
 };
+

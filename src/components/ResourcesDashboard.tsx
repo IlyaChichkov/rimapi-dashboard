@@ -1,8 +1,10 @@
 // src/components/ResourcesDashboard.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { rimworldApi, selectItem } from '../services/rimworldApi';
-import { ResourcesData, ResourceItem } from '../types';
+import { ResourcesData, ResourceItem, Colonist } from '../types';
 import './ResourcesDashboard.css';
+import { useToast } from './ToastContext';
+import { useImageCache } from './ImageCacheContext';
 
 interface SortOption {
     field: 'name' | 'amount' | 'value' | 'quality' | 'hitPoints' | 'category' | 'type';
@@ -51,7 +53,6 @@ interface ResourceGroup {
     filteredHasDurability?: boolean;
 }
 
-
 const cleanResourceName = (name: string): string => {
     // Remove patterns like " x75", " x100", etc. (quantity indicators)
     let cleaned = name.replace(/\s*x\d+\s*$/, '');
@@ -74,7 +75,14 @@ export const ResourcesDashboard: React.FC = () => {
     const [resourcesData, setResourcesData] = useState<ResourcesData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [imageCache, setImageCache] = useState<Record<string, string>>({});
+
+    const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
+    const [assignModalOpen, setAssignModalOpen] = useState<boolean>(false);
+    const [selectedItem, setSelectedItem] = useState<ResourceItem | null>(null);
+    const [pawns, setPawns] = useState<Colonist[]>([]);
+    const [loadingPawns, setLoadingPawns] = useState<boolean>(false);
+
+    const { addToast } = useToast();
 
     // State management
     const [sortOption, setSortOption] = useState<SortOption>({ field: 'name', direction: 'asc' });
@@ -93,6 +101,12 @@ export const ResourcesDashboard: React.FC = () => {
         showAll: false
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    const {
+        getItemImage,
+        fetchItemImage,
+        preloadItemImages
+    } = useImageCache();
 
     // New grouping state
     const [groupItems, setGroupItems] = useState<boolean>(true);
@@ -118,7 +132,7 @@ export const ResourcesDashboard: React.FC = () => {
     ];
 
     // Available quality options
-    const qualityOptions = ['awful', 'poor', 'normal', 'good', 'excellent', 'masterwork', 'legendary'];
+    const qualityOptions = ['awful', 'poor', 'normal', 'good', 'excellent', 'masterwork', 'legendary', 'none'];
 
     // Fetch resources data
     const fetchResources = async () => {
@@ -135,22 +149,86 @@ export const ResourcesDashboard: React.FC = () => {
         }
     };
 
-    // Fetch item image
-    const fetchItemImage = async (defName: string) => {
-        if (imageCache[defName]) return;
+    useEffect(() => {
+        const fetchPawnsForModal = async () => {
+            if (assignModalOpen && selectedItem) {
+                setLoadingPawns(true);
+                try {
+                    const colonistsDetailed = await rimworldApi.getPawns();
+                    setPawns(colonistsDetailed);
+                } catch (error) {
+                    console.error('Failed to fetch colonists:', error);
+                } finally {
+                    setLoadingPawns(false);
+                }
+            }
+        };
+
+        fetchPawnsForModal();
+    }, [assignModalOpen, selectedItem]);
+
+    const handleAssignToPawn = async (pawnId: string) => {
+        if (!selectedItem) return;
 
         try {
-            const imageData = await rimworldApi.getItemImage(defName);
-            if (imageData.result === 'Success' && imageData.image_base64) {
-                setImageCache(prev => ({
-                    ...prev,
-                    [defName]: `data:image/png;base64,${imageData.image_base64}`
-                }));
+            const assignableCategories: { [key: string]: string[] } = {
+                'weapon': ['weapon'],
+                'apparel': ['apparel', 'armor', 'headgear', 'gear']
+            };
+
+            const itemCategory = Object.keys(assignableCategories).find(category =>
+                selectedItem.categories?.some(itemCat =>
+                    assignableCategories[category].some(validCat =>
+                        itemCat.toLowerCase().includes(validCat.toLowerCase())
+                    )
+                )
+            );
+
+            const result = await rimworldApi.assignItemToPawn(
+                selectedItem.thing_id.toString(),
+                itemCategory ?? "none",
+                pawnId
+            );
+            if (result.success) {
+                setAssignModalOpen(false);
+                setSelectedItem(null);
+                fetchResources();
+
+                addToast({
+                    type: 'success',
+                    title: `Done`,
+                    message: `Assigned equip ${itemCategory} job to pawn`,
+                    duration: 3000
+                });
             }
-        } catch (err) {
-            console.warn(`Failed to fetch image for ${defName}:`, err);
+        } catch (error) {
+            setAssignModalOpen(false);
+            setSelectedItem(null);
+
+            addToast({
+                type: 'error',
+                title: 'Failed to assign item',
+                message: error instanceof Error ? error.message : 'Unknown error occurred',
+                duration: 5000
+            });
         }
     };
+
+    const handleCloseModal = () => {
+        setAssignModalOpen(false);
+        setSelectedItem(null);
+    };
+
+    // Add click outside handler for context menu
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setContextMenuOpen(null);
+        };
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, []);
+
 
     // Process and aggregate resource data
     const allResources = useMemo(() => {
@@ -169,6 +247,32 @@ export const ResourcesDashboard: React.FC = () => {
         });
         return resources;
     }, [resourcesData]);
+    useEffect(() => {
+        if (resourcesData) {
+            const allItems = Object.values(resourcesData).flat();
+            const missingItem = allItems.find(item => item && item.def_name === "VFEP_WarcasketGun_Autorifle");
+
+            if (missingItem) {
+                console.log('Found missing item:', missingItem);
+                console.log('Quality:', missingItem.quality, 'Label:', getQualityLabel(missingItem.quality));
+                console.log('Categories:', missingItem.categories);
+
+                // Check if it passes filters
+                const passesQuality = filters.qualities.length === 0 ||
+                    (missingItem.quality !== null && missingItem.quality !== undefined &&
+                        filters.qualities.includes(getQualityLabel(missingItem.quality)));
+
+                const passesCategory = filters.categories.length === 0 ||
+                    (missingItem.categories && missingItem.categories.some(cat => filters.categories.includes(cat)));
+
+                console.log('Passes quality filter:', passesQuality);
+                console.log('Passes category filter:', passesCategory);
+                console.log('Current filters:', filters);
+            } else {
+                console.log('Item not found in raw data');
+            }
+        }
+    }, [resourcesData, filters]);
 
     // Group items by def_name - only groups with more than 1 item
     const groupedResources = useMemo((): ResourceGroup[] => {
@@ -206,15 +310,20 @@ export const ResourcesDashboard: React.FC = () => {
             }
         });
 
-        // Only return groups that have more than one item OR multiple stacks of the same item
-        return Object.values(groups).filter(group =>
-            group.items.length > 1 || group.totalCount > group.items[0].stack_count
-        );
+        return Object.values(groups).filter(group => {
+            const hasMultipleInstances = group.items.length > 1;
+            return hasMultipleInstances;
+        });
+
     }, [allResources]);
+
 
     // Helper function for quality sorting
     const getQualityLabel = (quality: number | null): string => {
+        if (quality === null || quality === undefined) return 'none';
+
         const qualityValues: Record<number, string> = {
+            [-1]: 'awful', // no quality item
             0: 'awful',
             1: 'poor',
             2: 'normal',
@@ -223,7 +332,9 @@ export const ResourcesDashboard: React.FC = () => {
             5: 'masterwork',
             6: 'legendary'
         };
-        return quality ? qualityValues[quality] : 'none';
+
+        const label = qualityValues[quality];
+        return label && (label.toLowerCase() || 'none');
     };
 
     // Filter resources (individual items)
@@ -241,19 +352,21 @@ export const ResourcesDashboard: React.FC = () => {
 
         // Category filter
         if (filters.categories.length > 0) {
-            filtered = filtered.filter(resource =>
-                filters.categories.includes(resource.category)
-            );
+            filtered = filtered.filter(resource => {
+                if (!resource.categories || !Array.isArray(resource.categories)) return false;
+                return resource.categories.some(category => filters.categories.includes(category));
+            });
         }
 
         // Quality filter
         if (filters.qualities.length > 0) {
             filtered = filtered.filter(resource => {
-                if (!resource.quality) return false;
+                if (resource.quality === null || resource.quality === undefined) return false;
                 const qualityLabel = getQualityLabel(resource.quality);
-                return qualityLabel && filters.qualities.includes(qualityLabel.toLowerCase());
+                return qualityLabel && qualityLabel !== 'none' && filters.qualities.includes(qualityLabel);
             });
         }
+
 
         // Amount filter
         filtered = filtered.filter(resource =>
@@ -675,7 +788,7 @@ export const ResourcesDashboard: React.FC = () => {
                 totalValue: resource.market_value * resource.stack_count
             }));
         }
-    }, [groupItems, filteredGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
+    }, [groupItems, sortedGroups, filteredGroups, sortedResources, allResources, groupedResources, sortOption, filters]);
 
     // Paginate display data
     const displayedData = useMemo(() => {
@@ -825,36 +938,35 @@ export const ResourcesDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Image loading effect
+    // Fetch item image
     useEffect(() => {
-        let isMounted = true;
+        if (displayedData.length === 0) return;
 
-        if (displayedData.length > 0 && isMounted) {
-            const defNamesToLoad = new Set<string>();
+        const defNamesToLoad: string[] = [];
 
-            displayedData.forEach(item => {
-                if (item.type === 'group') {
-                    const group = item.data as ResourceGroup;
-                    if (!imageCache[group.def_name] && !group.category.includes("corpses")) {
-                        defNamesToLoad.add(group.def_name);
-                    }
-                } else {
-                    const resource = item.data as ResourceItem & { category: string };
-                    if (!imageCache[resource.def_name] && !resource.category.includes("corpses")) {
-                        defNamesToLoad.add(resource.def_name);
-                    }
-                }
-            });
+        displayedData.forEach(item => {
+            const { def_name, category } = item.type === 'group'
+                ? item.data as ResourceGroup
+                : item.data as ResourceItem & { category: string };
 
-            defNamesToLoad.forEach(defName => {
-                fetchItemImage(defName);
-            });
+            if (!getItemImage(def_name) && !category.includes("corpses")) {
+                defNamesToLoad.push(def_name);
+            }
+        });
+
+        if (defNamesToLoad.length > 0) {
+            preloadItemImages(defNamesToLoad);
         }
+    }, [displayedData, getItemImage, preloadItemImages]);
 
-        return () => {
-            isMounted = false;
+    useEffect(() => {
+        const handleClickOutside = () => {
+            setContextMenuOpen(null);
         };
-    }, [displayedData, imageCache]);
+
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
+    }, [setContextMenuOpen]);
 
     if (error) {
         return (
@@ -1089,7 +1201,7 @@ export const ResourcesDashboard: React.FC = () => {
                             <GroupCard
                                 key={`group-${group.def_name}-${index}`}
                                 group={group}
-                                imageUrl={imageCache[group.def_name]}
+                                imageUrl={getItemImage(group.def_name)}
                                 categoryInfo={resourceCategories.find(cat => cat.key === group.category)}
                                 onClick={() => handleGroupClick(group.def_name)}
                                 isExpanded={expandedGroup === group.def_name}
@@ -1101,8 +1213,12 @@ export const ResourcesDashboard: React.FC = () => {
                             <ResourceCard
                                 key={`individual-${resource.thing_id}-${index}`}
                                 resource={resource}
-                                imageUrl={imageCache[resource.def_name]}
+                                imageUrl={getItemImage(resource.def_name)}
                                 categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
+                                contextMenuOpen={contextMenuOpen}
+                                setContextMenuOpen={setContextMenuOpen}
+                                setSelectedItem={setSelectedItem}
+                                setAssignModalOpen={setAssignModalOpen}
                             />
                         );
                     }
@@ -1178,6 +1294,16 @@ export const ResourcesDashboard: React.FC = () => {
             >
                 {loading ? '🔄' : '🔄'} Refresh
             </button>
+
+            {/* Assign Modal */}
+            <AssignToPawnModal
+                isOpen={assignModalOpen}
+                onClose={handleCloseModal}
+                item={selectedItem}
+                pawns={pawns}
+                loading={loadingPawns}
+                onAssign={handleAssignToPawn}
+            />
         </div>
     );
 };
@@ -1241,11 +1367,17 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
     };
 
     const quality = resource.quality;
+    const qualityLabel = getQualityLabel(quality);
 
-    if (quality === null || quality === undefined || !getQualityLabel(quality)) {
+    const shouldShowQuality = quality !== null &&
+        quality !== undefined &&
+        qualityLabel !== null &&
+        qualityLabel !== 'none';
+
+    if (!shouldShowQuality) {
         return (
             <div className="empty-quality-badge"></div>
-        )
+        );
     }
 
     return (
@@ -1260,13 +1392,56 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
 // Resource Card Component
 interface ResourceCardProps {
     resource: ResourceItem & { category: string };
-    imageUrl?: string;
+    imageUrl?: string | null;
     categoryInfo?: ResourceCategory;
+    contextMenuOpen: string | null;
+    setContextMenuOpen: (id: string | null) => void;
+    setSelectedItem: (item: ResourceItem | null) => void;
+    setAssignModalOpen: (open: boolean) => void;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categoryInfo }) => {
+const ResourceCard: React.FC<ResourceCardProps> = ({
+    resource,
+    imageUrl,
+    categoryInfo,
+    contextMenuOpen,
+    setContextMenuOpen,
+    setSelectedItem,
+    setAssignModalOpen
+}) => {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
+
+    const { addToast } = useToast();
+
+    // Get the context menu state
+    const isContextMenuOpen = contextMenuOpen === resource.thing_id.toString();
+
+    const handleCardClick = (e: React.MouseEvent) => {
+        console.log('Card clicked, current state:', isContextMenuOpen);
+        e.stopPropagation(); // Prevent event from bubbling up
+        if (isContextMenuOpen) {
+            setContextMenuOpen(null);
+        } else {
+            setContextMenuOpen(resource.thing_id.toString());
+        }
+    };
+
+    const handleAssign = () => {
+        setSelectedItem(resource);
+        setAssignModalOpen(true);
+        setContextMenuOpen(null);
+    };
+
+    const handleDetails = () => {
+        // Placeholder for details modal
+        console.log('Show details for:', resource.thing_id);
+        setContextMenuOpen(null);
+    };
+
+    const handleCloseContextMenu = () => {
+        setContextMenuOpen(null);
+    };
 
     const getDurabilityPercent = () => {
         if (resource.max_hit_points === 0) return 100;
@@ -1282,11 +1457,33 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
         durabilityPercent > 25 ? '#f08c00' : '#e03131';
 
     return (
-        <div className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''}`}>
+        <div
+            className={`resource-card ${resource.is_forbidden ? 'forbidden' : ''} ${isContextMenuOpen ? 'context-menu-open' : ''}`}
+            onClick={handleCardClick}
+        >
             {/* View Action Button */}
             <button
                 className="view-action-btn"
-                onClick={() => selectItem(resource.thing_id, resource.position)}
+                onClick={(e) => {
+                    e.stopPropagation();
+
+                    try {
+                        selectItem(resource.thing_id, resource.position)
+                        addToast({
+                            type: 'success',
+                            title: `Done`,
+                            message: `Focused camera view on item: ${resource.label}`,
+                            duration: 3000
+                        });
+                    } catch (error) {
+                        addToast({
+                            type: 'error',
+                            title: 'Failed to assign item',
+                            message: error instanceof Error ? error.message : 'Unknown error occurred',
+                            duration: 5000
+                        });
+                    }
+                }}
                 title="View item details"
             >
                 👁️
@@ -1361,14 +1558,23 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, imageUrl, categor
                     </button>
                 )}
             </div>
-        </div>
+
+            {/* Context Menu */}
+            <CardContextMenu
+                item={resource}
+                isOpen={isContextMenuOpen}
+                onClose={handleCloseContextMenu}
+                onAssign={handleAssign}
+                onDetails={handleDetails}
+            />
+        </div >
     );
 };
 
 // Group Card Component
 interface GroupCardProps {
     group: ResourceGroup;
-    imageUrl?: string;
+    imageUrl?: string | null;
     categoryInfo?: ResourceCategory;
     onClick: () => void;
     isExpanded: boolean;
@@ -1450,5 +1656,202 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, imageUrl, categoryInfo, on
     );
 };
 
+interface CardContextMenuProps {
+    item: ResourceItem & { category: string };
+    isOpen: boolean;
+    onClose: () => void;
+    onAssign: () => void;
+    onDetails: () => void;
+}
+
+const CardContextMenu: React.FC<CardContextMenuProps> = ({
+    item,
+    isOpen,
+    onClose,
+    onAssign,
+    onDetails
+}) => {
+    const assignableCategories = ['weapon', 'apparel', 'armor', 'headgear', 'gear'];
+    const isAssignable = assignableCategories.some(category =>
+        item.category.includes(category)
+    );
+
+    return (
+        <div
+            className={`card-context-menu ${isOpen ? 'open' : ''}`}
+            onClick={onClose}
+        >
+            <div className="context-menu-header">
+                <h4 className="context-item-name">{item.label}</h4>
+                <button className="context-close-btn" onClick={onClose}>×</button>
+            </div>
+
+            <div className="context-menu-actions">
+                {isAssignable && (
+                    <button className="context-action-btn assign-btn" onClick={onAssign}>
+                        Equip
+                    </button>
+                )}
+                {/*<button className="context-action-btn details-btn" onClick={onDetails}>
+                    ℹ️ Details
+                </button>*/}
+            </div>
+        </div>
+    );
+};
+
+
+interface AssignToPawnModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    item: ResourceItem | null;
+    pawns: Colonist[];
+    loading: boolean;
+    onAssign: (pawnId: string) => void;
+}
+
+const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
+    isOpen,
+    onClose,
+    item,
+    pawns,
+    loading,
+    onAssign
+}) => {
+    const { imageCache, fetchColonistImage } = useImageCache();
+    const [searchTerm, setSearchTerm] = React.useState('');
+
+    const sortedPawns = [...pawns].sort((a, b) =>
+        a.name.localeCompare(b.name)
+    );
+
+    // Filter pawns based on search term
+    const filteredPawns = sortedPawns.filter(pawn =>
+        pawn.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pawn.gender.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        pawn.age.toString().includes(searchTerm)
+    );
+
+    React.useEffect(() => {
+        if (isOpen && !loading) {
+            sortedPawns.forEach(pawn => {
+                fetchColonistImage(pawn.id.toString());
+            });
+        }
+    }, [isOpen, loading, sortedPawns, fetchColonistImage]);
+
+    // Clear search when modal closes
+    React.useEffect(() => {
+        if (!isOpen) {
+            setSearchTerm('');
+        }
+    }, [isOpen]);
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="assign-modal-overlay" onClick={onClose}>
+            <div className="assign-modal-content" onClick={(e) => e.stopPropagation()}>
+                <div className="assign-modal-header">
+                    <h3>Assign {item?.label} to Colonist</h3>
+                    <button className="assign-modal-close-btn" onClick={onClose}>×</button>
+                </div>
+
+                <div className="assign-modal-body scrollbar-container">
+                    {/* Search Bar */}
+                    <div className="assign-search-container">
+                        <div className="assign-search-bar">
+                            <input
+                                type="text"
+                                placeholder="Search colonists by name, age, or gender..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="assign-search-input"
+                            />
+                            <span className="assign-search-icon">🔍</span>
+                            {searchTerm && (
+                                <button
+                                    className="assign-clear-search-btn"
+                                    onClick={() => setSearchTerm('')}
+                                    title="Clear search"
+                                >
+                                    ×
+                                </button>
+                            )}
+                        </div>
+                        <div className="assign-search-results-info">
+                            {searchTerm && (
+                                <span>
+                                    Showing {filteredPawns.length} of {sortedPawns.length} colonists
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    {loading ? (
+                        <div className="assign-loading-pawns">Loading colonists...</div>
+                    ) : (
+                        <div className="assign-pawns-container">
+                            {filteredPawns.length === 0 ? (
+                                <div className="assign-no-results">
+                                    <div className="assign-no-results-icon">🔍</div>
+                                    <p>No colonists found matching "{searchTerm}"</p>
+                                    <button
+                                        className="assign-clear-search-btn large"
+                                        onClick={() => setSearchTerm('')}
+                                    >
+                                        Clear search
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="assign-pawns-grid">
+                                    {filteredPawns.map(pawn => {
+                                        const colonistId = pawn.id.toString();
+                                        const imageUrl = imageCache[colonistId];
+
+                                        return (
+                                            <div key={pawn.id} className="assign-pawn-card">
+                                                <div className="assign-pawn-avatar">
+                                                    {imageUrl ? (
+                                                        <img
+                                                            src={imageUrl}
+                                                            alt={pawn.name}
+                                                            className="assign-pawn-portrait"
+                                                            onError={(e) => {
+                                                                // Fallback if image fails to load
+                                                                e.currentTarget.style.display = 'none';
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="assign-pawn-placeholder">
+                                                            {pawn.name.charAt(0).toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="assign-pawn-info">
+                                                    <div className="assign-pawn-name">{pawn.name}</div>
+                                                    <div className="assign-pawn-details">
+                                                        <span className="assign-pawn-age">{pawn.age}</span>
+                                                        <span className="assign-pawn-gender">{pawn.gender}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="assign-pawn-action-btn"
+                                                    onClick={() => onAssign(colonistId)}
+                                                >
+                                                    Assign
+                                                </button>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default ResourcesDashboard;

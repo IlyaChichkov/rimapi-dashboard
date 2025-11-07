@@ -1,0 +1,1038 @@
+/* src/components/InventoryTab.css */
+:root {
+  --primary-color: #4dabf7;
+  --primary-dark: #3b99e0;
+  --bg-primary: #1e1e1e;
+  --bg-secondary: #2d2d2d;
+  --bg-tertiary: #3a3a3a;
+  --text-primary: #ffffff;
+  --text-secondary: #b0b0b0;
+  --text-muted: #888888;
+  --border-color: #404040;
+  --border-light: #4a4a4a;
+  --success-color: #51cf66;
+  --warning-color: #fcc419;
+  --danger-color: #ff6b6b;
+  --rarity-awful: #8c8c8c;
+  --rarity-poor: #69a5ff;
+  --rarity-normal: #51cf66;
+  --rarity-good: #37b24d;
+  --rarity-excellent: #339af0;
+  --rarity-masterwork: #9c36b5;
+  --rarity-legendary: #f59f00;
+  --border-radius: 12px;
+  --border-radius-sm: 8px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --transition: all 0.3s ease;
+}
+
+.inventory-tab {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  min-height: 80vh;
+  gap: 1.5rem;
+}
+
+.inventory-tab-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.inventory-tab-header h3 {
+  color: var(--primary-color);
+  font-size: 1.5rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.inventory-summary {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.inventory-summary span {
+  padding: 0.25rem 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius-sm);
+  border: 1px solid var(--border-light);
+}
+
+/* Main Content Layout */
+.inventory-tab-content {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 600px;
+}
+
+/* Colonist List Section */
+.colonist-list-section {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+}
+
+.section-header h4 {
+  margin: 0;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.colonist-controls {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.sort-dropdown {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* Colonist Cards */
+.colonist-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+  align-content: start;
+}
+
+.colonist-card {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  gap: 0.75rem;
+}
+
+.colonist-card:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.colonist-card.selected {
+  border-color: var(--primary-color);
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(77, 171, 247, 0.1) 100%);
+}
+
+.colonist-portrait-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.colonist-portrait {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  border: 2px solid var(--border-light);
+  transition: var(--transition);
+}
+
+.colonist-card.selected .colonist-portrait {
+  border-color: var(--primary-color);
+}
+
+.colonist-health-bar {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 3px;
+  background: var(--bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.health-fill {
+  height: 100%;
+  background: var(--success-color);
+  transition: width 0.3s ease;
+}
+
+.colonist-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.colonist-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.colonist-details {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.colonist-stats {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+}
+
+.mood-stat, .hunger-stat {
+  color: var(--text-muted);
+}
+
+/* Inventory Section */
+.inventory-section {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border-radius: var(--border-radius);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+}
+
+.inventory-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sort-buttons {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.sort-button {
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.sort-button:hover {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.sort-button.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* Category Tabs */
+.category-tabs {
+  display: flex;
+  padding: 0 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  overflow-x: auto;
+}
+
+.category-tab {
+  padding: 0.75rem 1rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.category-tab:hover {
+  color: var(--text-primary);
+}
+
+.category-tab.active {
+  color: var(--primary-color);
+  border-bottom-color: var(--primary-color);
+}
+
+/* Inventory Grid */
+.inventory-container {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+/* Inventory Items */
+.inventory-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-sm);
+  padding: 1rem 0.5rem;
+  transition: var(--transition);
+  cursor: pointer;
+  min-height: 120px;
+}
+
+.inventory-item:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary-color);
+}
+
+.item-icon-container {
+  position: relative;
+  margin-bottom: 0.5rem;
+}
+
+.item-icon {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.item-stack {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--primary-color);
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.item-damage-indicator {
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 2px;
+  background: var(--danger-color);
+  border-radius: 1px;
+}
+
+.item-forbidden-indicator {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  font-size: 0.8rem;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.8));
+}
+
+/* Rarity Colors */
+.inventory-item.rarity-awful { border-color: var(--rarity-awful); }
+.inventory-item.rarity-poor { border-color: var(--rarity-poor); }
+.inventory-item.rarity-normal { border-color: var(--rarity-normal); }
+.inventory-item.rarity-good { border-color: var(--rarity-good); }
+.inventory-item.rarity-excellent { border-color: var(--rarity-excellent); }
+.inventory-item.rarity-masterwork { border-color: var(--rarity-masterwork); }
+.inventory-item.rarity-legendary { border-color: var(--rarity-legendary); }
+
+.inventory-item.rarity-legendary {
+  background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(245, 159, 0, 0.1) 100%);
+}
+
+/* Tooltips */
+.item-tooltip {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: var(--transition);
+  pointer-events: none;
+}
+
+.inventory-item:hover .item-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.item-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+}
+
+.item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.7rem;
+}
+
+.item-value {
+  color: var(--warning-color);
+  font-weight: 600;
+}
+
+.item-quality {
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.item-durability {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+/* Loading States */
+.skeleton-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+}
+
+.inventory-item-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+}
+
+.skeleton-image {
+  width: 50px;
+  height: 50px;
+  background: var(--bg-tertiary);
+  border-radius: var(--border-radius-sm);
+  animation: pulse 2s infinite;
+}
+
+.skeleton-text {
+  width: 60px;
+  height: 12px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* Empty and Error States */
+.empty-state, .error-state, .placeholder-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-icon, .error-icon, .placeholder-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.empty-state h4, .error-state h4, .placeholder-section h4 {
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.retry-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.retry-button:hover {
+  background: var(--primary-dark);
+}
+
+.load-more-button {
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-size: 0.9rem;
+}
+
+.load-more-button:hover {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+/* Scrollbars */
+.scrollbar-container {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-light) transparent;
+}
+
+.scrollbar-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+@media (max-width: 480px) {
+  .inventory-tab {
+    padding: 0.75rem;
+  }
+  
+  .colonist-card {
+    padding: 0.5rem;
+  }
+  
+  .colonist-portrait {
+    width: 50px;
+    height: 50px;
+  }
+  
+  .inventory-grid {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  }
+  
+  .item-icon {
+    width: 35px;
+    height: 35px;
+  }
+}/* Add these styles to your existing CSS file */
+
+/* Tooltip Styles */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 0.75rem;
+  box-shadow: var(--shadow);
+  max-width: 250px;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.2s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+.tooltip-top::before {
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px 6px 0 6px;
+  border-color: var(--border-color) transparent transparent transparent;
+}
+
+.tooltip-bottom::before {
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 0 6px 6px 6px;
+  border-color: transparent transparent var(--border-color) transparent;
+}
+
+/* Item Tooltip Content */
+.item-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.item-tooltip-header {
+  display: flex;
+  justify-content: between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.item-tooltip-header .item-name {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  flex: 1;
+  margin: 0;
+}
+
+.item-rarity {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.item-tooltip-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.item-detail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.durability-warning {
+  color: var(--danger-color) !important;
+}
+
+.forbidden {
+  color: var(--danger-color);
+  font-weight: 600;
+}
+
+.item-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
+}
+
+.item-category-tag {
+  font-size: 0.6rem;
+  padding: 0.1rem 0.3rem;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+/* Item Label (always visible under icon) */
+.item-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 0.25rem;
+  line-height: 1.2;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Pagination Styles */
+.pagination-section {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.pagination-info {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.pagination-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-sm);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.pagination-button:hover:not(:disabled) {
+  border-color: var(--primary-color);
+  color: var(--text-primary);
+}
+
+.pagination-button.active {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-ellipsis {
+  padding: 0 0.5rem;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+/* Empty colonist list state */
+.empty-colonist-list {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.empty-colonist-list .empty-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+
+.empty-colonist-list p {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+}
+
+.empty-colonist-list small {
+  font-size: 0.8rem;
+}
+
+/* Update existing inventory item styles */
+.inventory-item {
+  /* Remove the old tooltip hover effects */
+}
+
+.inventory-item:hover .item-tooltip {
+  /* Remove this rule as we're using the new tooltip system */
+}
+
+/* Responsive pagination */
+@media (max-width: 768px) {
+  .pagination-section {
+    padding: 0.75rem;
+  }
+  
+  .pagination-controls {
+    gap: 0.125rem;
+  }
+  
+  .pagination-button {
+    min-width: 1.75rem;
+    height: 1.75rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tooltip {
+    max-width: 200px;
+    padding: 0.5rem;
+  }
+  
+  .item-tooltip-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  .item-tooltip-header .item-name {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .inventory-tab-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .colonist-list {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  
+  .colonist-card {
+    max-width: 100%;
+    flex-direction: row;
+    text-align: left;
+    padding: 0.5rem;
+  }
+  
+  .colonist-info {
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .colonist-stats {
+    justify-content: flex-start;
+  }
+}
+
+/* For very small screens */
+@media (max-width: 360px) {
+  .colonist-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .colonist-info {
+    align-items: center;
+    text-align: center;
+  }
+  
+  .colonist-stats {
+    justify-content: center;
+  }
+}
+
+/* Update empty state for grid layout */
+.empty-colonist-list {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* Ensure pagination works with grid layout */
+.pagination-section {
+  grid-column: 1 / -1;
+  padding: 1rem;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Enhanced tooltip positioning */
+.tooltip {
+  position: fixed;
+  z-index: 1000;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 0.75rem;
+  box-shadow: var(--shadow);
+  max-width: 250px;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+  transform: translateZ(0); /* Hardware acceleration */
+}
+
+/* Remove the arrow styles since we're using floating positioning */
+.tooltip::before {
+  display: none;
+}
+
+/* Ensure tooltip stays on top of everything */
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+/* Update inventory grid to maintain consistency */
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.inventory-item {
+  max-width: 100px;
+  margin: 0 auto;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 1000;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 0.75rem;
+  box-shadow: var(--shadow);
+  max-width: 250px;
+  pointer-events: none;
+  animation: tooltipFadeIn 0.15s ease-out;
+  transform: translateZ(0);
+}
+
+/* Ensure tooltip stays within bounds */
+.tooltip {
+  /* Prevent tooltip from going outside the viewport */
+  max-width: min(250px, calc(100vw - 20px));
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Update inventory item to ensure proper tooltip container */
+.inventory-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-tertiary);
+  border: 2px solid transparent;
+  border-radius: var(--border-radius-sm);
+  padding: 1rem 0.5rem;
+  transition: var(--transition);
+  cursor: pointer;
+  min-height: 120px;
+  width: 100%;
+}
+
+.inventory-item .tooltip-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}

@@ -1,15 +1,118 @@
 // src/components/OverflowManagementModal.tsx
 import React from 'react';
-import { ColonistDetailed } from '../types';
+import { Colonist, ColonistDetailed, Skill as SkillType, Trait } from '../types';
 import './OverflowManagementModal.css';
+import { useImageCache } from './ImageCacheContext';
+
+// ---- WorkTags bitmask (from your enum) ----
+const WorkTags = {
+    None: 0,
+    ManualDumb: 2,
+    ManualSkilled: 4,
+    Violent: 8,
+    Caring: 0x10,
+    Social: 0x20,
+    Commoner: 0x40,
+    Intellectual: 0x80,
+    Animals: 0x100,
+    Artistic: 0x200,
+    Crafting: 0x400,
+    Cooking: 0x800,
+    Firefighting: 0x1000,
+    Cleaning: 0x2000,
+    Hauling: 0x4000,
+    PlantWork: 0x8000,
+    Mining: 0x10000,
+    Hunting: 0x20000,
+    Constructing: 0x40000,
+    Shooting: 0x80000,
+    AllWork: 0x100000,
+} as const;
+
+// Work type -> relevant skills (unchanged)
+const WORKTYPE_TO_SKILLS: Record<string, string[]> = {
+    doctor: ['Medicine'],
+    construction: ['Construction'],
+    mining: ['Mining'],
+    growing: ['Plants', 'Growing'],
+    cooking: ['Cooking'],
+    research: ['Intellectual'],
+    warden: ['Social'],
+    handling: ['Animals'],
+    crafting: ['Crafting'],
+    smithing: ['Crafting'],
+    tailoring: ['Crafting'],
+    art: ['Artistic'],
+    // firefighter/patient/hauling/cleaning: no direct skill
+};
+
+// NEW: Work type -> WorkTags that can block this job
+const WORKTYPE_TO_TAGS: Record<string, number[]> = {
+    firefighter: [WorkTags.Firefighting],
+    patient: [], // leave empty; being incapable of Caring might be relevant, but patient is special
+    doctor: [WorkTags.Caring],
+    construction: [WorkTags.Constructing],
+    mining: [WorkTags.Mining],
+    growing: [WorkTags.PlantWork],
+    cooking: [WorkTags.Cooking],
+    research: [WorkTags.Intellectual],
+    warden: [WorkTags.Social],
+    handling: [WorkTags.Animals],
+    crafting: [WorkTags.Crafting],
+    art: [WorkTags.Artistic],
+    smithing: [WorkTags.Crafting],
+    tailoring: [WorkTags.Crafting],
+    hauling: [WorkTags.Hauling],
+    cleaning: [WorkTags.Cleaning],
+};
+
+function getRelevantSkillNamesForWorkType(workTypeId: string): string[] {
+    return WORKTYPE_TO_SKILLS[workTypeId] || [];
+}
+
+function getBestSkillLevel(
+    skills: SkillType[] | undefined,
+    names: string[]
+): { level: number | null; name: string | null } {
+    if (!skills || !names.length) return { level: null, name: null };
+    let best: { level: number; name: string } | null = null;
+    for (const n of names) {
+        const s = skills.find(sk => sk.name === n || (sk as any).skill === n);
+        if (s) {
+            if (!best || s.level > best.level) best = { level: s.level, name: s.name || (s as any).skill || n };
+        }
+    }
+    return best ? best : { level: null, name: null };
+}
+
+// NEW: collect all disabled tags from a pawn's skills (bitwise OR)
+function aggregateDisabledTags(skills: SkillType[] | undefined): number {
+    if (!skills) return 0;
+    return skills.reduce((mask, s) => mask | (s.disabled_work_tags ?? 0), 0);
+}
+
+// NEW: check if any tag required by this work type is disabled
+function isDisabledForWorkTypeByTags(skills: SkillType[] | undefined, workTypeId: string): boolean {
+    const tags = WORKTYPE_TO_TAGS[workTypeId] || [];
+    if (!tags.length) return false;
+    const mask = aggregateDisabledTags(skills);
+    return tags.some(tag => (mask & tag) !== 0);
+}
 
 interface OverflowManagementModalProps {
-    workType: any;
-    colonists: any[];
+    workType: { id: string; name: string; icon: string };
+    colonists: any[]; // assignments: { colonist, priority, skills, detailed? }
     allColonists: ColonistDetailed[];
     onClose: () => void;
     onPriorityChange: (workTypeId: string, colonistId: number, newPriority: number) => void;
-    onRemoveColonist: (workTypeId: string, colonistId: number) => void;
+    onRemoveColonist: (workTypeId: string, colonist: Colonist) => void;
+}
+
+// placeholder for future logic: decide which traits affect this work type
+function getAffectingTraits(_workTypeId: string, traits: Trait[] | undefined): string[] {
+    // TODO: real logic later; for now, return [] but typed as string[]
+    const affecting: Trait[] = (traits ?? []).filter(() => false);
+    return affecting.map(t => t.label || t.name);
 }
 
 const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
@@ -21,41 +124,43 @@ const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
     onRemoveColonist
 }) => {
     const [selectedColonist, setSelectedColonist] = React.useState<any>(null);
-    const [priorityFilter, setPriorityFilter] = React.useState<number | 'all'>('all');
-    const [searchTerm, setSearchTerm] = React.useState('');
+    const [sortDir, setSortDir] = React.useState<'asc' | 'desc'>('asc'); // asc = low first (default)
 
-    // Filter colonists based on priority and search
-    const filteredColonists = React.useMemo(() => {
-        let filtered = colonists;
+    const { imageCache, fetchColonistImage } = useImageCache();
 
-        if (priorityFilter !== 'all') {
-            filtered = filtered.filter(col => col.priority === priorityFilter);
-        }
-
-        if (searchTerm) {
-            filtered = filtered.filter(col =>
-                col.colonist.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        return filtered;
-    }, [colonists, priorityFilter, searchTerm]);
-
+    // Build available list (unchanged)
     const availableColonists = React.useMemo(() => {
-        // Colonists not currently assigned to this work type
         const assignedIds = new Set(colonists.map(col => col.colonist.id));
         return allColonists.filter(col => !assignedIds.has(col.colonist.id));
     }, [allColonists, colonists]);
 
-    const handleAddColonist = (colonist: ColonistDetailed, priority: number = 1) => {
-        // This would be implemented when we have the API
-        console.log(`Add ${colonist.colonist.name} to ${workType.name} with priority ${priority}`);
-    };
+    // Warm portraits
+    React.useEffect(() => {
+        colonists.forEach(a => fetchColonistImage?.(String(a.colonist.id)).catch(() => void 0));
+        availableColonists.forEach(cd => fetchColonistImage?.(String(cd.colonist.id)).catch(() => void 0));
+    }, [colonists, availableColonists, fetchColonistImage]);
+
+    // Sorting by best relevant skill
+    const sortedColonists = React.useMemo(() => {
+        const names = getRelevantSkillNamesForWorkType(workType.id);
+        if (!names.length) return colonists.slice();
+        const list = colonists.slice().sort((a, b) => {
+            const A = getBestSkillLevel(a.skills, names).level ?? -1;
+            const B = getBestSkillLevel(b.skills, names).level ?? -1;
+            return sortDir === 'asc' ? A - B : B - A;
+        });
+        return list;
+    }, [colonists, workType.id, sortDir]);
 
     const handleBulkPriorityChange = (newPriority: number) => {
-        filteredColonists.forEach(col => {
+        sortedColonists.forEach(col => {
             onPriorityChange(workType.id, col.colonist.id, newPriority);
         });
+    };
+
+    const handleAddColonist = (colonist: ColonistDetailed, priority: number = 1) => {
+        console.log(`Add ${colonist.colonist.name} to ${workType.name} with priority ${priority}`);
+        // TODO: when API available
     };
 
     return (
@@ -71,52 +176,43 @@ const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
                 </div>
 
                 <div className="modal-body">
-                    {/* Left Panel - Colonists List */}
+                    {/* Left Panel - now with toolbar and grid */}
                     <div className="left-panel">
-                        <div className="panel-header">
+                        <div className="panel-header toolbar">
                             <h4>Assigned Colonists ({colonists.length})</h4>
-                            <div className="filter-controls">
-                                <select
-                                    value={priorityFilter}
-                                    onChange={(e) => setPriorityFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-                                    className="priority-filter"
-                                >
-                                    <option value="all">All Priorities</option>
-                                    <option value="1">Priority 1</option>
-                                    <option value="2">Priority 2</option>
-                                    <option value="3">Priority 3</option>
-                                    <option value="4">Priority 4</option>
-                                    <option value="0">Disabled</option>
-                                </select>
-                                <input
-                                    type="text"
-                                    placeholder="Search colonists..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="search-input"
-                                />
-                            </div>
+
+                            {/* small sort button in the corner */}
+                            <button
+                                className="sort-skill-btn"
+                                onClick={() => setSortDir(prev => prev === 'asc' ? 'desc' : 'asc')}
+                                title={sortDir === 'asc' ? 'Sort: Skill ↑ (low first)' : 'Sort: Skill ↓ (high first)'}
+                                aria-label="Toggle sort by skill"
+                            >
+                                ⇅ Skill {sortDir === 'asc' ? '↑' : '↓'}
+                            </button>
                         </div>
 
-                        <div className="colonists-list">
-                            {filteredColonists.map(assignment => (
-                                <ColonistListItem
+                        {/* Grid of colonist cards */}
+                        <div className="colonists-grid scrollbar-container">
+                            {sortedColonists.map(assignment => (
+                                <ColonistGridCard
                                     key={assignment.colonist.id}
                                     assignment={assignment}
-                                    workType={workType} // Add this prop
                                     workTypeId={workType.id}
+                                    workTypeName={workType.name}
                                     isSelected={selectedColonist?.colonist.id === assignment.colonist.id}
                                     onSelect={setSelectedColonist}
                                     onPriorityChange={onPriorityChange}
                                     onRemove={onRemoveColonist}
+                                    imageUrl={imageCache[String(assignment.colonist.id)]}
+                                    fetchImage={() => fetchColonistImage ? fetchColonistImage(String(assignment.colonist.id)) : Promise.resolve()}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* Right Panel - Management Tools */}
+                    {/* Right Panel - unchanged except it still reacts to selected colonist */}
                     <div className="right-panel">
-                        {/* Selected Colonist Info */}
                         {selectedColonist ? (
                             <SelectedColonistInfo
                                 assignment={selectedColonist}
@@ -200,128 +296,121 @@ const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
     );
 };
 
-// Colonist List Item Component
-const ColonistListItem: React.FC<any> = ({
+// --- Grid card component ---
+const ColonistGridCard: React.FC<{
+    assignment: any;
+    workTypeId: string;
+    workTypeName: string;
+    isSelected: boolean;
+    onSelect: (a: any) => void;
+    onPriorityChange: (workTypeId: string, colonistId: number, newPriority: number) => void;
+    onRemove: (workTypeId: string, colonist: Colonist) => void;
+    imageUrl?: string;
+    fetchImage: () => Promise<void>;
+}> = ({
     assignment,
-    workType,
     workTypeId,
+    workTypeName,
     isSelected,
     onSelect,
     onPriorityChange,
-    onRemove
+    onRemove,
+    imageUrl,
+    fetchImage
 }) => {
-    const handlePriorityClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        const newPriority = (assignment.priority + 1) % 10;
-        onPriorityChange(workTypeId, assignment.colonist.id, newPriority);
-    };
+        const relevantNames = getRelevantSkillNamesForWorkType(workTypeId);
+        const best = getBestSkillLevel(assignment.skills, relevantNames);
 
-    const getRelevantSkillsForWork = (workType: string, skills: any[]): any[] => {
-        const workSkillMapping: { [key: string]: string[] } = {
-            'firefighter': ['Shooting', 'Melee'],
-            'doctor': ['Medicine'],
-            'construction': ['Construction'],
-            'mining': ['Mining'],
-            'growing': ['Plants'],
-            'cooking': ['Cooking'],
-            'research': ['Intellectual'],
-            'warden': ['Social'],
-            'handling': ['Animals'],
-            'crafting': ['Crafting'],
-            'art': ['Artistic'],
-            'smithing': ['Crafting', 'Construction'],
-            'tailoring': ['Crafting'],
-            'hauling': [], // No specific skill
-            'cleaning': [], // No specific skill
-            'patient': [], // No specific skill
+        // Grab traits list from detailed info
+        const traitsList: string[] =
+            assignment?.detailed?.colonist_work_info?.traits ?? [];
+        const hasTraits = traitsList.length > 0;
+
+        React.useEffect(() => {
+            if (!imageUrl) fetchImage().catch(() => void 0);
+        }, [imageUrl, fetchImage]);
+
+        const handlePriorityClick = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            const newPriority = (assignment.priority + 1) % 10;
+            onPriorityChange(workTypeId, assignment.colonist.id, newPriority);
         };
 
-        const relevantSkillNames = workSkillMapping[workType.toLowerCase()] || [];
-        return skills.filter(skill =>
-            relevantSkillNames.includes(skill.name) && skill.level > 0
+        const affectingTraits = getAffectingTraits(
+            workTypeId,
+            assignment?.detailed?.colonist_work_info?.traits
         );
-    };
 
-    // Get relevant skills for this work type
-    const relevantSkills = getRelevantSkillsForWork(workType.name, assignment.skills || []);
-    const hasRelevantSkills = relevantSkills.length > 0;
+        return (
+            <div
+                className={`colonist-card ${isSelected ? 'selected' : ''}`}
+                onClick={() => onSelect(assignment)}
+                title={best.name ? `${best.name}: ${best.level ?? '—'}` : 'No relevant skill'}
+            >
+                {/* TOP ROW */}
+                <div className="card-row top">
+                    <div className="card-left">
+                        <img
+                            src={imageUrl}
+                            alt={assignment.colonist.name}
+                            className="card-portrait"
+                            onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                        />
+                        <div className="card-id">
+                            <div className="card-name">{assignment.colonist.name}</div>
+                            <div className="card-sub">{assignment.colonist.gender} • {assignment.colonist.age}y</div>
+                        </div>
+                    </div>
 
-    // Update the return structure in ColonistListItem component
-    return (
-        <div
-            className={`colonist-list-item ${isSelected ? 'selected' : ''}`}
-            onClick={() => onSelect(assignment)}
-        >
-            {/* Main content area - takes up all available space */}
-            <div className="colonist-content">
-                <div className="colonist-basic-info">
-                    <div className="colonist-name">{assignment.colonist.name}</div>
-                    <div className="colonist-details">
-                        {assignment.colonist.gender} • {assignment.colonist.age}y
+                    <div className="card-right">
+                        <button
+                            className={`priority-badge priority-${assignment.priority}`}
+                            onClick={handlePriorityClick}
+                            aria-label={`Change priority for ${assignment.colonist.name}`}
+                            title={`Priority: ${assignment.priority}`}
+                        >
+                            {assignment.priority === 0 ? '❌' : assignment.priority}
+                        </button>
                     </div>
                 </div>
 
-                {/* Relevant Skills Display - positioned below basic info */}
-                {hasRelevantSkills && (
-                    <div className="relevant-skills-mini">
-                        {relevantSkills.slice(0, 3).map((skill: any) => (
-                            <div
-                                key={skill.name}
-                                className={`skill-level-mini level-${getSkillLevelRange(skill.level)}`}
-                                title={`${skill.name}: ${skill.level}`}
+                {/* BOTTOM ROW */}
+                <div className="card-row bottom">
+                    <div className="card-chips">
+                        <span className="chip chip-skill">
+                            {best.name ? `${best.name}: ${best.level ?? '—'}` : 'No relevant skill'}
+                        </span>
+
+                        {/* SHOW TRAITS CHIP ONLY IF TRAITS EXIST */}
+                        {hasTraits && (
+                            <span
+                                className={`chip chip-traits ${affectingTraits.length ? 'chip-attention' : ''}`}
+                                title={
+                                    affectingTraits.length
+                                        ? `Potentially affecting: ${affectingTraits.join(', ')}`
+                                        : 'No known trait impact (TBD)'
+                                }
                             >
-                                {skill.name}: {skill.level}
-                            </div>
-                        ))}
-                        {relevantSkills.length > 3 && (
-                            <div className="more-skills" title={`${relevantSkills.length - 3} more skills`}>
-                                +{relevantSkills.length - 3}
-                            </div>
+                                Traits {affectingTraits.length ? `(${affectingTraits.length})` : '(—)'}
+                            </span>
                         )}
                     </div>
-                )}
 
-                {!hasRelevantSkills && (
-                    <div className="no-relevant-skills">
-                        No relevant skills
+                    <div className="card-actions">
+                        <button
+                            className="remove-btn"
+                            onClick={(e) => { e.stopPropagation(); onRemove(workTypeId, assignment.colonist.id); }}
+                        >
+                            Remove
+                        </button>
                     </div>
-                )}
+                </div>
             </div>
-
-            {/* Actions - aligned to the right */}
-            <div className="list-item-actions">
-                <button
-                    className={`priority-badge priority-${assignment.priority}`}
-                    onClick={handlePriorityClick}
-                >
-                    {assignment.priority === 0 ? '❌' : assignment.priority}
-                </button>
-                <button
-                    className="remove-btn"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onRemove(workTypeId, assignment.colonist.id);
-                    }}
-                >
-                    Remove
-                </button>
-            </div>
-        </div>
-    );
-};
-
-// Add helper function for skill level ranges
-const getSkillLevelRange = (level: number): string => {
-    if (level === 0) return '0';
-    if (level <= 4) return '1-4';
-    if (level <= 8) return '5-8';
-    if (level <= 12) return '9-12';
-    if (level <= 16) return '13-16';
-    return '17-20';
-};
+        );
+    };
 
 
-// Selected Colonist Info Component
+// Selected Colonist Info (unchanged from your version)
 const SelectedColonistInfo: React.FC<any> = ({
     assignment,
     workType,

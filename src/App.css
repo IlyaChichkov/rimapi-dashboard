@@ -45,3 +45,48 @@
     transform: rotate(360deg);
   }
 }
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+.scrollbar-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.scrollbar-container::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb {
+    background: rgba(77, 171, 247, 0.5);
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(77, 171, 247, 0.7);
+    background-clip: content-box;
+}
+
+.scrollbar-container::-webkit-scrollbar-thumb:active {
+    background: rgba(77, 171, 247, 0.9);
+    background-clip: content-box;
+}
+
+.scrollbar-container::-webkit-scrollbar-corner {
+    background: transparent;
+}
+
+/* Buttons */
+
+.gray-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #b0b0b0;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}

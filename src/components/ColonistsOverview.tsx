@@ -1,7 +1,7 @@
 // src/components/ColonistsOverviewTab.tsx
 import React from 'react';
 import { Colonist, ColonistDetailed } from '../types';
-import { selectAndViewColonist } from '../services/rimworldApi';
+import { rimworldApi, selectAndViewColonist } from '../services/rimworldApi';
 import {
     useReactTable,
     getCoreRowModel,
@@ -13,25 +13,39 @@ import {
     ColumnFiltersState,
 } from '@tanstack/react-table';
 import './ColonistsOverview.css';
+import { useImageCache } from './ImageCacheContext';
 
 interface ColonistsOverviewProps {
     colonistsDetailed?: any[];
     loading?: boolean;
     onViewHealth?: (colonistName: string) => void;
     onViewSkills?: (colonistName: string) => void;
-    onViewWork?: (colonistId: number) => void; // Add this
+    onViewInventory?: (colonist: ColonistDetailed) => void;
+    onViewWork?: (colonist: ColonistDetailed) => void;
 }
 
 const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     colonistsDetailed = [],
     onViewHealth = null,
     onViewSkills = null,
+    onViewInventory = null,
     onViewWork = null,
     loading = false
 }) => {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [globalFilter, setGlobalFilter] = React.useState('');
+    const { imageCache, fetchColonistImage } = useImageCache();
+
+    React.useEffect(() => {
+        colonistsDetailed.forEach(c => {
+            const id = c.colonist?.id;
+            if (id != null && !imageCache[id]) {
+                fetchColonistImage(String(id));
+            }
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [colonistsDetailed, fetchColonistImage, imageCache]);
 
     interface FilterOption {
         value: string;
@@ -42,8 +56,8 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
         colonistsDetailed.forEach((colonist: ColonistDetailed) => {
-            colonist.colonist_work_info.traits.forEach(trait => {
-                traits.add(trait);
+            colonist.colonist_work_info.traits.forEach((trait) => {
+                traits.add(trait.label || trait.name);
             });
         });
         return Array.from(traits).sort();
@@ -91,6 +105,28 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         ));
     };
 
+    const [filtersOpen, setFiltersOpen] = React.useState<boolean>(() => {
+        try {
+            const saved = localStorage.getItem('colonists_filters_open');
+            return saved ? JSON.parse(saved) : true;
+        } catch {
+            return true;
+        }
+    });
+
+    React.useEffect(() => {
+        try {
+            localStorage.setItem('colonists_filters_open', JSON.stringify(filtersOpen));
+        } catch { }
+    }, [filtersOpen]);
+
+    // counts for badge
+    const activeFiltersCount =
+        (traitFilter?.length || 0) +
+        (jobFilter?.length || 0) +
+        (skillFilters?.length || 0) +
+        ((globalFilter?.trim()?.length || 0) > 0 ? 1 : 0);
+
     // Add this function to handle custom filtering
     const filteredData = React.useMemo(() => {
         if (!colonistsDetailed.length) return [];
@@ -99,8 +135,8 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
             // Trait filter
             if (traitFilter.length > 0) {
                 const colonistTraits = colonist.colonist_work_info.traits;
-                const hasMatchingTrait = traitFilter.some(trait =>
-                    colonistTraits.includes(trait)
+                const hasMatchingTrait = traitFilter.some((needle) =>
+                    colonistTraits.some((t) => t.label === needle || t.name === needle)
                 );
                 if (!hasMatchingTrait) return false;
             }
@@ -139,24 +175,44 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 cell: ({ row }) => {
                     const colonist = row.original.colonist;
                     const traits = row.original.colonist_work_info.traits;
+                    const imageUrl = imageCache[colonist.id];
+
                     return (
                         <div className="colonist-info">
-                            <div className="colonist-name-row">
-                                <span className="colonist-name">{colonist.name}</span>
-                                {traits.length > 0 && (
-                                    <div className="traits-tooltip">
-                                        <span className="traits-icon">🧬</span>
-                                        <div className="traits-popup">
-                                            {traits.map((trait, index) => (
-                                                <div key={index} className="trait-item">{trait}</div>
-                                            ))}
-                                        </div>
+                            <div className="colonist-portrait-row">
+                                <div className="colonist-portrait">
+                                    {imageUrl ? (
+                                        <img
+                                            src={imageUrl}
+                                            alt={`Portrait of ${colonist.name}`}
+                                            className="portrait-image"
+                                        />
+                                    ) : null}
+                                    <div className={`portrait-placeholder ${imageUrl ? 'hidden' : ''}`}>
+                                        👤
                                     </div>
-                                )}
-                            </div>
-                            <div className="colonist-details">
-                                <span className="colonist-gender">{colonist.gender}</span>
-                                <span className="colonist-age">{colonist.age}y</span>
+                                </div>
+                                <div className="colonist-details">
+                                    <div className="colonist-name-row">
+                                        <span className="colonist-name">{colonist.name}</span>
+                                        {traits.length > 0 && (
+                                            <div className="traits-tooltip">
+                                                <span className="traits-icon">🧬</span>
+                                                <div className="traits-popup">
+                                                    {traits.map((trait, index) => (
+                                                        <div key={trait.name ?? index} className="trait-item">
+                                                            {typeof trait === 'string' ? trait : (trait.label || trait.name)}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="colonist-meta">
+                                        <span className="colonist-gender">{colonist.gender}</span>
+                                        <span className="colonist-age">{colonist.age}y</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     );
@@ -248,39 +304,35 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                                 onClick={() => handleViewHealth(row.original)}
                                 title="View Health Details"
                             >
-                                ❤️
+                                ❤️ Health
                             </button>
                             <button
                                 className="action-btn inventory-btn"
                                 onClick={() => handleViewInventory(row.original)}
                                 title="View Inventory"
                             >
-                                🎒
+                                🎒 Inventory
                             </button>
                             <button
                                 className="action-btn skills-btn"
-                                onClick={() => {
-                                    if (onViewSkills) {
-                                        onViewSkills(colonist.name);
-                                    }
-                                }}
+                                onClick={() => handleViewSkills(row.original)}
                                 title="View Skills Details"
                             >
-                                📊
+                                📊 Skills
                             </button>
                             <button
                                 className="action-btn work-btn"
                                 onClick={() => handleAssignWork(row.original)}
                                 title="Assign Work"
                             >
-                                ⚙️
+                                ⚙️ Work
                             </button>
                             <button
                                 className="action-btn select-btn"
                                 onClick={() => handleSelectColonist(row.original)}
                                 title="Select in Game"
                             >
-                                👁️
+                                👁️ View
                             </button>
                         </div>
                     );
@@ -288,7 +340,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 enableSorting: false,
             },
         ],
-        []
+        [imageCache]
     );
 
     const table = useReactTable({
@@ -341,13 +393,20 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     };
 
     const handleViewInventory = (colonist: ColonistDetailed) => {
-        console.log('View inventory for:', colonist.colonist.name);
-        // TODO: Implement inventory view
+        if (onViewInventory) {
+            onViewInventory(colonist);
+        }
     };
+
+    const handleViewSkills = (colonist: ColonistDetailed) => {
+        if (onViewSkills) {
+            onViewSkills(colonist.colonist.name);
+        }
+    }
 
     const handleAssignWork = (colonist: ColonistDetailed) => {
         if (onViewWork) {
-            onViewWork(colonist.colonist.id);
+            onViewWork(colonist);
         }
     };
 
@@ -362,7 +421,6 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     // NeedBar component for needs display
     const NeedBar: React.FC<{ label: string; value: number }> = ({ label, value }) => {
         const barWidth = Math.max(0, Math.min(100, value * 100));
-        console.log('barWidth:', barWidth)
         return (
             <div className="need-bar">
                 <div className="need-label">{label}:</div>
@@ -385,146 +443,161 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                         Showing: {filteredData.length}/{colonistsDetailed.length}
                     </span>
                 </div>
+                <div className="controls">
+                    <button
+                        className={`filters-toggle ${hasActiveFilters ? 'active' : ''}`}
+                        aria-expanded={filtersOpen}
+                        aria-controls="colonists-filter-controls"
+                        onClick={() => setFiltersOpen(v => !v)}
+                        title={filtersOpen ? 'Hide filters' : 'Show filters'}
+                    >
+                        Filters
+                        {activeFiltersCount > 0 && <span className="filters-badge">{activeFiltersCount}</span>}
+                        <span className="chevron" aria-hidden>{filtersOpen ? '▾' : '▸'}</span>
+                    </button>
+                </div>
             </div>
 
-            <div className="filter-controls">
-                <div className="filter-group">
-                    <label>Traits:</label>
-                    <select
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                handleTraitFilter(e.target.value);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="filter-select"
-                    >
-                        <option value="">Add trait filter...</option>
-                        {availableTraits.map(trait => (
-                            <option key={trait} value={trait}>{trait}</option>
-                        ))}
-                    </select>
-                    <div className="active-filters">
-                        {traitFilter.map(trait => (
-                            <span key={trait} className="active-filter-tag">
-                                {trait}
-                                <button onClick={() => handleTraitFilter(trait)}>❌</button>
-                            </span>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="filter-group">
-                    <label>Skills:</label>
-                    <div className="skill-filter-controls">
+            <div className={`filters-collapsible ${filtersOpen ? 'open' : 'closed'}`}>
+                {filtersOpen ? (<div id="colonists-filter-controls" className="filter-controls">
+                    <div className="filter-group">
+                        <label>Traits:</label>
                         <select
                             value=""
                             onChange={(e) => {
                                 if (e.target.value) {
-                                    handleAddSkillFilter(e.target.value);
+                                    handleTraitFilter(e.target.value);
                                     e.target.value = '';
                                 }
                             }}
                             className="filter-select"
                         >
-                            <option value="">Add skill filter...</option>
-                            {SKILL_OPTIONS.map(skill => (
-                                <option key={skill.value} value={skill.value}>{skill.label}</option>
+                            <option value="">Add trait filter...</option>
+                            {availableTraits.map(trait => (
+                                <option key={trait} value={trait}>{trait}</option>
                             ))}
                         </select>
+                        <div className="active-filters">
+                            {traitFilter.map(trait => (
+                                <span key={trait} className="active-filter-tag">
+                                    {trait}
+                                    <button onClick={() => handleTraitFilter(trait)}>❌</button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                    <div className="active-filters">
-                        {skillFilters.map((filter, index) => (
-                            <div key={index} className="skill-filter-tag">
-                                <span className="skill-filter-name">{filter.name}:</span>
-                                <select
-                                    value={filter.minLevel}
-                                    onChange={(e) => handleUpdateSkillFilter(index, { minLevel: Number(e.target.value) })}
-                                    className="level-select"
-                                >
-                                    {Array.from({ length: 21 }, (_, i) => (
-                                        <option key={i} value={i}>≥{i}</option>
-                                    ))}
-                                </select>
-                                <span className="range-separator">-</span>
-                                <select
-                                    value={filter.maxLevel}
-                                    onChange={(e) => handleUpdateSkillFilter(index, { maxLevel: Number(e.target.value) })}
-                                    className="level-select"
-                                >
-                                    {Array.from({ length: 21 }, (_, i) => (
-                                        <option key={i} value={i}>≤{i}</option>
-                                    ))}
-                                </select>
-                                <button
-                                    onClick={() => handleRemoveSkillFilter(index)}
-                                    className="remove-filter-btn"
-                                >
-                                    ❌
-                                </button>
-                            </div>
-                        ))}
+
+                    <div className="filter-group">
+                        <label>Skills:</label>
+                        <div className="skill-filter-controls">
+                            <select
+                                value=""
+                                onChange={(e) => {
+                                    if (e.target.value) {
+                                        handleAddSkillFilter(e.target.value);
+                                        e.target.value = '';
+                                    }
+                                }}
+                                className="filter-select"
+                            >
+                                <option value="">Add skill filter...</option>
+                                {SKILL_OPTIONS.map(skill => (
+                                    <option key={skill.value} value={skill.value}>{skill.label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="active-filters">
+                            {skillFilters.map((filter, index) => (
+                                <div key={index} className="skill-filter-tag">
+                                    <span className="skill-filter-name">{filter.name}:</span>
+                                    <select
+                                        value={filter.minLevel}
+                                        onChange={(e) => handleUpdateSkillFilter(index, { minLevel: Number(e.target.value) })}
+                                        className="level-select"
+                                    >
+                                        {Array.from({ length: 21 }, (_, i) => (
+                                            <option key={i} value={i}>≥{i}</option>
+                                        ))}
+                                    </select>
+                                    <span className="range-separator">-</span>
+                                    <select
+                                        value={filter.maxLevel}
+                                        onChange={(e) => handleUpdateSkillFilter(index, { maxLevel: Number(e.target.value) })}
+                                        className="level-select"
+                                    >
+                                        {Array.from({ length: 21 }, (_, i) => (
+                                            <option key={i} value={i}>≤{i}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        onClick={() => handleRemoveSkillFilter(index)}
+                                        className="remove-filter-btn"
+                                    >
+                                        ❌
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="filter-group">
-                    <label>Jobs:</label>
-                    <select
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) {
-                                handleJobFilter(e.target.value);
-                                e.target.value = '';
-                            }
-                        }}
-                        className="filter-select"
-                    >
-                        <option value="">Add job filter...</option>
-                        <option value="FleeAndCower">Flee and Cower</option>
-                        <option value="Patient">Patient</option>
-                        <option value="Firefighter">Firefighter</option>
-                        <option value="Doctor">Doctor</option>
-                        <option value="Cooking">Cooking</option>
-                        <option value="Construction">Construction</option>
-                        <option value="Mining">Mining</option>
-                        <option value="Growing">Growing</option>
-                        <option value="Research">Research</option>
-                        <option value="Warden">Warden</option>
-                        <option value="Handling">Handling</option>
-                        <option value="Crafting">Crafting</option>
-                        <option value="Art">Art</option>
-                        <option value="Smithing">Smithing</option>
-                        <option value="Tailoring">Tailoring</option>
-                        <option value="Hauling">Hauling</option>
-                        <option value="Cleaning">Cleaning</option>
-                    </select>
-                    <div className="active-filters">
-                        {jobFilter.map(job => (
-                            <span key={job} className="active-filter-tag">
-                                {job}
-                                <button onClick={() => handleJobFilter(job)}>❌</button>
-                            </span>
-                        ))}
+                    <div className="filter-group">
+                        <label>Jobs:</label>
+                        <select
+                            value=""
+                            onChange={(e) => {
+                                if (e.target.value) {
+                                    handleJobFilter(e.target.value);
+                                    e.target.value = '';
+                                }
+                            }}
+                            className="filter-select"
+                        >
+                            <option value="">Add job filter...</option>
+                            <option value="FleeAndCower">Flee and Cower</option>
+                            <option value="Patient">Patient</option>
+                            <option value="Firefighter">Firefighter</option>
+                            <option value="Doctor">Doctor</option>
+                            <option value="Cooking">Cooking</option>
+                            <option value="Construction">Construction</option>
+                            <option value="Mining">Mining</option>
+                            <option value="Growing">Growing</option>
+                            <option value="Research">Research</option>
+                            <option value="Warden">Warden</option>
+                            <option value="Handling">Handling</option>
+                            <option value="Crafting">Crafting</option>
+                            <option value="Art">Art</option>
+                            <option value="Smithing">Smithing</option>
+                            <option value="Tailoring">Tailoring</option>
+                            <option value="Hauling">Hauling</option>
+                            <option value="Cleaning">Cleaning</option>
+                        </select>
+                        <div className="active-filters">
+                            {jobFilter.map(job => (
+                                <span key={job} className="active-filter-tag">
+                                    {job}
+                                    <button onClick={() => handleJobFilter(job)}>❌</button>
+                                </span>
+                            ))}
+                        </div>
                     </div>
-                </div>
 
-                <div className="filter-group">
-                    <label>Search:</label>
-                    <input
-                        type="text"
-                        placeholder="Search names, jobs..."
-                        value={globalFilter ?? ''}
-                        onChange={e => setGlobalFilter(e.target.value)}
-                        className="search-input"
-                    />
-                </div>
+                    <div className="filter-group">
+                        <label>Search:</label>
+                        <input
+                            type="text"
+                            placeholder="Search names, jobs..."
+                            value={globalFilter ?? ''}
+                            onChange={e => setGlobalFilter(e.target.value)}
+                            className="search-input"
+                        />
+                    </div>
 
-                {hasActiveFilters && (
-                    <button className="clear-filters-btn" onClick={clearAllFilters}>
-                        Clear All Filters
-                    </button>
-                )}
+                    {hasActiveFilters && (
+                        <button className="clear-filters-btn" onClick={clearAllFilters}>
+                            Clear All Filters
+                        </button>
+                    )}
+                </div>) : <div></div>}
             </div>
 
             <div className="table-container">

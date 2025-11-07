@@ -24,14 +24,14 @@ A real-time web dashboard for monitoring your RimWorld colony, built with React,
 - [RIMAPI Mod](https://github.com/IlyaChichkov/RIMAPI) installed and enabled
 - Node.js 16+ and npm
 
-## Installation
+## Getting started
 
 ### 1. Install RIMAPI Mod
 
 First, ensure you have the RIMAPI mod installed in your RimWorld game:
 
-1. Download the latest RIMAPI mod from the [**Releases**](https://github.com/IlyaChichkov/RIMAPI/releases) page
-2. Extract to your RimWorld Mods folder
+1. Download the latest RIMAPI mod from the [**Releases**](https://github.com/IlyaChichkov/RIMAPI/releases) page or [**Steam workshop page**](https://steamcommunity.com/sharedfiles/filedetails/?id=3593423732)
+2. Extract to your RimWorld Mods folder (if loaded from Github)
 3. Enable the mod in RimWorld's Mod configuration
 4. Start your RimWorld game
 

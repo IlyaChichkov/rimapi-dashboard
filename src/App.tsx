@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import RimWorldDashboard from './components/RimWorldDashboard';
 import ApiConfig from './components/ApiConfig';
 import './App.css';
+import { ToastContainer } from './components/ToastContainer';
+import { ToastProvider } from './components/ToastContext';
+import { ImageCacheProvider } from './components/ImageCacheContext';
 
 function App() {
   const [apiUrl, setApiUrl] = useState<string>('');
@@ -31,16 +34,21 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {!isConfigured ? (
-        <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} />
-      ) : (
-        <RimWorldDashboard 
-          apiUrl={apiUrl} 
-          onResetConfig={handleResetConfig} 
-        />
-      )}
-    </div>
+    <ImageCacheProvider>
+      <div className="App">
+        {!isConfigured ? (
+          <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} />
+        ) : (
+          <ToastProvider>
+            <RimWorldDashboard
+              apiUrl={apiUrl}
+              onResetConfig={handleResetConfig}
+            />
+            <ToastContainer />
+          </ToastProvider>
+        )}
+      </div>
+    </ImageCacheProvider>
   );
 }
 
