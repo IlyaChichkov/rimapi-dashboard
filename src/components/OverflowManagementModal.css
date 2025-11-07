@@ -691,7 +691,6 @@
 
 /* Grid of colonists (replaces colonists-list for the left panel) */
 .colonists-grid {
-    flex: 1;
     overflow-y: auto;
     padding: 12px;
     display: grid;
@@ -829,7 +828,7 @@
 
 /* BOTTOM row layout */
 .card-row.bottom .card-chips {
-  flex: 1 1 auto;
+  margin-top: 12px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -837,7 +836,6 @@
 }
 
 .card-row.bottom .card-actions {
-  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -904,7 +902,6 @@
 .colonist-card {
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* evenly distribute top/bottom rows */
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 10px;
@@ -914,6 +911,7 @@
   min-height: 110px;   /* baseline height */
   height: 100%;        /* stretch to uniform grid height */
   box-sizing: border-box;
+  flex: 0 1 auto;
 }
 
 /* Optional (for smoother resizing / name wrapping) */

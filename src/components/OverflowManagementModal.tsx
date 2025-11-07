@@ -193,7 +193,7 @@ const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
                         </div>
 
                         {/* Grid of colonist cards */}
-                        <div className="colonists-grid">
+                        <div className="colonists-grid scrollbar-container">
                             {sortedColonists.map(assignment => (
                                 <ColonistGridCard
                                     key={assignment.colonist.id}
