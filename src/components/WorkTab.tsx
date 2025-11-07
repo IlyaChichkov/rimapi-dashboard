@@ -13,7 +13,6 @@ import {
     sortAssignmentsBySkill,
     optimizeAllWorkTypes,
     getRelevantSkillNamesForWorkType,
-    bestRelevantLevel,
 } from '../services/rimworldWork';
 
 interface WorkTabProps {
@@ -71,7 +70,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
 
                 // Map the work names from the API response to the WorkTypeLite structure with emoji and category
                 const workTypesWithDetails = workTypesFromApi.map(work => {
-                    const workType = WORK_TYPES.find(w => w.id.toLowerCase() == work.toLowerCase());
+                    const workType = WORK_TYPES.find(w => w.id.toLowerCase() === work.toLowerCase());
                     return {
                         id: work,
                         name: work,

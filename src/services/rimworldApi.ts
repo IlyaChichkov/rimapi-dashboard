@@ -13,7 +13,6 @@ import {
   ResearchSummary,
   ColonistDetailed,
   ModInfo,
-  ResourcesStoredResponse,
   ItemImageResponse,
   ResourcesData,
   Position,

@@ -1,7 +1,7 @@
 // src/components/ResourcesDashboard.tsx
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { rimworldApi, selectItem } from '../services/rimworldApi';
-import { ResourcesData, ResourceItem, Colonist, ColonistDetailed } from '../types';
+import { ResourcesData, ResourceItem, Colonist } from '../types';
 import './ResourcesDashboard.css';
 import { useToast } from './ToastContext';
 import { useImageCache } from './ImageCacheContext';
@@ -346,7 +346,7 @@ export const ResourcesDashboard: React.FC = () => {
         };
 
         const label = qualityValues[quality];
-        return label && label.toLowerCase() || 'none';
+        return label && (label.toLowerCase() || 'none');
     };
 
     // Filter resources (individual items)
