@@ -75,7 +75,6 @@ export const ResourcesDashboard: React.FC = () => {
     const [resourcesData, setResourcesData] = useState<ResourcesData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [imageCache, setImageCache] = useState<Record<string, string>>({});
 
     const [contextMenuOpen, setContextMenuOpen] = useState<string | null>(null);
     const [assignModalOpen, setAssignModalOpen] = useState<boolean>(false);
@@ -102,6 +101,12 @@ export const ResourcesDashboard: React.FC = () => {
         showAll: false
     });
     const [showFilters, setShowFilters] = useState(false);
+
+    const {
+        getItemImage,
+        fetchItemImage,
+        preloadItemImages
+    } = useImageCache();
 
     // New grouping state
     const [groupItems, setGroupItems] = useState<boolean>(true);
@@ -141,23 +146,6 @@ export const ResourcesDashboard: React.FC = () => {
             console.error('Error fetching resources:', err);
         } finally {
             setLoading(false);
-        }
-    };
-
-    // Fetch item image
-    const fetchItemImage = async (defName: string) => {
-        if (imageCache[defName]) return;
-
-        try {
-            const imageData = await rimworldApi.getItemImage(defName);
-            if (imageData.result === 'success' && imageData.image_base64) {
-                setImageCache(prev => ({
-                    ...prev,
-                    [defName]: `data:image/png;base64,${imageData.image_base64}`
-                }));
-            }
-        } catch (err) {
-            console.warn(`Failed to fetch image for ${defName}:`, err);
         }
     };
 
@@ -950,36 +938,26 @@ export const ResourcesDashboard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Image loading effect
+    // Fetch item image
     useEffect(() => {
-        let isMounted = true;
+        if (displayedData.length === 0) return;
 
-        if (displayedData.length > 0 && isMounted) {
-            const defNamesToLoad = new Set<string>();
+        const defNamesToLoad: string[] = [];
 
-            displayedData.forEach(item => {
-                if (item.type === 'group') {
-                    const group = item.data as ResourceGroup;
-                    if (!imageCache[group.def_name] && !group.category.includes("corpses")) {
-                        defNamesToLoad.add(group.def_name);
-                    }
-                } else {
-                    const resource = item.data as ResourceItem & { category: string };
-                    if (!imageCache[resource.def_name] && !resource.category.includes("corpses")) {
-                        defNamesToLoad.add(resource.def_name);
-                    }
-                }
-            });
+        displayedData.forEach(item => {
+            const { def_name, category } = item.type === 'group'
+                ? item.data as ResourceGroup
+                : item.data as ResourceItem & { category: string };
 
-            defNamesToLoad.forEach(defName => {
-                fetchItemImage(defName);
-            });
+            if (!getItemImage(def_name) && !category.includes("corpses")) {
+                defNamesToLoad.push(def_name);
+            }
+        });
+
+        if (defNamesToLoad.length > 0) {
+            preloadItemImages(defNamesToLoad);
         }
-
-        return () => {
-            isMounted = false;
-        };
-    }, [displayedData, imageCache]);
+    }, [displayedData, getItemImage, preloadItemImages]);
 
     useEffect(() => {
         const handleClickOutside = () => {
@@ -1223,7 +1201,7 @@ export const ResourcesDashboard: React.FC = () => {
                             <GroupCard
                                 key={`group-${group.def_name}-${index}`}
                                 group={group}
-                                imageUrl={imageCache[group.def_name]}
+                                imageUrl={getItemImage(group.def_name)}
                                 categoryInfo={resourceCategories.find(cat => cat.key === group.category)}
                                 onClick={() => handleGroupClick(group.def_name)}
                                 isExpanded={expandedGroup === group.def_name}
@@ -1235,7 +1213,7 @@ export const ResourcesDashboard: React.FC = () => {
                             <ResourceCard
                                 key={`individual-${resource.thing_id}-${index}`}
                                 resource={resource}
-                                imageUrl={imageCache[resource.def_name]}
+                                imageUrl={getItemImage(resource.def_name)}
                                 categoryInfo={resourceCategories.find(cat => cat.key === resource.category)}
                                 contextMenuOpen={contextMenuOpen}
                                 setContextMenuOpen={setContextMenuOpen}
@@ -1414,7 +1392,7 @@ const QualityTag: React.FC<QualityTagProps> = ({ resource }) => {
 // Resource Card Component
 interface ResourceCardProps {
     resource: ResourceItem & { category: string };
-    imageUrl?: string;
+    imageUrl?: string | null;
     categoryInfo?: ResourceCategory;
     contextMenuOpen: string | null;
     setContextMenuOpen: (id: string | null) => void;
@@ -1596,7 +1574,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({
 // Group Card Component
 interface GroupCardProps {
     group: ResourceGroup;
-    imageUrl?: string;
+    imageUrl?: string | null;
     categoryInfo?: ResourceCategory;
     onClick: () => void;
     isExpanded: boolean;
