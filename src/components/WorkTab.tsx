@@ -523,8 +523,13 @@ const ColonistAssignmentCard: React.FC<ColonistAssignmentCardProps> = ({
 
     const handlePriorityClick = (e: React.MouseEvent) => {
         e.stopPropagation();
-        const newPriority = (assignment.priority + 1) % 10; // Cycle 0-9 (per current behavior)
+        const isAltPressed = e.altKey
+        const priorityUpdate = isAltPressed ? 1 : -1;
+        const newPriority = (assignment.priority + priorityUpdate) % 10; // Cycle 0-9 (per current behavior)
         onPriorityChange(workTypeId, assignment.colonist.id, newPriority);
+        if (newPriority == 0) {
+
+        }
     };
 
     const priorityClass = `priority-badge priority-${assignment.priority}`;
