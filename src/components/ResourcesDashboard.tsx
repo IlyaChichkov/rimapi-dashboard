@@ -324,7 +324,6 @@ export const ResourcesDashboard: React.FC = () => {
 
         return Object.values(groups).filter(group => {
             const hasMultipleInstances = group.items.length > 1;
-            console.log(`Group ${group.def_name}: items=${group.items.length}, totalCount=${group.totalCount}, shouldGroup=${hasMultipleInstances}`);
             return hasMultipleInstances;
         });
 
@@ -1780,7 +1779,7 @@ const AssignToPawnModal: React.FC<AssignToPawnModalProps> = ({
                     <button className="assign-modal-close-btn" onClick={onClose}>×</button>
                 </div>
 
-                <div className="assign-modal-body">
+                <div className="assign-modal-body scrollbar-container">
                     {/* Search Bar */}
                     <div className="assign-search-container">
                         <div className="assign-search-bar">

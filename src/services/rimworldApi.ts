@@ -94,7 +94,7 @@ const validateGameState = (data: unknown): GameState => {
 
 const validateColonists = (data: unknown): Colonist[] => {
   const arr = ensureArray<Colonist>(data);
-  return arr.filter((c: any) => c && c.id && c.name);
+  return arr.filter((c: any) => c && c.id);
 };
 
 const validateColonistsDetailed = (data: unknown): ColonistDetailed[] => {
@@ -315,7 +315,7 @@ export const rimworldApi = {
     const response = await getJson<{ colonists: Colonist[] }>(
       "/colonists?fields=id,name,gender,age",
     );
-    return validateColonists(response?.colonists ?? []);
+    return validateColonists(response);
   },
 
   // Placeholder for future backend call
