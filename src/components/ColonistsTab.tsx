@@ -4,6 +4,7 @@ import ColonistsOverview from './ColonistsOverview';
 import './ColonistsTab.css';
 import ColonistsSkillsDashboard from './ColonistsSkillsDashboard';
 import WorkTab from './WorkTab';
+import { ColonistDetailed } from '../types';
 
 interface ColonistsTabProps {
     colonistsDetailed?: any[];
@@ -18,7 +19,7 @@ type ColonistsSubTab = 'overview' | 'skills' | 'work' | 'inventory' | 'analyze';
 const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     const [activeSubTab, setActiveSubTab] = React.useState<ColonistsSubTab>('overview');
     const [skillsFilterColonist, setSkillsFilterColonist] = React.useState<string>('');
-    const [selectedColonistId, setSelectedColonistId] = React.useState<number | undefined>();
+    const [selectedColonist, setSelectedColonist] = React.useState<ColonistDetailed | undefined>();
 
     const renderSubTabContent = () => {
         switch (activeSubTab) {
@@ -27,7 +28,8 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                     <WorkTab
                         colonistsDetailed={props.colonistsDetailed}
                         loading={props.loading}
-                        selectedColonist={props.selectedColonist} // Pass selected colonist if any
+                        selectedColonist={selectedColonist}
+                        onClearFilter={handleClearSelectedColonist}
                     />
                 );
             case 'overview':
@@ -37,9 +39,13 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
                         loading={props.loading}
                         onViewHealth={props.onViewHealth}
                         onViewSkills={handleOpenSkillsWithFilter}
-                        onViewWork={(colonistId) => {
-                            setSelectedColonistId(colonistId);
+                        onViewWork={(colonist) => {
+                            setSelectedColonist(colonist);
                             setActiveSubTab('work');
+                        }}
+                        onViewInventory={(colonist) => {
+                            setSelectedColonist(colonist);
+                            setActiveSubTab('inventory');
                         }}
                     />
                 );
@@ -70,6 +76,10 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     // Add function to clear skills filter
     const handleClearSkillsFilter = () => {
         setSkillsFilterColonist('');
+    };
+
+    const handleClearSelectedColonist = () => {
+        setSelectedColonist(undefined);
     };
 
     return (

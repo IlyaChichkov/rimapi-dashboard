@@ -20,13 +20,15 @@ interface ColonistsOverviewProps {
     loading?: boolean;
     onViewHealth?: (colonistName: string) => void;
     onViewSkills?: (colonistName: string) => void;
-    onViewWork?: (colonistId: number) => void; // Add this
+    onViewInventory?: (colonist: ColonistDetailed) => void;
+    onViewWork?: (colonist: ColonistDetailed) => void;
 }
 
 const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     colonistsDetailed = [],
     onViewHealth = null,
     onViewSkills = null,
+    onViewInventory = null,
     onViewWork = null,
     loading = false
 }) => {
@@ -292,39 +294,35 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                                 onClick={() => handleViewHealth(row.original)}
                                 title="View Health Details"
                             >
-                                ❤️
+                                ❤️ Health
                             </button>
                             <button
                                 className="action-btn inventory-btn"
                                 onClick={() => handleViewInventory(row.original)}
                                 title="View Inventory"
                             >
-                                🎒
+                                🎒 Inventory
                             </button>
                             <button
                                 className="action-btn skills-btn"
-                                onClick={() => {
-                                    if (onViewSkills) {
-                                        onViewSkills(colonist.name);
-                                    }
-                                }}
+                                onClick={() => handleViewSkills(row.original)}
                                 title="View Skills Details"
                             >
-                                📊
+                                📊 Skills
                             </button>
                             <button
                                 className="action-btn work-btn"
                                 onClick={() => handleAssignWork(row.original)}
                                 title="Assign Work"
                             >
-                                ⚙️
+                                ⚙️ Work
                             </button>
                             <button
                                 className="action-btn select-btn"
                                 onClick={() => handleSelectColonist(row.original)}
                                 title="Select in Game"
                             >
-                                👁️
+                                👁️ View
                             </button>
                         </div>
                     );
@@ -385,13 +383,20 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     };
 
     const handleViewInventory = (colonist: ColonistDetailed) => {
-        console.log('View inventory for:', colonist.colonist.name);
-        // TODO: Implement inventory view
+        if (onViewInventory) {
+            onViewInventory(colonist);
+        }
     };
+
+    const handleViewSkills = (colonist: ColonistDetailed) => {
+        if (onViewSkills) {
+            onViewSkills(colonist.colonist.name);
+        }
+    }
 
     const handleAssignWork = (colonist: ColonistDetailed) => {
         if (onViewWork) {
-            onViewWork(colonist.colonist.id);
+            onViewWork(colonist);
         }
     };
 

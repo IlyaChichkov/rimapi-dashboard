@@ -19,7 +19,8 @@ import {
 interface WorkTabProps {
     colonistsDetailed?: ColonistDetailed[];
     loading?: boolean;
-    selectedColonist?: ColonistDetailed; // For navigation from overview
+    selectedColonist?: ColonistDetailed;
+    onClearFilter?: () => void;
 }
 
 type WorkType = WorkTypeLite;
@@ -48,7 +49,8 @@ const LOW_SKILL_THRESHOLD = 3; // highlight when skill <= 3
 const WorkTab: React.FC<WorkTabProps> = ({
     colonistsDetailed = [],
     loading = false,
-    selectedColonist
+    selectedColonist,
+    onClearFilter
 }) => {
 
     const [assignments, setAssignments] = React.useState<Record<string, Assignment[]>>({});
@@ -126,6 +128,20 @@ const WorkTab: React.FC<WorkTabProps> = ({
         setAssignments(initial);
     }, [colonistsDetailed, workTypes, fetchColonistImage]);
 
+    React.useEffect(() => {
+        if (selectedColonist) {
+            setSearchQuery(selectedColonist.colonist.name)
+        }
+    }, [selectedColonist]);
+
+    const handleSearchQueryChange = async (searchQuery: string) => {
+        if (onClearFilter) {
+            onClearFilter()
+        }
+
+        setSearchQuery(searchQuery)
+    }
+
     // --- filtering helpers ---
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
@@ -136,8 +152,8 @@ const WorkTab: React.FC<WorkTabProps> = ({
         if (!normalizedQuery) {
             return { matchesCard: true, filtered: list };
         }
-        const workNameMatches = workTypeName.toLowerCase().includes(normalizedQuery);
-        const filteredByColonist = list.filter(a =>
+        let workNameMatches = workTypeName.toLowerCase().includes(normalizedQuery);
+        let filteredByColonist = list.filter(a =>
             a.colonist.name.toLowerCase().includes(normalizedQuery)
         );
         const matchesCard = workNameMatches || filteredByColonist.length > 0;
@@ -292,7 +308,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
                     <input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => handleSearchQueryChange(e.target.value)}
                         placeholder="Search work or colonists…"
                         aria-label="Search work types or colonists"
                         className="search-input"
@@ -300,7 +316,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
                     {searchQuery && (
                         <button
                             className="search-clear"
-                            onClick={() => setSearchQuery('')}
+                            onClick={() => handleSearchQueryChange('')}
                             aria-label="Clear search"
                             title="Clear"
                         >
