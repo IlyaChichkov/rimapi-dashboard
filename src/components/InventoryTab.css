@@ -148,7 +148,7 @@
   align-content: start;
 }
 
-.colonist-card {
+.inventory-colonist-card {
   display: flex;
   align-items: center;
   padding: 0.75rem;
@@ -160,13 +160,13 @@
   gap: 0.75rem;
 }
 
-.colonist-card:hover {
+.inventory-colonist-card:hover {
   border-color: var(--primary-color);
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
 
-.colonist-card.selected {
+.inventory-colonist-card.selected {
   border-color: var(--primary-color);
   background: linear-gradient(135deg, var(--bg-tertiary) 0%, rgba(77, 171, 247, 0.1) 100%);
 }
@@ -184,7 +184,7 @@
   transition: var(--transition);
 }
 
-.colonist-card.selected .colonist-portrait {
+.inventory-colonist-card.selected .colonist-portrait {
   border-color: var(--primary-color);
 }
 
@@ -572,7 +572,7 @@
     padding: 0.75rem;
   }
   
-  .colonist-card {
+  .inventory-colonist-card {
     padding: 0.5rem;
   }
   
@@ -879,7 +879,7 @@
     gap: 0.5rem;
   }
   
-  .colonist-card {
+  .inventory-colonist-card {
     max-width: 100%;
     flex-direction: row;
     text-align: left;
@@ -898,7 +898,7 @@
 
 /* For very small screens */
 @media (max-width: 360px) {
-  .colonist-card {
+  .inventory-colonist-card {
     flex-direction: column;
     text-align: center;
   }

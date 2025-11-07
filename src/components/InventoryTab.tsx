@@ -68,7 +68,7 @@ const ColonistCard: React.FC<{
     portraitUrl: string;
 }> = React.memo(({ colonist, isSelected, onClick, portraitUrl }) => (
     <div
-        className={`colonist-card ${isSelected ? 'selected' : ''}`}
+        className={`inventory-colonist-card ${isSelected ? 'selected' : ''}`}
         onClick={onClick}
         role="button"
         tabIndex={0}
