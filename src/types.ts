@@ -276,3 +276,13 @@ export interface ResourcesData {
   food?: ResourceItem[];
   [key: string]: ResourceItem[] | undefined; // This allows for additional categories
 }
+
+export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'other';
+
+export interface LogEntry {
+  id: number;
+  time: string;
+  level: LogLevel;
+  message: string;
+  jsonPretty?: string;
+}

@@ -206,6 +206,123 @@ const validateResearchFinished = (data: unknown): ResearchFinished => {
 // -----------------------------
 // High-level actions
 // -----------------------------
+
+// Small helper
+async function postJson<T>(path: string, body: any): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`HTTP ${res.status}: ${text}`);
+  }
+  return res.json() as Promise<T>;
+}
+
+// Read a File -> base64 (no data:... prefix)
+async function fileToBase64NoHeader(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(fr.error);
+    fr.onload = () => resolve(String(fr.result));
+    fr.readAsDataURL(file);
+  });
+  const commaIdx = dataUrl.indexOf(',');
+  return commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl;
+}
+
+/**
+ * Upload item texture via chunked Base64 parts.
+ * Sends multiple POSTs to /api/v1/item/image with:
+ *  - name: string (item_def_name)
+ *  - image: base64 chunk (string)
+ *  - final: boolean (true for the last part)
+ */
+async function setItemTextureChunks({
+  itemDefName,
+  base64,
+  chunkSize = 750 * 1024,
+  onProgress,
+}: {
+  itemDefName: string;
+  base64: string;                // no data: header — pure base64
+  chunkSize?: number;
+  onProgress?: (percent: number, sentBytes: number, totalBytes: number, chunkIndex: number) => void;
+}) {
+  const total = base64.length;
+  let sent = 0;
+  let idx = 0;
+
+  while (sent < total) {
+    const next = Math.min(sent + chunkSize, total);
+    const piece = base64.slice(sent, next);
+    const isFinal = next >= total;
+
+    await postJson('/item/image', {
+      name: itemDefName,
+      image: piece,
+      final: isFinal
+    });
+    sent = next;
+    idx++;
+    const percent = Math.round((sent / total) * 100);
+    onProgress?.(percent, sent, total, idx);
+  }
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const fr = new FileReader();
+    fr.onerror = () => reject(fr.error);
+    fr.onload = () => {
+      const result = String(fr.result || '');
+      // strip "data:image/...;base64," if present
+      const i = result.indexOf('base64,');
+      resolve(i >= 0 ? result.slice(i + 'base64,'.length) : result);
+    };
+    fr.readAsDataURL(file);
+  });
+}
+/**
+ * High-level helper: takes a File, converts to base64 (no header), and uploads in chunks.
+ */
+async function uploadItemTextureFile(
+  itemName: string,
+  file: File,
+  opts?: {
+    kind: string,
+    imageIndex: string,
+    direction: string | undefined,
+    onProgress?: (percent: number, sent: number, total: number, idx: number) => void;
+  }
+) {
+  const base64 = await fileToBase64(file);
+  const total = base64.length;
+  let idx = 0;
+
+  // public string Name { get; set; }
+  // public string Image { get; set; }
+  // public string Direction { get; set; }
+  // public string ThingType { get; set; }
+  // public string IsStackable { get; set; }
+  // public string MaskImage { get; set; }
+
+  const direction = opts?.direction === undefined ? "all" : opts?.direction; 
+
+  await postJson('/item/image', {
+    name: itemName,
+    image: base64,
+    direction: direction,
+    ThingType: opts?.kind,
+    UpdateItemIndex: opts?.imageIndex,
+  });
+
+  opts?.onProgress?.(100, total, total, idx);
+}
+
+
 export const selectItem = async (itemId: number, position: Position): Promise<void> => {
   try {
     await postNoBody(`/deselect?type=all`);
@@ -367,6 +484,24 @@ export const rimworldApi = {
   async fetchWorkList (): Promise<string[]> {
     const data = await getJson<{ work: string[] }>('/work-list');
     return data?.work || [];
+  },
+  
+  uploadItemTextureFile,
+
+  async setStuffColor(name: string, hex: string): Promise<void> {
+    const cleanHex = hex.replace(/^#/, '');
+    await postJson('/stuff/color', {
+      name,
+      hex: cleanHex,
+    });
+  },
+
+  async fetchMaterialsAtlas(): Promise<{ materials: string[] }> {
+    return getJson('/materials-atlas');
+  },
+
+  async clearMaterialsAtlas(): Promise<void> {
+    await postJson('/materials-atlas/clear', {});
   },
 };
 
