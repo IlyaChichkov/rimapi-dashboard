@@ -18,6 +18,7 @@ import MedicalAlertsCard from './MedicalAlertsCard';
 import ModsTab from './ModsTab';
 import ResourcesDashboard from './ResourcesDashboard';
 import { useToast } from './ToastContext';
+import DevTab from './DevTab';
 
 const getChartSize = (colonistsCount: number): number => {
   if (colonistsCount <= 5) return 1;    // Normal size
@@ -27,7 +28,7 @@ const getChartSize = (colonistsCount: number): number => {
 };
 
 // Tab types
-type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'mods';
+type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
 
 const renderColonistCharts = (colonists: Colonist[]) => {
   if (colonists.length <= 10) {
@@ -245,11 +246,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       case 'resources':
         return <ResourcesTab loading={loading} />;
 
-      case 'mods':
-        return <ModsTab
-          modsInfo={modsInfo}
-          loading={loading}
-        />;
+      case 'tools':
+        return <DevTab modsInfo={modsInfo} loading={loading} />;
 
       default:
         return <DashboardTab
@@ -332,10 +330,10 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           📦 Resources
         </button>
         <button
-          className={`tab-button ${activeTab === 'mods' ? 'active' : ''}`}
-          onClick={() => setActiveTab('mods')}
+          className={`tab-button ${activeTab === 'tools' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tools')}
         >
-          ⚙️ Mods
+          ⚙️ Tools
         </button>
       </div>
 

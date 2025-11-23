@@ -243,12 +243,6 @@ const WorkTab: React.FC<WorkTabProps> = ({
             colonistsDetailed,
             assignments,
             workTypes: workTypesLite,
-            getCurrentPriorityFor,
-            setPriority: async (colonistId, workName, newPriority) => {
-                await rimworldApi.setColonistWorkPriority(colonistId, workName, newPriority);
-            },
-            setWorkPrioritiesBulk: rimworldApi.setColonistsWorkPriorities, // Corrected bulk function
-            fetchWorkList: rimworldApi.fetchWorkList, // Fetch the full list of work types
         });
 
         setAssignments(nextAssignments);
