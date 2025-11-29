@@ -40,12 +40,19 @@ const withTimeout = (timeoutMs = DEFAULT_TIMEOUT_MS) => {
   return { signal: controller.signal, cancel: () => clearTimeout(id) };
 };
 
+// Updated response type to match new API format
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  errors: string[];
+  warnings: string[];
+  timestamp: string;
+}
+
 async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
   const { signal, cancel } = withTimeout();
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-      // Don’t set Content-Type by default to avoid POST preflight.
-      // Add only what you need explicitly via init.headers.
       mode: "cors",
       signal,
       ...init,
@@ -61,7 +68,14 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
 
     const ct = res.headers.get("content-type") || "";
     if (ct.includes("application/json")) {
-      return (await res.json()) as T;
+      const response: ApiResponse<T> = await res.json();
+      
+      if (!response.success) {
+        const errorMsg = response.errors?.join(", ") || "API request failed";
+        throw new Error(errorMsg);
+      }
+      
+      return response.data;
     }
 
     return undefined as T;
@@ -207,18 +221,27 @@ const validateResearchFinished = (data: unknown): ResearchFinished => {
 // High-level actions
 // -----------------------------
 
-// Small helper
+// Updated postJson to handle new API response format
 async function postJson<T>(path: string, body: any): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+  
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`HTTP ${res.status}: ${text}`);
   }
-  return res.json() as Promise<T>;
+  
+  const response: ApiResponse<T> = await res.json();
+  
+  if (!response.success) {
+    const errorMsg = response.errors?.join(", ") || "API request failed";
+    throw new Error(errorMsg);
+  }
+  
+  return response.data;
 }
 
 // Read a File -> base64 (no data:... prefix)
@@ -285,6 +308,7 @@ function fileToBase64(file: File): Promise<string> {
     fr.readAsDataURL(file);
   });
 }
+
 /**
  * High-level helper: takes a File, converts to base64 (no header), and uploads in chunks.
  */
@@ -302,13 +326,6 @@ async function uploadItemTextureFile(
   const total = base64.length;
   let idx = 0;
 
-  // public string Name { get; set; }
-  // public string Image { get; set; }
-  // public string Direction { get; set; }
-  // public string ThingType { get; set; }
-  // public string IsStackable { get; set; }
-  // public string MaskImage { get; set; }
-
   const direction = opts?.direction === undefined ? "all" : opts?.direction; 
 
   await postJson('/item/image', {
@@ -321,7 +338,6 @@ async function uploadItemTextureFile(
 
   opts?.onProgress?.(100, total, total, idx);
 }
-
 
 export const selectItem = async (itemId: number, position: Position): Promise<void> => {
   try {
@@ -428,7 +444,7 @@ export const rimworldApi = {
   },
 
   async getPawns(): Promise<Colonist[]> {
-    const response = await getJson<{ colonists: Colonist[] }>(
+    const response = await getJson<Colonist[]>(
       "/colonists?fields=id,name,gender,age",
     );
     return validateColonists(response);
@@ -482,8 +498,8 @@ export const rimworldApi = {
   },
 
   async fetchWorkList (): Promise<string[]> {
-    const data = await getJson<{ work: string[] }>('/work-list');
-    return data?.work || [];
+    const data = await getJson<string[]>('/work-list');
+    return data || [];
   },
   
   uploadItemTextureFile,
@@ -504,4 +520,3 @@ export const rimworldApi = {
     await postJson('/materials-atlas/clear', {});
   },
 };
-
