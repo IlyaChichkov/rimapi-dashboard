@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/rimapi-dashboard/static/css/main.ad46483f.css",
-    "main.js": "/rimapi-dashboard/static/js/main.2a63a02f.js",
+    "main.js": "/rimapi-dashboard/static/js/main.9f1d7161.js",
     "static/js/453.a15dd84e.chunk.js": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js",
     "static/media/bg.jpg": "/rimapi-dashboard/static/media/bg.c44fc59048124c880ec8.jpg",
     "index.html": "/rimapi-dashboard/index.html",
     "main.ad46483f.css.map": "/rimapi-dashboard/static/css/main.ad46483f.css.map",
-    "main.2a63a02f.js.map": "/rimapi-dashboard/static/js/main.2a63a02f.js.map",
+    "main.9f1d7161.js.map": "/rimapi-dashboard/static/js/main.9f1d7161.js.map",
     "453.a15dd84e.chunk.js.map": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ad46483f.css",
-    "static/js/main.2a63a02f.js"
+    "static/js/main.9f1d7161.js"
   ]
 }
