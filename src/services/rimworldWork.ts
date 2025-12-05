@@ -194,7 +194,7 @@ export async function optimizeAllWorkTypes({
   const next: Record<string, Assignment[]> = {};
   let changes = 0;
 
-  const canonicalNames = await rimworldApi.fetchWorkList()
+  const canonicalNames = (await rimworldApi.fetchWorkList()).work
 
   // Precompute current non-basic load from existing assignments (for busyness penalty)
   const nonBasicLoad = new Map<number, number>();
