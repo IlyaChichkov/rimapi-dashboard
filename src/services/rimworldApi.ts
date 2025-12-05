@@ -497,8 +497,8 @@ export const rimworldApi = {
     return data.items;  // Returning just the inventory items
   },
 
-  async fetchWorkList (): Promise<string[]> {
-    const data = await getJson<string[]>('/work-list');
+  async fetchWorkList (): Promise<{work: string[]}> {
+    const data = await getJson<{work: string[]}>('/work-list');
     return data || [];
   },
   

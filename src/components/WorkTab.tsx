@@ -66,7 +66,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
     React.useEffect(() => {
         const fetchWorkTypes = async () => {
             try {
-                const workTypesFromApi = await rimworldApi.fetchWorkList();
+                const workTypesFromApi = (await rimworldApi.fetchWorkList()).work;
 
                 // Map the work names from the API response to the WorkTypeLite structure with emoji and category
                 const workTypesWithDetails = workTypesFromApi.map(work => {
@@ -81,7 +81,8 @@ const WorkTab: React.FC<WorkTabProps> = ({
 
                 setWorkTypes(workTypesWithDetails);  // Update state with fetched work types
             } catch (error) {
-                console.error("Failed to fetch work types:", error);
+                console.error("Failed to fetch work types:");
+                console.error(error);
                 addToast({
                     type: 'error',
                     title: 'Error',
