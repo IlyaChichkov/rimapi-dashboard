@@ -91,7 +91,6 @@ export interface ResearchProgress {
   progress_percent: number;
 }
 
-
 export interface ResearchFinished {
   finished_projects: string[];
 }

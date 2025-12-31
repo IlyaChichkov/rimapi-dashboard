@@ -49,7 +49,7 @@ interface ApiResponse<T> {
   timestamp: string;
 }
 
-async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T | null> {
   const { signal, cancel } = withTimeout();
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -63,7 +63,8 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${res.statusText} - ${text || "No body"}`);
+      console.error(`HTTP ${res.status} ${res.statusText} - ${text || "No body"}`);
+      return null;
     }
 
     const ct = res.headers.get("content-type") || "";
@@ -72,9 +73,11 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
       
       if (!response.success) {
         const errorMsg = response.errors?.join(", ") || "API request failed";
-        throw new Error(errorMsg);
+        console.error(errorMsg);
+        return null;
       }
       
+      console.log(response);
       return response.data;
     }
 
@@ -103,6 +106,11 @@ const validateGameState = (data: unknown): GameState => {
     storyteller: d.storyteller ?? "Unknown",
     difficulty: d.difficulty ?? "Unknown",
   };
+};
+
+const validatecolonistsResp = (data: unknown): Colonist[] => {
+  const d = (data ?? {}) as Colonist[];
+  return d;
 };
 
 const validateColonists = (data: unknown): Colonist[] => {
@@ -414,7 +422,7 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
 
   return {
     gameState: validateGameState(gameState),
-    colonists: colonistsResp,
+    colonists: validatecolonistsResp(colonistsResp),
     colonistsDetailed: validateColonistsDetailed(colonistsDetailedRaw),
     resources: validateResources(resourcesRaw),
     creatures: validateCreatures(creaturesRaw),
@@ -494,12 +502,12 @@ export const rimworldApi = {
 
   async fetchColonistInventory (colonistId: number) {
     const data = await getJson<{ items: any[] }>(`/colonist/inventory?id=${colonistId}`);
-    return data.items;  // Returning just the inventory items
+    return (data ?? { items: [] }).items;  // Returning just the inventory items
   },
 
   async fetchWorkList (): Promise<{work: string[]}> {
     const data = await getJson<{work: string[]}>('/work-list');
-    return data || [];
+    return data ?? {work: []};
   },
   
   uploadItemTextureFile,
@@ -513,7 +521,8 @@ export const rimworldApi = {
   },
 
   async fetchMaterialsAtlas(): Promise<{ materials: string[] }> {
-    return getJson('/materials-atlas');
+    const data = await getJson('/materials-atlas') as { materials: string[] };
+    return (data ?? {materials: []})
   },
 
   async clearMaterialsAtlas(): Promise<void> {
