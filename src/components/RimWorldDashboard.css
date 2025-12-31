@@ -173,6 +173,8 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-card:hover, .stats-card:hover {
@@ -201,11 +203,12 @@
 }
 
 .chart-container {
-  height: 300px;
+  flex-grow: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 .chart-loading {

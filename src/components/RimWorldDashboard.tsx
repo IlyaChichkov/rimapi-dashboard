@@ -1,5 +1,8 @@
 // src/components/RimWorldDashboard.tsx
 import React, { useState, useEffect, useCallback } from 'react';
+import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
 import {
   ColonistStatsChart,
   ResourcesChart,
@@ -20,55 +23,12 @@ import ResourcesDashboard from './ResourcesDashboard';
 import { useToast } from './ToastContext';
 import DevTab from './DevTab';
 
-const getChartSize = (colonistsCount: number): number => {
-  if (colonistsCount <= 5) return 1;    // Normal size
-  if (colonistsCount <= 10) return 2;   // 2x width
-  if (colonistsCount <= 15) return 3;   // 3x width
-  return 4;                             // 4x width for 16+ colonists
-};
+
 
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
 
-const renderColonistCharts = (colonists: Colonist[]) => {
-  if (colonists.length <= 10) {
-    return (
-      <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
-        {/* Single chart for <= 10 colonists */}
-        <div className="chart-header">
-          <h3>Colonist Health & Mood</h3>
-          <div className="colonist-count-badge">
-            {colonists.length} Colonists
-          </div>
-        </div>
-        <div className="chart-container">
-          <ColonistStatsChart colonists={colonists} />
-        </div>
-      </div>
-    );
-  }
 
-  // Split colonists into chunks for mobile
-  const chunkSize = 8;
-  const chunks = [];
-  for (let i = 0; i < colonists.length; i += chunkSize) {
-    chunks.push(colonists.slice(i, i + chunkSize));
-  }
-
-  return chunks.map((chunk, index) => (
-    <div key={index} className="chart-card colonist-stats-card mobile-split">
-      <div className="chart-header">
-        <h3>Colonists {index * chunkSize + 1}-{index * chunkSize + chunk.length}</h3>
-        <div className="colonist-count-badge">
-          {chunk.length} Colonists
-        </div>
-      </div>
-      <div className="chart-container">
-        <ColonistStatsChart colonists={chunk} />
-      </div>
-    </div>
-  ));
-};
 
 
 interface RimWorldDashboardProps {
@@ -190,7 +150,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const modsInfo = data?.modsInfo || [];
 
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
-  const colonistChartSize = getChartSize(colonists.length);
+  
 
   // Update the sorted colonists
   const sortedColonists = getSortedColonists(colonists, sortBy);
@@ -380,45 +340,11 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
   resources,
   power,
   creatures,
-  researchProgress,
-  researchFinished,
-  researchSummary,
   loading,
 }) => {
-  // Add the missing state and functions here
-  const [isMobile, setIsMobile] = useState(false);
+  const { width, containerRef, mounted } = useContainerWidth();
   const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
 
-  // Check screen size for responsive behavior
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  // Helper function to calculate chart size for PC
-  const getChartSize = (colonistsCount: number): number => {
-    if (colonistsCount <= 5) return 1;    // Normal size
-    if (colonistsCount <= 10) return 2;   // 2x width
-    if (colonistsCount <= 15) return 3;   // 3x width
-    return 4;                             // 4x width for 16+ colonists
-  };
-
-  // Helper function to split colonists into chunks for mobile
-  const splitColonistsIntoChunks = (colonists: Colonist[], chunkSize: number = 8): Colonist[][] => {
-    const chunks = [];
-    for (let i = 0; i < colonists.length; i += chunkSize) {
-      chunks.push(colonists.slice(i, i + chunkSize));
-    }
-    return chunks;
-  };
-
-  // Add sorting function
   const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'mood') => {
     const sorted = [...colonists];
     switch (sortBy) {
@@ -430,193 +356,121 @@ const DashboardTab: React.FC<DashboardTabProps> = ({
     }
   }, []);
 
-  // Calculate chart size for PC
-  const colonistChartSize = getChartSize(colonists.length);
-
-  // Split colonists for mobile display
-  const colonistChunks = splitColonistsIntoChunks(colonists);
-
-  // Update sorted colonists
   const sortedColonists = getSortedColonists(colonists, sortBy);
 
-  // Mobile colonist charts render function
-  const renderColonistCharts = (colonists: Colonist[]) => {
-    if (colonists.length <= 10) {
-      return (
-        <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
-          <div className="chart-header">
-            <h3>Mood</h3>
-            <div className="chart-corner-container">
-              <div className="colonist-count-badge">
-                {colonists.length} Colonists
-              </div>
-              <div className="sort-controls">
-                <span className="sort-label">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-                  className="sort-select"
-                >
-                  <option className="filter-option" value="name">Name</option>
-                  <option className="filter-option" value="mood">Mood</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-            {colonists.length > 0 ? (
-              <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} />
-            ) : (
-              <div className="no-data">No colonist data available</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // Split colonists into chunks for mobile
-    const chunks = splitColonistsIntoChunks(colonists);
-
-    return chunks.map((chunk, index) => (
-      <div key={index} className="chart-card colonist-stats-card mobile-split">
-        <div className="chart-header">
-          <h3>
-            Colonists {index * 8 + 1}-{index * 8 + chunk.length}
-            <span className="colonist-chunk-badge">
-              {chunk.length} Colonists
-            </span>
-          </h3>
-          <div className="sort-controls">
-            <span className="sort-label">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-              className="sort-select"
-            >
-              <option className="filter-option" value="name">Name</option>
-              <option className="filter-option" value="mood">Mood</option>
-            </select>
-          </div>
-        </div>
-        <div className="chart-container">
-          <ColonistStatsChart colonists={getSortedColonists(chunk, sortBy)} />
-        </div>
-      </div>
-    ));
-  };
+  const layout = [
+    { i: 'colonists', x: 0, y: 0, w: 6, h: 2 },
+    { i: 'resources', x: 6, y: 0, w: 6, h: 2 },
+    { i: 'power', x: 0, y: 2, w: 4, h: 2 },
+    { i: 'population', x: 4, y: 2, w: 4, h: 2 },
+    { i: 'summary', x: 8, y: 2, w: 4, h: 2 }
+  ];
 
   return (
-    <div className="dashboard-grid">
-      {/* Colonist Stats */}
-      {isMobile ? (
-        renderColonistCharts(colonists)
-      ) : (
-        <div
-          className={`chart-card colonist-stats-card size-${colonistChartSize}`}
-          data-colonist-count={colonists.length}
+    <div ref={containerRef}>
+      {mounted && (
+        <ReactGridLayout
+          layout={layout}
+          width={width}
+          gridConfig={{
+            cols: 12,
+            rowHeight: 150,
+          }}
         >
-          <div className="chart-header">
-            <h3>Mood</h3>
-            <div className="chart-corner-container">
-              <div className="colonist-count-badge">
-                {colonists.length} Colonists
+          <div key="colonists" className="chart-card">
+            <div className="chart-header">
+              <h3>Mood</h3>
+              <div className="chart-corner-container">
+                <div className="colonist-count-badge">
+                  {colonists.length} Colonists
+                </div>
+                <div className="sort-controls">
+                  <span className="sort-label">Sort by:</span>
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
+                    className="sort-select"
+                  >
+                    <option className="filter-option" value="name">Name</option>
+                    <option className="filter-option" value="mood">Mood</option>
+                  </select>
+                </div>
               </div>
-              <div className="sort-controls">
-                <span className="sort-label">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-                  className="sort-select"
-                >
-                  <option className="filter-option" value="name">Name</option>
-                  <option className="filter-option" value="mood">Mood</option>
-                </select>
+            </div>
+            <div className="chart-container">
+              {colonists.length > 0 ? (
+                <ColonistStatsChart colonists={sortedColonists} />
+              ) : (
+                <div className="no-data">No colonist data available</div>
+              )}
+            </div>
+          </div>
+          <div key="resources" className="chart-card">
+            <div className="chart-header">
+              <h3>Resource Distribution</h3>
+              <div className="resource-total">
+                Total: {resources.total_items || 0} items
+              </div>
+            </div>
+            <div className="chart-container">
+              {resources.categories && resources.categories.length > 0 ? (
+                <ResourcesChart resources={resources} />
+              ) : (
+                <div className="no-data">No resource data available</div>
+              )}
+            </div>
+          </div>
+          <div key="power" className="chart-card">
+            <div className="chart-header">
+              <div className="chart-header-top">
+                <h3>Power Management</h3>
+                <div className="power-header-controls">
+                  <div className="power-status">
+                    Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
+                    {(power.total_consumption || 0) > (power.current_power || 0) && (
+                      <span className="power-warning-icon" title="Power consumption exceeds production!">
+                        ⚠️
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="chart-container">
+              <PowerChart power={power} />
+            </div>
+          </div>
+          <div key="population" className="chart-card">
+            <div className="chart-header">
+              <h3>Population Overview</h3>
+            </div>
+            <div className="chart-container">
+              <PopulationChart creatures={creatures} />
+            </div>
+          </div>
+          <div key="summary" className="stats-card">
+            <h3>Colony Summary</h3>
+            <div className="summary-stats-grid">
+              <div className="summary-stat-item">
+                <div className="summary-stat-value">{colonists.length}</div>
+                <div className="summary-stat-label">Colonists</div>
+              </div>
+              <div className="summary-stat-item">
+                <div className="summary-stat-value">{creatures.animals_count || 0}</div>
+                <div className="summary-stat-label">Animals</div>
+              </div>
+              <div className="summary-stat-item">
+                <div className="summary-stat-value">{resources.total_items || 0}</div>
+                <div className="summary-stat-label">Total Items</div>
+              </div>
+              <div className="summary-stat-item">
+                <div className="summary-stat-value">${Math.round(resources.total_market_value || 0)}</div>
+                <div className="summary-stat-label">Wealth</div>
               </div>
             </div>
           </div>
-          <div className="chart-container">
-            {colonists.length > 0 ? (
-              <ColonistStatsChart colonists={sortedColonists} />
-            ) : (
-              <div className="no-data">No colonist data available</div>
-            )}
-          </div>
-        </div>
+        </ReactGridLayout>
       )}
-
-      {/* Resource Distribution */}
-      {resources.categories && resources.categories.length > 0 ? (
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Resource Distribution</h3>
-            <div className="resource-total">
-              Total: {resources.total_items || 0} items
-            </div>
-          </div>
-          <div className="chart-container">
-            {resources.categories && resources.categories.length > 0 ? (
-              <ResourcesChart resources={resources} />
-            ) : (
-              <div className="no-data">No resource data available</div>
-            )}
-          </div>
-        </div>
-      ) : (null)}
-
-      {/* Power Management */}
-      <div className="chart-card">
-        <div className="chart-header">
-          <div className="chart-header-top">
-            <h3>Power Management</h3>
-            <div className="power-header-controls">
-              <div className="power-status">
-                Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
-                {(power.total_consumption || 0) > (power.current_power || 0) && (
-                  <span className="power-warning-icon" title="Power consumption exceeds production!">
-                    ⚠️
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="chart-container">
-          <PowerChart power={power} />
-        </div>
-      </div>
-
-      {/* Population Overview */}
-      <div className="chart-card">
-        <div className="chart-header">
-          <h3>Population Overview</h3>
-        </div>
-        <div className="chart-container">
-          <PopulationChart creatures={creatures} />
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="stats-card">
-        <h3>Colony Summary</h3>
-        <div className="summary-stats-grid">
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{colonists.length}</div>
-            <div className="summary-stat-label">Colonists</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{creatures.animals_count || 0}</div>
-            <div className="summary-stat-label">Animals</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{resources.total_items || 0}</div>
-            <div className="summary-stat-label">Total Items</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">${Math.round(resources.total_market_value || 0)}</div>
-            <div className="summary-stat-label">Wealth</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
