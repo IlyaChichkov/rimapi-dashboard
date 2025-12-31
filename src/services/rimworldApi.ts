@@ -529,4 +529,17 @@ export const rimworldApi = {
   async clearMaterialsAtlas(): Promise<void> {
     await postJson('/materials-atlas/clear', {});
   },
+
+  async fetchGameState(): Promise<any | null> {
+    return getJson<any>('/game/state');
+  },
+
+  async startGame(): Promise<void> {
+    await postNoBody('/game/start');
+  },
+
+  async loadGame(): Promise<void> {
+    // This is a placeholder. A real implementation would need more logic.
+    console.log("Load Game action triggered.");
+  },
 };

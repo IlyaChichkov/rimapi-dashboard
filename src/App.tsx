@@ -2,30 +2,64 @@
 import React, { useState, useEffect } from 'react';
 import RimWorldDashboard from './components/RimWorldDashboard';
 import ApiConfig from './components/ApiConfig';
+import StartGameScreen from './components/StartGameScreen';
+import LoadingScreen from './components/LoadingScreen';
 import './App.css';
 import { ToastContainer } from './components/ToastContainer';
 import { ToastProvider } from './components/ToastContext';
 import { ImageCacheProvider } from './components/ImageCacheContext';
+import { rimworldApi, setApiBaseUrl } from './services/rimworldApi';
+
+type GameStatus = 'checking' | 'menu' | 'playing' | 'api_error';
 
 function App() {
   const [apiUrl, setApiUrl] = useState<string>('');
   const [isConfigured, setIsConfigured] = useState(false);
+  const [gameStatus, setGameStatus] = useState<GameStatus>('checking');
 
   useEffect(() => {
-    // Check if URL is saved in localStorage
     const savedUrl = localStorage.getItem('rimworldApiUrl');
     if (savedUrl) {
       setApiUrl(savedUrl);
+      setApiBaseUrl(savedUrl);
       setIsConfigured(true);
     } else {
-      // Set default URL but don't auto-connect
       setApiUrl('http://localhost:8765/api/v1');
+      // If not configured, we will show ApiConfig right away
     }
   }, []);
 
+  const checkGameState = async () => {
+    setGameStatus('checking');
+    try {
+      const state = await rimworldApi.fetchGameState();
+      if (state) {
+        if (state.program_state === 'Playing' && state.colonist_count > 0) {
+          setGameStatus('playing');
+        } else {
+          setGameStatus('menu');
+        }
+      } else {
+        setGameStatus('api_error');
+      }
+    } catch (error) {
+      console.error("Error checking game state:", error);
+      setGameStatus('api_error');
+    }
+  };
+
+  useEffect(() => {
+    if (isConfigured) {
+      checkGameState();
+    }
+  }, [isConfigured]);
+
   const handleApiUrlChange = (url: string) => {
+    localStorage.setItem('rimworldApiUrl', url);
     setApiUrl(url);
+    setApiBaseUrl(url);
     setIsConfigured(true);
+    setGameStatus('checking'); // Re-check game state after URL change
   };
 
   const handleResetConfig = () => {
@@ -33,20 +67,58 @@ function App() {
     setIsConfigured(false);
   };
 
+  const handleStartGame = async () => {
+    try {
+      await rimworldApi.startGame();
+      setTimeout(checkGameState, 5000); // Give game time to start, then re-check
+    } catch (error) {
+      console.error("Failed to start game:", error);
+    }
+  };
+
+  const handleLoadGame = async () => {
+    try {
+      await rimworldApi.loadGame();
+      const interval = setInterval(async () => {
+        const state = await rimworldApi.fetchGameState();
+        if (state && state.program_state === 'Playing' && state.colonist_count > 0) {
+          setGameStatus('playing');
+          clearInterval(interval);
+        }
+      }, 5000);
+    } catch (error) {
+      console.error("Failed to trigger load game:", error);
+    }
+  };
+
+  const renderContent = () => {
+    if (!isConfigured) {
+      return <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} />;
+    }
+
+    switch (gameStatus) {
+      case 'checking':
+        return <LoadingScreen message="Checking game state..." />;
+      case 'api_error':
+        return <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} onResetConfig={handleResetConfig} />;
+      case 'menu':
+        return <StartGameScreen onStartQuickGame={handleStartGame} onLoadGame={handleLoadGame} />;
+      case 'playing':
+        return (
+          <ToastProvider>
+            <RimWorldDashboard apiUrl={apiUrl} onResetConfig={handleResetConfig} />
+            <ToastContainer />
+          </ToastProvider>
+        );
+      default:
+        return <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} onResetConfig={handleResetConfig} />;
+    }
+  };
+
   return (
     <ImageCacheProvider>
       <div className="App">
-        {!isConfigured ? (
-          <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} />
-        ) : (
-          <ToastProvider>
-            <RimWorldDashboard
-              apiUrl={apiUrl}
-              onResetConfig={handleResetConfig}
-            />
-            <ToastContainer />
-          </ToastProvider>
-        )}
+        {renderContent()}
       </div>
     </ImageCacheProvider>
   );

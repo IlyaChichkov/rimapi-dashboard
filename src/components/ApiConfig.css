@@ -184,8 +184,7 @@
   flex-wrap: wrap;
 }
 
-.connect-btn, .default-btn {
-  flex: 1;
+.connect-btn, .default-btn, .reset-btn {
   min-width: 140px;
   padding: 16px 24px;
   border: none;
@@ -228,6 +227,17 @@
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
   background: rgba(255, 107, 53, 1);
+}
+
+.reset-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.reset-btn:hover:not(:disabled) {
+  background: #5a6268;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
 }
 
 .button-spinner {
