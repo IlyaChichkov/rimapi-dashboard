@@ -5,9 +5,10 @@ import './ApiConfig.css';
 interface ApiConfigProps {
   onApiUrlChange: (url: string) => void;
   currentUrl: string;
+  onResetConfig?: () => void;
 }
 
-const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => {
+const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl, onResetConfig }) => {
   const [inputUrl, setInputUrl] = useState(currentUrl);
   const [isValid, setIsValid] = useState(true);
   const [isTesting, setIsTesting] = useState(false);
@@ -149,6 +150,16 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl }) => 
             >
               Use Default
             </button>
+            {onResetConfig && (
+              <button
+                type="button"
+                onClick={onResetConfig}
+                className="reset-btn"
+                disabled={isTesting}
+              >
+                Change URL
+              </button>
+            )}
           </div>
         </form>
 

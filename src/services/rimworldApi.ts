@@ -49,7 +49,7 @@ interface ApiResponse<T> {
   timestamp: string;
 }
 
-async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> {
+async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T | null> {
   const { signal, cancel } = withTimeout();
   try {
     const res = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -63,7 +63,8 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`HTTP ${res.status} ${res.statusText} - ${text || "No body"}`);
+      console.error(`HTTP ${res.status} ${res.statusText} - ${text || "No body"}`);
+      return null;
     }
 
     const ct = res.headers.get("content-type") || "";
@@ -72,9 +73,11 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T> 
       
       if (!response.success) {
         const errorMsg = response.errors?.join(", ") || "API request failed";
-        throw new Error(errorMsg);
+        console.error(errorMsg);
+        return null;
       }
       
+      console.log(response);
       return response.data;
     }
 
@@ -93,7 +96,7 @@ const postNoBody = (endpoint: string) =>
 // -----------------------------
 const ensureArray = <T>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
-const validateGameState = (data: unknown): GameState => {
+const validateGameState = (data: unknown): any => {
   const d = (data ?? {}) as Record<string, any>;
   return {
     game_time: d.game_time ?? "Unknown",
@@ -102,7 +105,14 @@ const validateGameState = (data: unknown): GameState => {
     temperature: d.temperature ?? 0,
     storyteller: d.storyteller ?? "Unknown",
     difficulty: d.difficulty ?? "Unknown",
+    program_state: d.program_state ?? "Unknown",
+    colonist_count: d.colonist_count ?? 0,
   };
+};
+
+const validatecolonistsResp = (data: unknown): Colonist[] => {
+  const d = (data ?? {}) as Colonist[];
+  return d;
 };
 
 const validateColonists = (data: unknown): Colonist[] => {
@@ -414,7 +424,7 @@ export const fetchRimWorldData = async (): Promise<RimWorldData> => {
 
   return {
     gameState: validateGameState(gameState),
-    colonists: colonistsResp,
+    colonists: validatecolonistsResp(colonistsResp),
     colonistsDetailed: validateColonistsDetailed(colonistsDetailedRaw),
     resources: validateResources(resourcesRaw),
     creatures: validateCreatures(creaturesRaw),
@@ -476,9 +486,10 @@ export const rimworldApi = {
   },
   
   async setColonistWorkPriority(id: number, work: string, priority: number): Promise<void> {
-    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
-    await request<void>(`/colonist/work-priority?id=${id}&work=${capitalize(work)}&priority=${priority}`, {
+    await request<void>(`/colonist/work-priority`, {
       method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, work: work, priority: priority }),
     });
   },
 
@@ -494,12 +505,12 @@ export const rimworldApi = {
 
   async fetchColonistInventory (colonistId: number) {
     const data = await getJson<{ items: any[] }>(`/colonist/inventory?id=${colonistId}`);
-    return data.items;  // Returning just the inventory items
+    return (data ?? { items: [] }).items;  // Returning just the inventory items
   },
 
   async fetchWorkList (): Promise<{work: string[]}> {
     const data = await getJson<{work: string[]}>('/work-list');
-    return data || [];
+    return data ?? {work: []};
   },
   
   uploadItemTextureFile,
@@ -513,10 +524,23 @@ export const rimworldApi = {
   },
 
   async fetchMaterialsAtlas(): Promise<{ materials: string[] }> {
-    return getJson('/materials-atlas');
+    const data = await getJson('/materials-atlas') as { materials: string[] };
+    return (data ?? {materials: []})
   },
 
   async clearMaterialsAtlas(): Promise<void> {
     await postJson('/materials-atlas/clear', {});
+  },
+
+  async fetchGameState(): Promise<any | null> {
+    return getJson<any>('/game/state');
+  },
+
+  async startGame(): Promise<void> {
+    await postNoBody('/game/start/devquick');
+  },
+
+  async loadGame(name: string): Promise<void> {
+    await postNoBody(`/game/load?name=${encodeURIComponent(name)}`);
   },
 };

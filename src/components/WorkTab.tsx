@@ -67,6 +67,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
         const fetchWorkTypes = async () => {
             try {
                 const workTypesFromApi = (await rimworldApi.fetchWorkList()).work;
+                console.log("workTypes:", workTypes);
 
                 // Map the work names from the API response to the WorkTypeLite structure with emoji and category
                 const workTypesWithDetails = workTypesFromApi.map(work => {
@@ -81,8 +82,7 @@ const WorkTab: React.FC<WorkTabProps> = ({
 
                 setWorkTypes(workTypesWithDetails);  // Update state with fetched work types
             } catch (error) {
-                console.error("Failed to fetch work types:");
-                console.error(error);
+                console.error("Failed to fetch work types:", error);
                 addToast({
                     type: 'error',
                     title: 'Error',
@@ -162,15 +162,36 @@ const WorkTab: React.FC<WorkTabProps> = ({
     }, [normalizedQuery]);
 
     const handlePriorityChange = async (workTypeId: string, colonistId: number, newPriority: number) => {
-        // Determine the server-facing work name (falls back to id if not found)
         const workName = workTypes.find(w => w.id === workTypeId)?.name ?? workTypeId;
+
+        let oldPriority: number | undefined;
 
         // --- optimistic update ---
         setAssignments(prev => {
             const next = { ...prev };
-            next[workTypeId] = (prev[workTypeId] || []).map(a =>
-                a.colonist.id === colonistId ? { ...a, priority: newPriority } : a
-            );
+            const currentAssignments = prev[workTypeId] || [];
+            const existingAssignment = currentAssignments.find(a => a.colonist.id === colonistId);
+            oldPriority = existingAssignment?.priority;
+
+            if (existingAssignment) {
+                // Update existing
+                next[workTypeId] = currentAssignments.map(a =>
+                    a.colonist.id === colonistId ? { ...a, priority: newPriority } : a
+                );
+            } else {
+                // Add new
+                const colonistDetail = colonistsDetailed.find(cd => cd.colonist.id === colonistId);
+                if (colonistDetail) {
+                    const newAssignment: Assignment = {
+                        colonist: colonistDetail.colonist,
+                        priority: newPriority,
+                        skills: colonistDetail.colonist_work_info.skills,
+                        detailed: colonistDetail,
+                    };
+                    next[workTypeId] = [...currentAssignments, newAssignment];
+                    fetchColonistImage?.(String(colonistId)).catch(() => void 0);
+                }
+            }
             return next;
         });
 
@@ -182,16 +203,24 @@ const WorkTab: React.FC<WorkTabProps> = ({
             // --- rollback on failure ---
             setAssignments(prev => {
                 const next = { ...prev };
-                next[workTypeId] = (prev[workTypeId] || []).map(a =>
-                    a.colonist.id === colonistId ? { ...a, priority: (a.priority + 9) % 10 } : a
-                );
+                if (oldPriority !== undefined) { // It was an update
+                    next[workTypeId] = (prev[workTypeId] || []).map(a =>
+                        a.colonist.id === colonistId ? { ...a, priority: oldPriority! } : a
+                    );
+                } else { // It was an add
+                    next[workTypeId] = (prev[workTypeId] || []).filter(a => a.colonist.id !== colonistId);
+                }
                 return next;
             });
         }
     };
 
     const handleAddColonist = (workTypeId: string) => {
-        console.log(`Add colonist to ${workTypeId}`);
+        const workType = workTypes.find(w => w.id === workTypeId);
+        if (workType) {
+            const list = assignments[workTypeId] || [];
+            handleOverflowClick(workType, list);
+        }
     };
 
     const handleRemoveColonist = async (workTypeId: string, colonist: Colonist) => {
@@ -520,7 +549,7 @@ const ColonistAssignmentCard: React.FC<ColonistAssignmentCardProps> = ({
         e.stopPropagation();
         const isAltPressed = e.altKey
         const priorityUpdate = isAltPressed ? 1 : -1;
-        const newPriority = (assignment.priority + priorityUpdate) % 10; // Cycle 0-9 (per current behavior)
+        const newPriority = (assignment.priority + priorityUpdate + 10) % 10; // Cycle 0-9
         onPriorityChange(workTypeId, assignment.colonist.id, newPriority);
         if (newPriority == 0) {
 

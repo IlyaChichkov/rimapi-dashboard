@@ -159,8 +159,7 @@ const OverflowManagementModal: React.FC<OverflowManagementModalProps> = ({
     };
 
     const handleAddColonist = (colonist: ColonistDetailed, priority: number = 1) => {
-        console.log(`Add ${colonist.colonist.name} to ${workType.name} with priority ${priority}`);
-        // TODO: when API available
+        onPriorityChange(workType.id, colonist.colonist.id, priority);
     };
 
     return (
