@@ -484,9 +484,10 @@ export const rimworldApi = {
   },
   
   async setColonistWorkPriority(id: number, work: string, priority: number): Promise<void> {
-    const capitalize = (s: string) => (s && String(s[0]).toUpperCase() + String(s).slice(1)) || ""
-    await request<void>(`/colonist/work-priority?id=${id}&work=${capitalize(work)}&priority=${priority}`, {
+    await request<void>(`/colonist/work-priority`, {
       method: "POST",
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id, work: work, priority: priority }),
     });
   },
 

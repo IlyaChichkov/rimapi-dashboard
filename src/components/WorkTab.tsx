@@ -520,7 +520,7 @@ const ColonistAssignmentCard: React.FC<ColonistAssignmentCardProps> = ({
         e.stopPropagation();
         const isAltPressed = e.altKey
         const priorityUpdate = isAltPressed ? 1 : -1;
-        const newPriority = (assignment.priority + priorityUpdate) % 10; // Cycle 0-9 (per current behavior)
+        const newPriority = (assignment.priority + priorityUpdate + 10) % 10; // Cycle 0-9
         onPriorityChange(workTypeId, assignment.colonist.id, newPriority);
         if (newPriority == 0) {
 
