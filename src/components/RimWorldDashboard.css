@@ -880,3 +880,88 @@
   margin-right: auto;
   box-sizing: border-box;
 }
+
+/* Dashboard Actions Bar */
+.dashboard-actions-bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  width: calc(100% - 50px);
+  max-width: 1800px;
+  margin: 0 auto 25px auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.add-card-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(77, 171, 247, 0.4);
+}
+
+.add-card-btn:hover {
+  background: rgba(77, 171, 247, 0.4);
+  color: white;
+}
+
+.trash-zone {
+  padding: 10px 20px;
+  border: 2px dashed rgba(255, 107, 107, 0.5);
+  border-radius: 8px;
+  color: rgba(255, 107, 107, 0.8);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.trash-zone.over {
+  background: rgba(255, 107, 107, 0.2);
+  border-style: solid;
+  color: white;
+}
+
+.add-card-container {
+  position: relative;
+}
+
+.add-card-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(25, 25, 25, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+}
+
+.add-card-menu button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.add-card-menu button:hover {
+  background: rgba(77, 171, 247, 0.4);
+}
