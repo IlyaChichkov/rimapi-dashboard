@@ -331,8 +331,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 width={width}
                 // @ts-ignore
                 gridConfig={{
-                    cols: 12,
-                    rowHeight: 150,
+                  cols: 12,
+                  rowHeight: 150,
                 }}
               >
                 {layout.map(item => renderCard(item))}

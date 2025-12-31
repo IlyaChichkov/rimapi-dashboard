@@ -874,7 +874,7 @@
 .dashboard-header,
 .tabs-navigation,
 .tab-content {
-  width: calc(100% - 50px); /* Same calculation as header */
+  width: 100%; /* Same calculation as header */
   max-width: 1800px; /* Optional: add max-width if header has one */
   margin-left: auto;
   margin-right: auto;
@@ -892,7 +892,7 @@
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   border-radius: 12px;
-  width: calc(100% - 50px);
+  width: 100%;
   max-width: 1800px;
   margin: 0 auto 25px auto;
   border: 1px solid rgba(255, 255, 255, 0.2);
