@@ -4,9 +4,10 @@ import './StartGameScreen.css';
 interface StartGameScreenProps {
     onStartQuickGame: () => void;
     onLoadGame: (saveName: string) => void;
+    onConfigureApi?: () => void;
 }
 
-const StartGameScreen: React.FC<StartGameScreenProps> = ({ onStartQuickGame, onLoadGame }) => {
+const StartGameScreen: React.FC<StartGameScreenProps> = ({ onStartQuickGame, onLoadGame, onConfigureApi }) => {
     const [saveName, setSaveName] = useState('');
 
     useEffect(() => {
@@ -32,10 +33,17 @@ const StartGameScreen: React.FC<StartGameScreenProps> = ({ onStartQuickGame, onL
             <div className="start-game-container">
                 <h1 className="title">Welcome to RimWorld Dashboard</h1>
                 <p className="subtitle">Your game is running, but no colony is loaded.</p>
-                <div className="actions">
-                    <button className="action-btn start-btn" onClick={onStartQuickGame}>
-                        🚀 Start Quick Game
-                    </button>
+                <div className="start-game-actions-container">
+                    <div className="start-game-actions-row">
+                        <button className="action-btn start-btn" onClick={onStartQuickGame}>
+                            🚀 Start Quick Game
+                        </button>
+                        {onConfigureApi && (
+                            <button className="action-btn config-btn" onClick={onConfigureApi}>
+                                ⚙️ Configure API
+                            </button>
+                        )}
+                    </div>
                     <div className="load-game-action">
                         <input
                             type="text"

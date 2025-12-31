@@ -77,7 +77,7 @@ function App() {
   };
 
   const handleLoadGame = async (saveName: string) => {
-    if(!saveName) return;
+    if (!saveName) return;
     try {
       await rimworldApi.loadGame(saveName);
       const interval = setInterval(async () => {
@@ -103,7 +103,7 @@ function App() {
       case 'api_error':
         return <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} onResetConfig={handleResetConfig} />;
       case 'menu':
-        return <StartGameScreen onStartQuickGame={handleStartGame} onLoadGame={handleLoadGame} />;
+        return <StartGameScreen onStartQuickGame={handleStartGame} onLoadGame={handleLoadGame} onConfigureApi={handleResetConfig} />;
       case 'playing':
         return (
           <ToastProvider>
