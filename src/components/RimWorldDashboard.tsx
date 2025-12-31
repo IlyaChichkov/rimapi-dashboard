@@ -74,11 +74,13 @@ const renderColonistCharts = (colonists: Colonist[]) => {
 interface RimWorldDashboardProps {
   apiUrl: string;
   onResetConfig: () => void;
+  onGameStateChange: () => void;
 }
 
 const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   apiUrl,
-  onResetConfig
+  onResetConfig,
+  onGameStateChange
 }) => {
   const [data, setData] = useState<RimWorldData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -128,6 +130,12 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     try {
       setLoading(true);
       const rimWorldData = await fetchRimWorldData();
+      
+      if (!rimWorldData.gameState || (rimWorldData.gameState as any).program_state !== 'Playing' || !rimWorldData.colonists || rimWorldData.colonists.length === 0) {
+        onGameStateChange();
+        return;
+      }
+
       console.log(rimWorldData)
       setData(rimWorldData);
       setLastUpdated(new Date());
@@ -138,7 +146,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onGameStateChange]);
 
   useEffect(() => {
     loadData();

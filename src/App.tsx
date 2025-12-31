@@ -107,7 +107,7 @@ function App() {
       case 'playing':
         return (
           <ToastProvider>
-            <RimWorldDashboard apiUrl={apiUrl} onResetConfig={handleResetConfig} />
+            <RimWorldDashboard apiUrl={apiUrl} onResetConfig={handleResetConfig} onGameStateChange={checkGameState} />
             <ToastContainer />
           </ToastProvider>
         );

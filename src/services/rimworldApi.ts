@@ -96,7 +96,7 @@ const postNoBody = (endpoint: string) =>
 // -----------------------------
 const ensureArray = <T>(val: unknown): T[] => (Array.isArray(val) ? (val as T[]) : []);
 
-const validateGameState = (data: unknown): GameState => {
+const validateGameState = (data: unknown): any => {
   const d = (data ?? {}) as Record<string, any>;
   return {
     game_time: d.game_time ?? "Unknown",
@@ -105,6 +105,8 @@ const validateGameState = (data: unknown): GameState => {
     temperature: d.temperature ?? 0,
     storyteller: d.storyteller ?? "Unknown",
     difficulty: d.difficulty ?? "Unknown",
+    program_state: d.program_state ?? "Unknown",
+    colonist_count: d.colonist_count ?? 0,
   };
 };
 
