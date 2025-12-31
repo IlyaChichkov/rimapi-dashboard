@@ -535,11 +535,10 @@ export const rimworldApi = {
   },
 
   async startGame(): Promise<void> {
-    await postNoBody('/game/start');
+    await postNoBody('/game/start/devquick');
   },
 
-  async loadGame(): Promise<void> {
-    // This is a placeholder. A real implementation would need more logic.
-    console.log("Load Game action triggered.");
+  async loadGame(name: string): Promise<void> {
+    await postNoBody(`/game/load?name=${encodeURIComponent(name)}`);
   },
 };

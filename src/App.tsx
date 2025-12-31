@@ -76,9 +76,10 @@ function App() {
     }
   };
 
-  const handleLoadGame = async () => {
+  const handleLoadGame = async (saveName: string) => {
+    if(!saveName) return;
     try {
-      await rimworldApi.loadGame();
+      await rimworldApi.loadGame(saveName);
       const interval = setInterval(async () => {
         const state = await rimworldApi.fetchGameState();
         if (state && state.program_state === 'Playing' && state.colonist_count > 0) {
