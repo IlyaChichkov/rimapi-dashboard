@@ -24,7 +24,10 @@ const ColonySummarySettingsModal: React.FC<ColonySummarySettingsModalProps> = ({
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <h2>Colony Summary Settings</h2>
+        <div className="modal-header">
+          <h2>Colony Summary Settings</h2>
+          <button onClick={onClose} className="close-modal-btn">&times;</button>
+        </div>
         <div className="settings-options">
           <label>
             <input
@@ -59,7 +62,6 @@ const ColonySummarySettingsModal: React.FC<ColonySummarySettingsModalProps> = ({
             Show Wealth
           </label>
         </div>
-        <button onClick={onClose}>Close</button>
       </div>
     </div>
   );

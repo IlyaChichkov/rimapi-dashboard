@@ -25,6 +25,7 @@ import { useToast } from './ToastContext';
 import DevTab from './DevTab';
 
 import ColonySummary, { ColonySummarySettings } from './ColonySummary';
+import ColonySummarySettingsModal from './ColonySummarySettingsModal';
 import PresetsContextMenu from './PresetsContextMenu';
 import ColonistCard from './ColonistCard';
 
@@ -175,6 +176,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   const [isPresetsMenuOpen, setPresetsMenuOpen] = useState(false);
   const [cardSettings, setCardSettings] = useState<{ [key: string]: any }>({});
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
 
   useEffect(() => {
     // Apply the selected preset layout if one is selected
@@ -187,6 +189,10 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       }
     }
   }, [selectedPreset, presets]); // Run when selectedPreset or presets change
+
+  const handleOpenColonySummarySettings = (cardId: string) => {
+    setEditingCardId(cardId);
+  };
 
   const handleSavePreset = (presetName: string) => {
     if (presetName) {
@@ -503,6 +509,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
             data={data}
             settings={summarySettings}
             onSettingsChange={(newSettings) => handleCardSettingsChange(item.i, newSettings)}
+            onOpenSettings={() => handleOpenColonySummarySettings(item.i)}
           />
         );
       case 'colonist':
@@ -677,6 +684,17 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
       <div className='footer-spacer'></div>
       <Footer />
+
+      {editingCardId && (
+        <ColonySummarySettingsModal
+          isOpen={!!editingCardId}
+          onClose={() => setEditingCardId(null)}
+          settings={cardSettings[editingCardId]}
+          onSettingsChange={(newSettings) => {
+            handleCardSettingsChange(editingCardId, newSettings);
+          }}
+        />
+      )}
     </div>
   );
 };

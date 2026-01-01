@@ -13,12 +13,11 @@ export interface ColonySummarySettings {
 interface ColonySummaryProps {
   settings: ColonySummarySettings;
   onSettingsChange: (settings: ColonySummarySettings) => void;
+  onOpenSettings: () => void;
   data: RimWorldData | null;
 }
 
-const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChange, data }) => {
-  const [isModalOpen, setModalOpen] = useState(false);
-
+const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChange, onOpenSettings, data }) => {
   const colonists = data?.colonists || [];
   const creatures = data?.creatures || {};
   const resources = data?.resources || { categories: [] };
@@ -27,7 +26,7 @@ const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChang
     <div className="colony-summary-card">
       <div className="card-header">
         <h3>Colony Summary</h3>
-        <button className="settings-btn" onClick={() => setModalOpen(true)}>⚙️</button>
+        <button className="settings-btn" onClick={onOpenSettings}>⚙️</button>
       </div>
       <div className="summary-stats-grid">
         {settings.showColonists && (
@@ -55,12 +54,6 @@ const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChang
           </div>
         )}
       </div>
-      <ColonySummarySettingsModal
-        isOpen={isModalOpen}
-        onClose={() => setModalOpen(false)}
-        settings={settings}
-        onSettingsChange={onSettingsChange}
-      />
     </div>
   );
 };
