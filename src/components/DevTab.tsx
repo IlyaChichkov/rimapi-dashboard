@@ -2,6 +2,7 @@
 import React from 'react';
 import ModsTab from './ModsTab';
 import './DevTab.css';
+import { sseService } from '../services/sseService';
 import { rimworldApi } from '../services/rimworldApi';
 
 type DevSubTab = 'mods' | 'console' | 'debug' | 'texture';
@@ -83,7 +84,7 @@ const DevConsole: React.FC = () => {
         },
     ]);
 
-    const [status, setStatus] = React.useState<'connecting' | 'connected' | 'disconnected'>('connecting');
+    const [status, setStatus] = React.useState<'connecting' | 'connected' | 'disconnected'>(sseService.getStatus());
     const [autoScroll, setAutoScroll] = React.useState<boolean>(true);
 
     // level filter state
@@ -218,40 +219,27 @@ const DevConsole: React.FC = () => {
 
     // SSE hookup
     React.useEffect(() => {
-        let es: EventSource | null = null;
+        sseService.connect();
 
-        try {
-            setStatus('connecting');
-            es = new EventSource('http://localhost:8765/api/v1/events');
+        const handleLogMessage = (ev: MessageEvent) => {
+            try {
+                appendLog(ev.data);
+            } catch (err) {
+                console.error('log_message handler error', err);
+                appendLog(ev.data);
+            }
+        };
 
-            es.onopen = () => setStatus('connected');
+        const handleStatusChange = (status: 'connecting' | 'connected' | 'disconnected') => {
+            setStatus(status);
+        };
 
-            es.addEventListener('log_message', (ev: MessageEvent) => {
-                try {
-                    appendLog(ev.data);
-                } catch (err) {
-                    console.error('log_message handler error', err);
-                    appendLog(ev.data);
-                }
-            });
-
-            es.onerror = () => {
-                setStatus('disconnected');
-                if (es) {
-                    es.close();
-                    es = null;
-                }
-            };
-        } catch (err) {
-            console.error('SSE setup error', err);
-            setStatus('disconnected');
-        }
+        sseService.addEventListener('log_message', handleLogMessage);
+        sseService.addStatusListener(handleStatusChange);
 
         return () => {
-            if (es) {
-                es.close();
-                es = null;
-            }
+            sseService.removeEventListener('log_message', handleLogMessage);
+            sseService.removeStatusListener(handleStatusChange);
         };
     }, [appendLog]);
 

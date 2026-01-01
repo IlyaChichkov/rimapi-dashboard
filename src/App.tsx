@@ -8,6 +8,7 @@ import './App.css';
 import { ToastContainer } from './components/ToastContainer';
 import { ToastProvider } from './components/ToastContext';
 import { ImageCacheProvider } from './components/ImageCacheContext';
+import { sseService } from './services/sseService';
 import { rimworldApi, setApiBaseUrl } from './services/rimworldApi';
 
 type GameStatus = 'checking' | 'menu' | 'playing' | 'api_error';
@@ -51,6 +52,7 @@ function App() {
   useEffect(() => {
     if (isConfigured) {
       checkGameState();
+      sseService.connect();
     }
   }, [isConfigured, checkGameState]);
 
