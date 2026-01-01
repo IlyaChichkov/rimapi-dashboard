@@ -898,6 +898,12 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+.dashboard-controls-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
 .add-card-btn {
   padding: 10px 20px;
   border: none;
@@ -966,86 +972,25 @@
   background: rgba(77, 171, 247, 0.4);
 }
 
-.dashboard-presets {
-  display: flex;
-  gap: 10px;
-  align-items: center;
+.presets-container {
+  position: relative;
 }
 
-.presets-select {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  color: white;
-  padding: 8px 12px;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.presets-select:focus {
-  outline: none;
-  border-color: #4dabf7;
-  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
-}
-
-.save-preset-btn {
-  padding: 8px 15px;
+.presets-btn {
+  padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: rgba(40, 167, 69, 0.3);
-  color: #28a745;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
   font-size: 0.9em;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 1px solid rgba(40, 167, 69, 0.4);
+  border: 1px solid rgba(77, 171, 247, 0.4);
 }
 
-.save-preset-btn:hover {
-  background: rgba(40, 167, 69, 0.5);
+.presets-btn:hover {
+  background: rgba(77, 171, 247, 0.4);
   color: white;
 }
 
-.delete-preset-btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(167, 40, 40, 0.3);
-  color: #a72c28;
-  font-size: 0.9em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid rgba(167, 49, 40, 0.4);
-}
-
-.delete-preset-btn:hover {
-  background: rgba(167, 40, 40, 0.5);
-  color: white;
-}
-
-.preset-name-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 6px;
-  color: white;
-  padding: 8px 12px;
-  font-size: 0.9em;
-  transition: all 0.3s ease;
-}
-
-.preset-name-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
-}
-
-.preset-name-input:focus {
-  outline: none;
-  border-color: #4dabf7;
-  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
-}
-
-.presets-select option {
-  background: #333;
-  color: white;
-}

@@ -24,6 +24,8 @@ import ResourcesDashboard from './ResourcesDashboard';
 import { useToast } from './ToastContext';
 import DevTab from './DevTab';
 
+import PresetsContextMenu from './PresetsContextMenu';
+
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
 
@@ -148,60 +150,157 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [isAddCardMenuOpen, setAddCardMenuOpen] = useState(false);
   const trashRef = useRef<HTMLDivElement>(null);
   const { width, containerRef, mounted } = useContainerWidth();
+  const presetChangeRef = useRef(false);
 
-  const [presets, setPresets] = useState<{ name: string, layout: Layout }[]>([]);
-  const [selectedPreset, setSelectedPreset] = useState<string>("");
-  const [presetName, setPresetName] = useState<string>("");
+  // Update the presets and selectedPreset initialization
+  const [presets, setPresets] = useState<{ name: string, layout: Layout }[]>(() => {
+    const savedPresets = localStorage.getItem('dashboard_presets');
+    return savedPresets ? JSON.parse(savedPresets) : [];
+  });
+
+  const [selectedPreset, setSelectedPreset] = useState<string>(() => {
+    const lastPreset = localStorage.getItem('last_selected_preset') || "";
+    const savedPresets = localStorage.getItem('dashboard_presets');
+
+    // Check if the last selected preset actually exists in the saved presets
+    if (lastPreset && savedPresets) {
+      const parsedPresets = JSON.parse(savedPresets);
+      const presetExists = parsedPresets.some((p: { name: string }) => p.name === lastPreset);
+      return presetExists ? lastPreset : "";
+    }
+    return "";
+  });
+
+  const [isPresetsMenuOpen, setPresetsMenuOpen] = useState(false);
 
   useEffect(() => {
-    const savedPresets = localStorage.getItem('dashboard_presets');
-    if (savedPresets) {
-      setPresets(JSON.parse(savedPresets));
+    // Apply the selected preset layout if one is selected
+    if (selectedPreset && presets.length > 0) {
+      const preset = presets.find(p => p.name === selectedPreset);
+      if (preset) {
+        presetChangeRef.current = true;
+        setLayout(preset.layout);
+      }
     }
-  }, []);
+  }, [selectedPreset, presets]); // Run when selectedPreset or presets change
 
-  const handleSavePreset = () => {
+  // Update handleSavePreset to handle auto-save scenarios better
+  const handleSavePreset = (presetName: string) => {
     if (presetName) {
       const newPreset = { name: presetName, layout: layout };
       const updatedPresets = [...presets.filter(p => p.name !== presetName), newPreset];
       setPresets(updatedPresets);
       localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
       setSelectedPreset(presetName);
+      localStorage.setItem('last_selected_preset', presetName);
+
       addToast({
         type: 'success',
         title: `Preset '${presetName}' saved!`,
       });
-      setPresetName(""); // Clear input after saving
+      return true;
     } else {
       addToast({
         type: 'warning',
         title: 'Please enter a name for the preset.',
       });
+      return false;
     }
   };
 
-  const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const presetName = e.target.value;
-    setSelectedPreset(presetName);
+  // Update handlePresetSelect to handle auto-save state
+  const handlePresetSelect = (presetName: string) => {
     if (presetName) {
       const preset = presets.find(p => p.name === presetName);
       if (preset) {
+        presetChangeRef.current = true;
         setLayout(preset.layout);
       }
+      setSelectedPreset(presetName);
+      localStorage.setItem('last_selected_preset', presetName);
     } else {
+      // When selecting "Create Preset" (empty string)
+      presetChangeRef.current = true;
       setLayout(initialLayout);
+      setSelectedPreset("");
+      localStorage.removeItem('last_selected_preset');
     }
   };
 
-  const handleDeletePreset = () => {
+  function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+  ): (...args: Parameters<T>) => void {
+    let timeout: NodeJS.Timeout;
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func(...args), wait);
+    };
+  }
+
+  // Add debouncing to prevent too many auto-saves
+  const onLayoutChangeDebounced = useCallback(
+    debounce((newLayout: Layout) => {
+      // Auto-save to current preset if one is selected
+      if (selectedPreset) {
+        const updatedPresets = presets.map(p =>
+          p.name === selectedPreset ? { ...p, layout: newLayout } : p
+        );
+        setPresets(updatedPresets);
+        localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
+        // Show subtle notification
+        const autoSaveToastId = `autosave-${selectedPreset}`;
+        const existingToast = document.querySelector(`[data-toast-id="${autoSaveToastId}"]`);
+        if (!existingToast) {
+          addToast({
+            type: 'info',
+            title: `Preset '${selectedPreset}' auto-saved`,
+            duration: 500,
+          });
+        }
+      }
+    }, 1000), // Wait 1 second after last layout change
+    [selectedPreset, presets, addToast]
+  );
+
+  const onLayoutChange = (newLayout: Layout) => {
+    if (presetChangeRef.current) {
+      presetChangeRef.current = false;
+      return;
+    }
+
+    setLayout(newLayout);
+
+    // Trigger debounced auto-save
     if (selectedPreset) {
-      const updatedPresets = presets.filter(p => p.name !== selectedPreset);
+      onLayoutChangeDebounced(newLayout);
+    } else {
+      // Check if layout matches any existing preset
+      const matchingPreset = presets.find(p =>
+        JSON.stringify(p.layout) === JSON.stringify(newLayout)
+      );
+      if (matchingPreset) {
+        setSelectedPreset(matchingPreset.name);
+        localStorage.setItem('last_selected_preset', matchingPreset.name);
+      } else if (JSON.stringify(layout) !== JSON.stringify(initialLayout)) {
+        setSelectedPreset(""); // Clear preset since layout no longer matches any preset
+      }
+    }
+  };
+
+  const handleDeletePreset = (presetName: string) => {
+    if (presetName) {
+      const updatedPresets = presets.filter(p => p.name !== presetName);
       setPresets(updatedPresets);
       localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
-      setSelectedPreset(""); // Go back to default
+      if (selectedPreset === presetName) {
+        setSelectedPreset(""); // Go back to default
+      }
       addToast({
         type: 'success',
-        title: `Preset '${selectedPreset}' deleted!`,
+        title: `Preset '${presetName}' deleted!`,
       });
     } else {
       addToast({
@@ -209,11 +308,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         title: 'Please select a preset to delete.',
       });
     }
-  };
-
-  const onLayoutChange = (newLayout: Layout) => {
-    setLayout(newLayout);
-    setSelectedPreset(""); // Deselect preset on layout change
   };
 
   const onRemoveItem = (itemId: string) => {
@@ -475,34 +569,36 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
       {activeTab === 'dashboard' && (
         <div className="dashboard-actions-bar">
-          <div className="add-card-container">
-            <button className="add-card-btn" onClick={() => setAddCardMenuOpen(!isAddCardMenuOpen)}>
-              ✨ Add Card
-            </button>
-            {isAddCardMenuOpen && (
-              <div className="add-card-menu">
-                {availableCards.map(cardId => (
-                  <button key={cardId} onClick={() => onAddItem(cardId)}>
-                    {cardId}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="dashboard-presets">
-            <select className="presets-select" onChange={handlePresetChange} value={selectedPreset}>
-              <option value="">Select Preset</option>
-              {presets.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
-            </select>
-            <input
-              type="text"
-              className="preset-name-input"
-              placeholder="Preset name"
-              value={presetName}
-              onChange={(e) => setPresetName(e.target.value)}
-            />
-            <button className="save-preset-btn" onClick={handleSavePreset}>Save Preset</button>
-            <button className="delete-preset-btn" onClick={handleDeletePreset}>Delete Preset</button>
+          <div className="dashboard-controls-left">
+            <div className="add-card-container">
+              <button className="add-card-btn" onClick={() => setAddCardMenuOpen(!isAddCardMenuOpen)}>
+                ✨ Add Card
+              </button>
+              {isAddCardMenuOpen && (
+                <div className="add-card-menu">
+                  {availableCards.map(cardId => (
+                    <button key={cardId} onClick={() => onAddItem(cardId)}>
+                      {cardId}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="presets-container">
+              <button className="presets-btn" onClick={() => setPresetsMenuOpen(!isPresetsMenuOpen)}>
+                {selectedPreset || 'Create Preset'}
+              </button>
+              {isPresetsMenuOpen && (
+                <PresetsContextMenu
+                  presets={presets}
+                  selectedPreset={selectedPreset}
+                  onSave={handleSavePreset}
+                  onSelect={handlePresetSelect}
+                  onDelete={handleDeletePreset}
+                  onClose={() => setPresetsMenuOpen(false)}
+                />
+              )}
+            </div>
           </div>
           <div className="trash-zone" ref={trashRef}>
             <span>🗑️ Drag here to delete</span>
