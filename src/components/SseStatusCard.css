@@ -1,0 +1,51 @@
+/* src/components/SseStatusCard.css */
+
+.sse-status-card {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.sse-status-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.sse-status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    font-size: 1.1rem;
+}
+
+.sse-status-label {
+    color: var(--color-text-muted);
+}
+
+.sse-status-value {
+    font-weight: bold;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+}
+
+.status-connected {
+    color: var(--color-success);
+    background-color: rgba(3, 201, 136, 0.1);
+}
+
+.status-disconnected {
+    color: var(--color-danger);
+    background-color: rgba(224, 49, 49, 0.1);
+}
+
+.status-connecting {
+    color: var(--color-warning);
+    background-color: rgba(240, 140, 0, 0.1);
+}

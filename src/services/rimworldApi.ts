@@ -77,7 +77,6 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T |
         return null;
       }
       
-      console.log(response);
       return response.data;
     }
 
@@ -131,7 +130,6 @@ const validateModsInfo = (data: unknown): ModInfo[] => {
 };
 
 const validateResources = (data: unknown): ResourceSummary => {
-  console.log(data)
   const d = (data ?? {}) as Record<string, any>;
   const categories = ensureArray<any>(d.categories).map((category) => ({
     category: category.category,

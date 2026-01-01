@@ -4,6 +4,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import type { Layout } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
+import { sseService } from '../services/sseService';
 import {
   ColonistStatsChart,
   ResourcesChart,
@@ -27,6 +28,7 @@ import DevTab from './DevTab';
 import ColonySummary, { ColonySummarySettings } from './ColonySummary';
 import ColonySummarySettingsModal from './ColonySummarySettingsModal';
 import PresetsContextMenu from './PresetsContextMenu';
+import SseStatusCard from './SseStatusCard';
 import ColonistCard from './ColonistCard';
 
 // Tab types
@@ -55,6 +57,29 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = React.useState<string[]>([]);
 
   const { addToast } = useToast();
+
+  useEffect(() => {
+    const handleWorldEvent = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data?.letter?.className === 'StandardLetter') {
+          addToast({
+            type: 'info',
+            title: 'New message',
+            message: data.letter.label,
+          });
+        }
+      } catch (error) {
+        console.error('Error handling world event:', error);
+      }
+    };
+
+    sseService.addEventListener('world_event', handleWorldEvent);
+
+    return () => {
+      sseService.removeEventListener('world_event', handleWorldEvent);
+    };
+  }, [addToast]);
 
   const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'mood') => {
     const sorted = [...colonists];
@@ -146,7 +171,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     { i: 'resources', x: 6, y: 0, w: 6, h: 2 },
     { i: 'power', x: 0, y: 2, w: 4, h: 2 },
     { i: 'population', x: 4, y: 2, w: 4, h: 2 },
-    { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2 }
+    { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2 },
+    { i: 'sseStatus', x: 0, y: 4, w: 4, h: 2 },
   ];
 
   const [layout, setLayout] = useState<Layout>(initialLayout);
@@ -420,7 +446,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -531,6 +557,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           </div>
 
         );
+      case 'sseStatus':
+        return <SseStatusCard />;
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
     }

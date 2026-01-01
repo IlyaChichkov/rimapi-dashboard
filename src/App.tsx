@@ -23,6 +23,7 @@ function App() {
     if (savedUrl) {
       setApiUrl(savedUrl);
       setApiBaseUrl(savedUrl);
+      sseService.setApiUrl(savedUrl);
       setIsConfigured(true);
     } else {
       setApiUrl('http://localhost:8765/api/v1');
@@ -60,6 +61,7 @@ function App() {
     localStorage.setItem('rimworldApiUrl', url);
     setApiUrl(url);
     setApiBaseUrl(url);
+    sseService.setApiUrl(url);
     setIsConfigured(true);
     setGameStatus('checking'); // Re-check game state after URL change
   };

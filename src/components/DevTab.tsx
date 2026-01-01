@@ -219,8 +219,6 @@ const DevConsole: React.FC = () => {
 
     // SSE hookup
     React.useEffect(() => {
-        sseService.connect();
-
         const handleLogMessage = (ev: MessageEvent) => {
             try {
                 appendLog(ev.data);
