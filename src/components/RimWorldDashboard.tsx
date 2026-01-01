@@ -149,8 +149,71 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const trashRef = useRef<HTMLDivElement>(null);
   const { width, containerRef, mounted } = useContainerWidth();
 
+  const [presets, setPresets] = useState<{ name: string, layout: Layout }[]>([]);
+  const [selectedPreset, setSelectedPreset] = useState<string>("");
+  const [presetName, setPresetName] = useState<string>("");
+
+  useEffect(() => {
+    const savedPresets = localStorage.getItem('dashboard_presets');
+    if (savedPresets) {
+      setPresets(JSON.parse(savedPresets));
+    }
+  }, []);
+
+  const handleSavePreset = () => {
+    if (presetName) {
+      const newPreset = { name: presetName, layout: layout };
+      const updatedPresets = [...presets.filter(p => p.name !== presetName), newPreset];
+      setPresets(updatedPresets);
+      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+      setSelectedPreset(presetName);
+      addToast({
+        type: 'success',
+        title: `Preset '${presetName}' saved!`,
+      });
+      setPresetName(""); // Clear input after saving
+    } else {
+      addToast({
+        type: 'warning',
+        title: 'Please enter a name for the preset.',
+      });
+    }
+  };
+
+  const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const presetName = e.target.value;
+    setSelectedPreset(presetName);
+    if (presetName) {
+      const preset = presets.find(p => p.name === presetName);
+      if (preset) {
+        setLayout(preset.layout);
+      }
+    } else {
+      setLayout(initialLayout);
+    }
+  };
+
+  const handleDeletePreset = () => {
+    if (selectedPreset) {
+      const updatedPresets = presets.filter(p => p.name !== selectedPreset);
+      setPresets(updatedPresets);
+      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+      setSelectedPreset(""); // Go back to default
+      addToast({
+        type: 'success',
+        title: `Preset '${selectedPreset}' deleted!`,
+      });
+    } else {
+      addToast({
+        type: 'warning',
+        title: 'Please select a preset to delete.',
+      });
+    }
+  };
+
   const onLayoutChange = (newLayout: Layout) => {
     setLayout(newLayout);
+    setSelectedPreset(""); // Deselect preset on layout change
   };
 
   const onRemoveItem = (itemId: string) => {
@@ -227,7 +290,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   };
 
   const renderCard = (item: Layout[number]) => {
-    const cardId = item.i.split('_')[0]; // Handle unique IDs for added cards
+    const cardId = item.i.split('_')[0];
     switch (cardId) {
       case 'colonists':
         return (
@@ -425,6 +488,21 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 ))}
               </div>
             )}
+          </div>
+          <div className="dashboard-presets">
+            <select className="presets-select" onChange={handlePresetChange} value={selectedPreset}>
+              <option value="">Select Preset</option>
+              {presets.map(p => <option key={p.name} value={p.name}>{p.name}</option>)}
+            </select>
+            <input
+              type="text"
+              className="preset-name-input"
+              placeholder="Preset name"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+            />
+            <button className="save-preset-btn" onClick={handleSavePreset}>Save Preset</button>
+            <button className="delete-preset-btn" onClick={handleDeletePreset}>Delete Preset</button>
           </div>
           <div className="trash-zone" ref={trashRef}>
             <span>🗑️ Drag here to delete</span>

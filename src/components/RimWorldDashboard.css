@@ -874,8 +874,8 @@
 .dashboard-header,
 .tabs-navigation,
 .tab-content {
-  width: 100%; /* Same calculation as header */
-  max-width: 1800px; /* Optional: add max-width if header has one */
+  width: 100%;
+  max-width: 1800px;
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
@@ -964,4 +964,88 @@
 
 .add-card-menu button:hover {
   background: rgba(77, 171, 247, 0.4);
+}
+
+.dashboard-presets {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.presets-select {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.presets-select:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
+}
+
+.save-preset-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(40, 167, 69, 0.3);
+  color: #28a745;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(40, 167, 69, 0.4);
+}
+
+.save-preset-btn:hover {
+  background: rgba(40, 167, 69, 0.5);
+  color: white;
+}
+
+.delete-preset-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(167, 40, 40, 0.3);
+  color: #a72c28;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(167, 49, 40, 0.4);
+}
+
+.delete-preset-btn:hover {
+  background: rgba(167, 40, 40, 0.5);
+  color: white;
+}
+
+.preset-name-input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: white;
+  padding: 8px 12px;
+  font-size: 0.9em;
+  transition: all 0.3s ease;
+}
+
+.preset-name-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.preset-name-input:focus {
+  outline: none;
+  border-color: #4dabf7;
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
+}
+
+.presets-select option {
+  background: #333;
+  color: white;
 }
