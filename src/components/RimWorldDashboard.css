@@ -787,11 +787,6 @@
   padding: 6px 0;
 }
 
-.summary-stat-label {
-  color: #b0b0b0;
-  font-size: 0.9em;
-}
-
 .summary-stat-value {
   color: white;
   font-weight: 600;
