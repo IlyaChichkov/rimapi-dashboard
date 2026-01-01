@@ -131,6 +131,7 @@ const validateModsInfo = (data: unknown): ModInfo[] => {
 };
 
 const validateResources = (data: unknown): ResourceSummary => {
+  console.log(data)
   const d = (data ?? {}) as Record<string, any>;
   const categories = ensureArray<any>(d.categories).map((category) => ({
     category: category.category,

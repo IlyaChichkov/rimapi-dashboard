@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RimWorldDashboard from './components/RimWorldDashboard';
 import ApiConfig from './components/ApiConfig';
 import StartGameScreen from './components/StartGameScreen';
@@ -29,7 +29,7 @@ function App() {
     }
   }, []);
 
-  const checkGameState = async () => {
+  const checkGameState = useCallback(async () => {
     setGameStatus('checking');
     try {
       const state = await rimworldApi.fetchGameState();
@@ -46,13 +46,13 @@ function App() {
       console.error("Error checking game state:", error);
       setGameStatus('api_error');
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isConfigured) {
       checkGameState();
     }
-  }, [isConfigured]);
+  }, [isConfigured, checkGameState]);
 
   const handleApiUrlChange = (url: string) => {
     localStorage.setItem('rimworldApiUrl', url);

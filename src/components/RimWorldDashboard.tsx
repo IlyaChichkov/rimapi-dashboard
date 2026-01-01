@@ -24,6 +24,7 @@ import ResourcesDashboard from './ResourcesDashboard';
 import { useToast } from './ToastContext';
 import DevTab from './DevTab';
 
+import ColonySummary, { ColonySummarySettings } from './ColonySummary';
 import PresetsContextMenu from './PresetsContextMenu';
 import ColonistCard from './ColonistCard';
 
@@ -144,7 +145,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     { i: 'resources', x: 6, y: 0, w: 6, h: 2 },
     { i: 'power', x: 0, y: 2, w: 4, h: 2 },
     { i: 'population', x: 4, y: 2, w: 4, h: 2 },
-    { i: 'summary', x: 8, y: 2, w: 4, h: 2 }
+    { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2 }
   ];
 
   const [layout, setLayout] = useState<Layout>(initialLayout);
@@ -246,6 +247,13 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     };
   }
 
+  const handleCardSettingsChange = (cardId: string, newSettings: any) => {
+    setCardSettings(prev => ({
+      ...prev,
+      [cardId]: newSettings
+    }));
+  };
+
   const onLayoutChange = (newLayout: Layout) => {
     if (presetChangeRef.current) {
       presetChangeRef.current = false;
@@ -313,8 +321,28 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     if (itemId === 'colonist') {
       setCardSettings(prev => ({ ...prev, [newItemId]: { colonistId: 0 } }));
     }
+    if (itemId === 'colonySummary') {
+      setCardSettings(prev => ({
+        ...prev,
+        [newItemId]: {
+          showColonists: true,
+          showAnimals: true,
+          showItems: true,
+          showWealth: true,
+        } as ColonySummarySettings
+      }));
+    }
     const newLayout = [...layout, newItem];
     setLayout(newLayout);
+
+    if (selectedPreset) {
+      const updatedPresets = presets.map(p =>
+        p.name === selectedPreset ? { ...p, layout: newLayout } : p
+      );
+      setPresets(updatedPresets);
+      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+    }
+
     setAddCardMenuOpen(false);
   };
 
@@ -372,7 +400,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'summary', 'colonist'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -454,29 +482,14 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
             <div className="chart-container"><PopulationChart creatures={creatures} /></div>
           </div>
         );
-      case 'summary':
+      case 'colonySummary':
+        const summarySettings = cardSettings[item.i] || { showColonists: true, showAnimals: true, showItems: true, showWealth: true };
         return (
-          <div key={item.i} className="stats-card">
-            <h3>Colony Summary</h3>
-            <div className="summary-stats-grid">
-              <div className="summary-stat-item">
-                <div className="summary-stat-value">{colonists.length}</div>
-                <div className="summary-stat-label">Colonists</div>
-              </div>
-              <div className="summary-stat-item">
-                <div className="summary-stat-value">{creatures.animals_count || 0}</div>
-                <div className="summary-stat-label">Animals</div>
-              </div>
-              <div className="summary-stat-item">
-                <div className="summary-stat-value">{resources.total_items || 0}</div>
-                <div className="summary-stat-label">Total Items</div>
-              </div>
-              <div className="summary-stat-item">
-                <div className="summary-stat-value">${Math.round(resources.total_market_value || 0)}</div>
-                <div className="summary-stat-label">Wealth</div>
-              </div>
-            </div>
-          </div>
+          <ColonySummary
+            data={data}
+            settings={summarySettings}
+            onSettingsChange={(newSettings) => handleCardSettingsChange(item.i, newSettings)}
+          />
         );
       case 'colonist':
         const colonistId = cardSettings[item.i]?.colonistId || 0;

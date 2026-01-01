@@ -122,7 +122,7 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
             switch (type) {
                 case 'hunger': return '🍽️';
                 case 'comfort': return '🪑';
-                case 'sleep': return '😪';
+                case 'sleep': return '😴';
                 default: return '⚠️';
             }
         } else {
@@ -262,16 +262,6 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                                     </div>
                                     <span className={`need-percentage ${getNeedColor(sleep)}`}>{sleep}%</span>
                                 </div>
-                            </div>
-                            <div className="colonist-actions">
-                                {onViewSkills && (
-                                    <button
-                                        className="action-btn"
-                                        onClick={() => onViewSkills(colonistInfo.name)}
-                                    >
-                                        📚 Skills
-                                    </button>
-                                )}
                             </div>
                         </div>
                     ) : (

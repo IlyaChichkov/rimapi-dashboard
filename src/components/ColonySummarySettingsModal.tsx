@@ -1,0 +1,68 @@
+import React from 'react';
+import './ColonySummarySettingsModal.css';
+import { ColonySummarySettings } from './ColonySummary';
+
+interface ColonySummarySettingsModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  settings: ColonySummarySettings;
+  onSettingsChange: (settings: ColonySummarySettings) => void;
+}
+
+const ColonySummarySettingsModal: React.FC<ColonySummarySettingsModalProps> = ({ isOpen, onClose, settings, onSettingsChange }) => {
+  if (!isOpen) {
+    return null;
+  }
+
+  const handleSettingChange = (setting: keyof ColonySummarySettings) => {
+    onSettingsChange({
+      ...settings,
+      [setting]: !settings[setting],
+    });
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <h2>Colony Summary Settings</h2>
+        <div className="settings-options">
+          <label>
+            <input
+              type="checkbox"
+              checked={settings.showColonists}
+              onChange={() => handleSettingChange('showColonists')}
+            />
+            Show Colonists
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={settings.showAnimals}
+              onChange={() => handleSettingChange('showAnimals')}
+            />
+            Show Animals
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={settings.showItems}
+              onChange={() => handleSettingChange('showItems')}
+            />
+            Show Total Items
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={settings.showWealth}
+              onChange={() => handleSettingChange('showWealth')}
+            />
+            Show Wealth
+          </label>
+        </div>
+        <button onClick={onClose}>Close</button>
+      </div>
+    </div>
+  );
+};
+
+export default ColonySummarySettingsModal;
