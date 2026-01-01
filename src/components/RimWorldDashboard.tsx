@@ -25,6 +25,7 @@ import { useToast } from './ToastContext';
 import DevTab from './DevTab';
 
 import PresetsContextMenu from './PresetsContextMenu';
+import ColonistCard from './ColonistCard';
 
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
@@ -172,6 +173,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   });
 
   const [isPresetsMenuOpen, setPresetsMenuOpen] = useState(false);
+  const [cardSettings, setCardSettings] = useState<{ [key: string]: any }>({});
 
   useEffect(() => {
     // Apply the selected preset layout if one is selected
@@ -239,7 +241,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     };
   }
 
-  // Add debouncing to prevent too many auto-saves
   const onLayoutChangeDebounced = useCallback(
     debounce((newLayout: Layout) => {
       // Auto-save to current preset if one is selected
@@ -250,20 +251,27 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         setPresets(updatedPresets);
         localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
 
-        // Show subtle notification
+        // Show subtle notification only if layout actually changed (not just order)
         const autoSaveToastId = `autosave-${selectedPreset}`;
         const existingToast = document.querySelector(`[data-toast-id="${autoSaveToastId}"]`);
         if (!existingToast) {
           addToast({
             type: 'info',
-            title: `Preset '${selectedPreset}' auto-saved`,
-            duration: 500,
+            title: `Preset '${selectedPreset}' updated`,
+            duration: 600,
           });
         }
       }
-    }, 1000), // Wait 1 second after last layout change
+    }, 400), // Wait 1 second after last layout change
     [selectedPreset, presets, addToast]
   );
+
+  const handleSelectColonistForCard = (cardId: string, colonistId: number) => {
+    setCardSettings(prev => ({
+      ...prev,
+      [cardId]: { ...prev[cardId], colonistId: colonistId }
+    }));
+  };
 
   const onLayoutChange = (newLayout: Layout) => {
     if (presetChangeRef.current) {
@@ -273,7 +281,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
     setLayout(newLayout);
 
-    // Trigger debounced auto-save
+    // Auto-save to current preset if one is selected
     if (selectedPreset) {
       onLayoutChangeDebounced(newLayout);
     } else {
@@ -311,19 +319,57 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   };
 
   const onRemoveItem = (itemId: string) => {
-    setLayout(layout.filter(item => item.i !== itemId));
+    const newLayout = layout.filter(item => item.i !== itemId);
+    setLayout(newLayout);
+
+    // Auto-save to current preset if one is selected
+    if (selectedPreset) {
+      const updatedPresets = presets.map(p =>
+        p.name === selectedPreset ? { ...p, layout: newLayout } : p
+      );
+      setPresets(updatedPresets);
+      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
+      // Show auto-save notification
+      addToast({
+        type: 'info',
+        title: `Preset '${selectedPreset}' updated (card removed)`,
+        duration: 1500,
+      });
+    }
   };
 
   const onAddItem = (itemId: string) => {
+    const newItemId = `${itemId}_${new Date().getTime()}`;
     const newItem: Layout[number] = {
-      i: `${itemId}_${new Date().getTime()}`,
+      i: newItemId,
       x: (layout.length * 4) % 12,
       y: Infinity,
       w: 4,
       h: 2,
     };
-    setLayout([...layout, newItem]);
+    if (itemId === 'colonist') {
+      setCardSettings(prev => ({ ...prev, [newItemId]: { colonistId: 0 } }));
+    }
+    const newLayout = [...layout, newItem];
+    setLayout(newLayout);
     setAddCardMenuOpen(false);
+
+    // Auto-save to current preset if one is selected
+    if (selectedPreset) {
+      const updatedPresets = presets.map(p =>
+        p.name === selectedPreset ? { ...p, layout: newLayout } : p
+      );
+      setPresets(updatedPresets);
+      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
+      // Show auto-save notification
+      addToast({
+        type: 'info',
+        title: `Preset '${selectedPreset}' updated (card added)`,
+        duration: 1500,
+      });
+    }
   };
 
   const onDragStop = (
@@ -338,7 +384,24 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       const isOverTrash = e.clientX > trashRect.left && e.clientX < trashRect.right &&
         e.clientY > trashRect.top && e.clientY < trashRect.bottom;
       if (isOverTrash) {
-        onRemoveItem(newItem.i);
+        const newLayout = layout.filter(item => item.i !== newItem.i);
+        setLayout(newLayout);
+
+        // Auto-save to current preset if one is selected
+        if (selectedPreset) {
+          const updatedPresets = presets.map(p =>
+            p.name === selectedPreset ? { ...p, layout: newLayout } : p
+          );
+          setPresets(updatedPresets);
+          localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
+          // Show auto-save notification
+          addToast({
+            type: 'info',
+            title: `Preset '${selectedPreset}' updated (card removed)`,
+            duration: 1500,
+          });
+        }
       }
       trashRef.current.classList.remove('over');
     }
@@ -363,7 +426,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'summary'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'summary', 'colonist'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -388,7 +451,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     switch (cardId) {
       case 'colonists':
         return (
-          <div key={item.i} className="chart-card">
+          <div className="chart-card-content">
             <div className="chart-header">
               <h3>Mood</h3>
               <div className="chart-corner-container">
@@ -409,7 +472,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         );
       case 'resources':
         return (
-          <div key={item.i} className="chart-card">
+          <div className="chart-card-content">
             <div className="chart-header">
               <h3>Resource Distribution</h3>
               <div className="resource-total">Total: {resources.total_items || 0} items</div>
@@ -421,7 +484,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         );
       case 'power':
         return (
-          <div key={item.i} className="chart-card">
+          <div className="chart-card-content">
             <div className="chart-header">
               <div className="chart-header-top">
                 <h3>Power Management</h3>
@@ -440,7 +503,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         );
       case 'population':
         return (
-          <div key={item.i} className="chart-card">
+          <div className="chart-card-content">
             <div className="chart-header"><h3>Population Overview</h3></div>
             <div className="chart-container"><PopulationChart creatures={creatures} /></div>
           </div>
@@ -469,6 +532,18 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
             </div>
           </div>
         );
+      case 'colonist':
+        const colonistId = cardSettings[item.i]?.colonistId || 0;
+        return (
+            <div key={item.i} className="chart-card">
+                <ColonistCard
+                    colonistId={colonistId}
+                    size={{ w: item.w, h: item.h }}
+                    onViewHealth={handleOpenMedicalTabWithColonist}
+                    onSelectColonist={(id) => handleSelectColonistForCard(item.i, id)}
+                />
+            </div>
+        );
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
     }
@@ -478,23 +553,26 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div ref={containerRef as React.RefObject<HTMLDivElement>}>
-            {mounted && (
+          <div className="tab-content dashboard-tab">
+            <div className="dashboard-grid-container">
               <ReactGridLayout
+                className="layout"
                 layout={layout}
+                width={1800} // Fixed to match header/tabs width
                 onLayoutChange={onLayoutChange}
-                onDrag={onDrag as any}
                 onDragStop={onDragStop as any}
-                width={width}
-                // @ts-ignore
-                gridConfig={{
-                  cols: 12,
-                  rowHeight: 150,
-                }}
+                onDrag={onDrag as any}
               >
-                {layout.map(item => renderCard(item))}
+                {layout.map(item => (
+                  <div key={item.i} className="grid-item">
+                    <div className="grid-item-content">
+                      {renderCard(item)}
+                    </div>
+                    <div className="react-resizable-handle" />
+                  </div>
+                ))}
               </ReactGridLayout>
-            )}
+            </div>
           </div>
         );
       case 'medical':

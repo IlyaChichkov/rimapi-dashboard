@@ -994,3 +994,245 @@
   color: white;
 }
 
+/* React Grid Layout Container */
+.react-grid-layout-container {
+  position: relative;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+  width: 100% !important;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+
+.react-grid-item.resizing {
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(77, 171, 247, 0.3);
+  border: 2px dashed rgba(77, 171, 247, 0.6);
+  border-radius: 12px;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2IDYiIHN0eWxlPSJiYWNrZ3JvdW5kLWNvbG9yOiNmZmZmZmYwMCIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI2cHgiIGhlaWdodD0iNnB4Ij48ZyBvcGFjaXR5PSIwLjMwMiI+PHBhdGggZD0iTSA2IDYgTCAwIDYgTCAwIDQuMiBMIDQgNC4yIEwgNC4yIDQuMiBMIDQuMiAwIEwgNiAwIEwgNiA2IEwgNiA2IFoiIGZpbGw9IiMwMDAwMDAiLz48L2c+PC9zdmc+');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+}
+
+/* Dashboard Grid Items */
+.grid-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.grid-item-content {
+  padding: 20px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove old dashboard-grid styles */
+.dashboard-grid {
+  /* Remove these lines since we're using React Grid Layout */
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+}
+
+/* Update tab content to use the new container */
+.tab-content.dashboard-tab {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+/* Make sure the trash zone is positioned correctly */
+.trash-zone {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Ensure mobile responsiveness */
+@media (max-width: 768px) {
+  .react-grid-layout-container {
+    padding: 0 10px;
+  }
+  
+  .tab-content.dashboard-tab {
+    padding: 0 10px;
+  }
+  
+  .dashboard-actions-bar {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .dashboard-controls-left {
+    justify-content: center;
+  }
+  
+  .trash-zone {
+    text-align: center;
+  }
+}
+
+/* For the React Grid Layout columns */
+.react-grid-layout {
+  margin: 0 -10px; /* Compensate for item padding */
+}
+
+/* Adjust grid item for better mobile */
+@media (max-width: 768px) {
+  .react-grid-item {
+    padding: 5px;
+  }
+  
+  .grid-item-content {
+    padding: 15px;
+  }
+}
+
+/* Add to RimWorldDashboard.css */
+.dashboard-tab-content {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* Make sure ReactGridLayout takes full width */
+.dashboard-tab-content .react-grid-layout {
+  width: 100% !important;
+  max-width: 1800px;
+}
+
+/* Update the .react-grid-layout-container if it exists */
+.react-grid-layout-container {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+/* If you have .tab-content class, make it consistent */
+.tab-content.dashboard-tab {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+.dashboard-grid-container {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+.dashboard-grid-container .react-grid-layout {
+  width: 100% !important;
+}
+
+/* Remove background from inner content */
+.chart-card-content,
+.stats-card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove background and other styles from chart-card, stats-card classes since they're now on grid-item */
+.chart-card,
+.stats-card {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  border: none;
+  height: 100%;
+}
+
+/* Add the card styles to grid-item instead */
+.grid-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.grid-item:hover {
+  transform: translateY(-5px);
+}
+
+.grid-item .chart-container {
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}

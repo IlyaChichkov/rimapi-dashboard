@@ -158,6 +158,10 @@ export interface ColonistMedicalInfo {
   hediffs: Hediff[];
   medical_policy_id: number;
   is_self_tend_allowed: boolean;
+  blood_pumping?: number;
+  breathing?: number;
+  consciousness?: number;
+  blood_loss?: number;
 }
 
 export interface ColonistDetailed {
