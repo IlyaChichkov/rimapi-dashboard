@@ -1,5 +1,5 @@
 // src/components/ColonistCard.tsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Colonist, ColonistDetailed } from '../types';
 import { rimworldApi, getApiBaseUrl, selectAndViewColonist } from '../services/rimworldApi';
 import './ColonistCard.css';
@@ -10,51 +10,78 @@ interface ColonistCardProps {
     onSelectColonist?: (colonistId: number) => void;
     onViewHealth?: (colonistName: string) => void;
     onViewSkills?: (colonistName: string) => void;
+    autoRefresh?: boolean;
+    lastUpdated?: Date | null;
 }
 
+// Update the ColonistCard component to show needs instead of health/age
 const ColonistCard: React.FC<ColonistCardProps> = ({
     colonistId,
     size,
     onSelectColonist,
-    onViewHealth,
     onViewSkills,
+    autoRefresh = true,
+    lastUpdated,
 }) => {
     const [colonist, setColonist] = useState<ColonistDetailed | null>(null);
     const [imageUrl, setImageUrl] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [isSelecting, setIsSelecting] = useState(false);
 
-    useEffect(() => {
-        const fetchColonistData = async () => {
-            try {
-                setLoading(true);
-                // Fetch detailed colonist data
-                const response = await fetch(`${getApiBaseUrl()}/colonists/detailed`);
-                if (response.ok) {
-                    const data = await response.json();
-                    const detailedData = data.data;
-                    const foundColonist = detailedData.find(
-                        (c: any) => c.colonist?.id === colonistId
-                    );
-                    setColonist(foundColonist || null);
-                }
+    // Function to fetch colonist data
+    const fetchColonistData = useCallback(async () => {
+        if (!colonistId) {
+            setLoading(false);
+            return;
+        }
 
-                // Fetch colonist image
+        try {
+            setLoading(true);
+            // Fetch detailed colonist data
+            const response = await fetch(`${getApiBaseUrl()}/colonists/detailed`);
+            if (response.ok) {
+                const data = await response.json();
+                const detailedData = data.data;
+                const foundColonist = detailedData.find(
+                    (c: any) => c.colonist?.id === colonistId
+                );
+                setColonist(foundColonist || null);
+            }
+
+            // Fetch colonist image (less frequently to reduce load)
+            if (!imageUrl || Math.random() < 0.2) { // Only refresh image 20% of the time
                 const imageResponse = await rimworldApi.getPawnPortraitImage(colonistId.toString());
                 if (imageResponse?.image_base64) {
                     setImageUrl(`data:image/png;base64,${imageResponse.image_base64}`);
                 }
-            } catch (error) {
-                console.error('Error fetching colonist data:', error);
-            } finally {
-                setLoading(false);
             }
-        };
+        } catch (error) {
+            console.error('Error fetching colonist data:', error);
+        } finally {
+            setLoading(false);
+        }
+    }, [colonistId, imageUrl]);
 
-        if (colonistId) {
+    // Initial fetch and auto-refresh
+    useEffect(() => {
+        fetchColonistData();
+
+        if (autoRefresh) {
+            // Refresh every 5 seconds (matching dashboard auto-refresh)
+            const intervalId = setInterval(() => {
+                fetchColonistData();
+            }, 5000);
+
+            return () => clearInterval(intervalId);
+        }
+    }, [fetchColonistData, autoRefresh]);
+
+    // Also refresh when lastUpdated prop changes (from parent)
+    useEffect(() => {
+        if (lastUpdated && colonistId) {
             fetchColonistData();
         }
-    }, [colonistId]);
+    }, [lastUpdated, colonistId, fetchColonistData]);
 
     const handleSelectColonist = (newColonistId: number) => {
         if (onSelectColonist) {
@@ -65,11 +92,53 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
 
     const colonistInfo = colonist?.colonist;
     const medicalInfo = colonist?.colonist_medical_info;
+    const needsInfo = colonist; // Assuming this exists in your data structure
 
-    if (!colonistInfo) {
+    // Convert mood from decimal (0.59) to percentage (59%)
+    const moodPercentage = colonistInfo?.mood ? Math.round(colonistInfo.mood * 100) : 0;
+
+    // Get needs values (assuming they're in decimal 0-1 format)
+    const hunger = needsInfo?.colonist.hunger ? Math.round(needsInfo.colonist.hunger * 100) : 0;
+    const comfort = needsInfo?.comfort ? Math.round(needsInfo.comfort * 100) : 0;
+    const sleep = needsInfo?.sleep ? Math.round(needsInfo.sleep * 100) : 0;
+
+    // Helper function to get color based on need value
+    const getNeedColor = (value: number) => {
+        if (value >= 70) return 'good';
+        if (value >= 40) return 'medium';
+        return 'bad';
+    };
+
+    // Helper function to get emoji based on need value
+    const getNeedEmoji = (value: number, type: string) => {
+        if (value >= 70) {
+            switch (type) {
+                case 'hunger': return '🍗';
+                case 'comfort': return '🛋️';
+                case 'sleep': return '😴';
+                default: return '✅';
+            }
+        } else if (value >= 40) {
+            switch (type) {
+                case 'hunger': return '🍽️';
+                case 'comfort': return '🪑';
+                case 'sleep': return '😪';
+                default: return '⚠️';
+            }
+        } else {
+            switch (type) {
+                case 'hunger': return '🥩';
+                case 'comfort': return '💺';
+                case 'sleep': return '😵';
+                default: return '❌';
+            }
+        }
+    };
+
+    if (!colonistInfo && !isSelecting) {
         return (
-            <div className="colonist-card error">
-                <p>Colonist not found</p>
+            <div className="colonist-card-wrapper empty">
+                <p>Select a colonist to display</p>
                 <button className="select-colonist-btn" onClick={() => setIsSelecting(true)}>
                     Select Colonist
                 </button>
@@ -83,9 +152,9 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
     const isLarge = size.w > 6 || size.h > 2;
 
     return (
-        <div className={`colonist-card size-${isSmall ? 'small' : isMedium ? 'medium' : 'large'}`}>
+        <div className={`colonist-card-wrapper size-${isSmall ? 'small' : isMedium ? 'medium' : 'large'}`}>
             <div className="colonist-card-header">
-                {isSelecting ? (
+                {isSelecting || !colonistInfo ? (
                     <ColonistSelector
                         currentColonistId={colonistId}
                         onSelect={handleSelectColonist}
@@ -97,14 +166,15 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                             {imageUrl && (
                                 <div className="colonist-portrait">
                                     <img src={imageUrl} alt={colonistInfo.name} />
+                                    {autoRefresh && <div className="refresh-indicator"></div>}
                                 </div>
                             )}
                             <div className="colonist-name-mood">
                                 <h3>{colonistInfo.name}</h3>
                                 <div className="colonist-mood">
                                     <span className="mood-label">Mood:</span>
-                                    <span className={`mood-value ${(colonistInfo.mood || 0) > 50 ? 'good' : 'bad'}`}>
-                                        {colonistInfo.mood || 'N/A'}%
+                                    <span className={`mood-value ${moodPercentage > 50 ? 'good' : 'bad'}`}>
+                                        {moodPercentage}%
                                     </span>
                                 </div>
                             </div>
@@ -120,149 +190,197 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                 )}
             </div>
 
-            <div className="colonist-card-content">
-                {isSmall ? (
-                    // Small card: Just basic info
-                    <div className="colonist-small-view">
-                        <div className="colonist-stats-small">
-                            <div className="stat-item">
-                                <span className="stat-label">Health:</span>
-                                <span className="stat-value">
-                                    {medicalInfo?.health || 'N/A'}%
-                                </span>
-                            </div>
-                            <div className="stat-item">
-                                <span className="stat-label">Age:</span>
-                                <span className="stat-value">{colonistInfo.age || 'N/A'}</span>
-                            </div>
-                        </div>
-                        {onViewHealth && (
-                            <button
-                                className="action-btn small"
-                                onClick={() => onViewHealth(colonistInfo.name)}
-                            >
-                                View Health
-                            </button>
-                        )}
-                    </div>
-                ) : isMedium ? (
-                    // Medium card: More details
-                    <div className="colonist-medium-view">
-                        <div className="colonist-details">
-                            <div className="detail-row">
-                                <span className="detail-label">Gender:</span>
-                                <span className="detail-value">{colonistInfo.gender || 'N/A'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Age:</span>
-                                <span className="detail-value">{colonistInfo.age || 'N/A'}</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Health:</span>
-                                <span className="detail-value">{medicalInfo?.health || 'N/A'}%</span>
-                            </div>
-                            <div className="detail-row">
-                                <span className="detail-label">Mood:</span>
-                                <span className="detail-value">{colonistInfo.mood || 'N/A'}%</span>
-                            </div>
-                        </div>
-                        <div className="colonist-actions">
-                            {onViewHealth && (
-                                <button
-                                    className="action-btn"
-                                    onClick={() => onViewHealth(colonistInfo.name)}
-                                >
-                                    🩺 Health
-                                </button>
-                            )}
-                            {onViewSkills && (
-                                <button
-                                    className="action-btn"
-                                    onClick={() => onViewSkills(colonistInfo.name)}
-                                >
-                                    📚 Skills
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                ) : (
-                    // Large card: Full details
-                    <div className="colonist-large-view">
-                        <div className="colonist-full-details">
-                            <div className="details-section">
-                                <h4>Basic Info</h4>
-                                <div className="details-grid">
-                                    <div className="detail-item">
-                                        <span className="detail-label">Gender:</span>
-                                        <span className="detail-value">{colonistInfo.gender || 'N/A'}</span>
-                                    </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Age:</span>
-                                        <span className="detail-value">{colonistInfo.age || 'N/A'}</span>
-                                    </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Mood:</span>
-                                        <span className="detail-value">{colonistInfo.mood || 'N/A'}%</span>
-                                    </div>
-                                    <div className="detail-item">
-                                        <span className="detail-label">Health:</span>
-                                        <span className="detail-value">{medicalInfo?.health || 'N/A'}%</span>
-                                    </div>
+            {colonistInfo && !isSelecting && (
+                <div className="colonist-card-content">
+                    {isSmall ? (
+                        // Small card: Just mood and basic needs
+                        <div className="colonist-small-view">
+                            <div className="colonist-needs-small">
+                                <div className="need-item">
+                                    <span className="need-icon">🍽️</span>
+                                    <span className="need-label">Hunger:</span>
+                                    <span className={`need-value ${getNeedColor(hunger)}`}>
+                                        {hunger}%
+                                    </span>
+                                </div>
+                                <div className="need-item">
+                                    <span className="need-icon">🛋️</span>
+                                    <span className="need-label">Comfort:</span>
+                                    <span className={`need-value ${getNeedColor(comfort)}`}>
+                                        {comfort}%
+                                    </span>
+                                </div>
+                                <div className="need-item">
+                                    <span className="need-icon">😴</span>
+                                    <span className="need-label">Sleep:</span>
+                                    <span className={`need-value ${getNeedColor(sleep)}`}>
+                                        {sleep}%
+                                    </span>
                                 </div>
                             </div>
-
-                            {medicalInfo && (
-                                <div className="details-section">
-                                    <h4>Medical Status</h4>
-                                    <div className="details-grid">
-                                        <div className="detail-item">
-                                            <span className="detail-label">Blood Pumping:</span>
-                                            <span className="detail-value">{medicalInfo.blood_pumping || 'N/A'}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="detail-label">Breathing:</span>
-                                            <span className="detail-value">{medicalInfo.breathing || 'N/A'}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="detail-label">Consciousness:</span>
-                                            <span className="detail-value">{medicalInfo.consciousness || 'N/A'}</span>
-                                        </div>
-                                        <div className="detail-item">
-                                            <span className="detail-label">Blood Loss:</span>
-                                            <span className="detail-value">{medicalInfo.blood_loss || 'N/A'}</span>
-                                        </div>
+                        </div>
+                    ) : isMedium ? (
+                        // Medium card: More detailed needs
+                        <div className="colonist-medium-view">
+                            <div className="colonist-needs-medium">
+                                <div className="need-row">
+                                    <div className="need-header">
+                                        <span className="need-icon-large">{getNeedEmoji(hunger, 'hunger')}</span>
+                                        <span className="need-title">Hunger</span>
                                     </div>
+                                    <div className="need-bar">
+                                        <div
+                                            className={`need-bar-fill ${getNeedColor(hunger)}`}
+                                            style={{ width: `${hunger}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className={`need-percentage ${getNeedColor(hunger)}`}>{hunger}%</span>
                                 </div>
-                            )}
-
-                            <div className="colonist-actions-full">
-                                {onViewHealth && (
-                                    <button
-                                        className="action-btn"
-                                        onClick={() => onViewHealth(colonistInfo.name)}
-                                    >
-                                        🩺 View Full Health
-                                    </button>
-                                )}
+                                <div className="need-row">
+                                    <div className="need-header">
+                                        <span className="need-icon-large">{getNeedEmoji(comfort, 'comfort')}</span>
+                                        <span className="need-title">Comfort</span>
+                                    </div>
+                                    <div className="need-bar">
+                                        <div
+                                            className={`need-bar-fill ${getNeedColor(comfort)}`}
+                                            style={{ width: `${comfort}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className={`need-percentage ${getNeedColor(comfort)}`}>{comfort}%</span>
+                                </div>
+                                <div className="need-row">
+                                    <div className="need-header">
+                                        <span className="need-icon-large">{getNeedEmoji(sleep, 'sleep')}</span>
+                                        <span className="need-title">Sleep</span>
+                                    </div>
+                                    <div className="need-bar">
+                                        <div
+                                            className={`need-bar-fill ${getNeedColor(sleep)}`}
+                                            style={{ width: `${sleep}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className={`need-percentage ${getNeedColor(sleep)}`}>{sleep}%</span>
+                                </div>
+                            </div>
+                            <div className="colonist-actions">
                                 {onViewSkills && (
                                     <button
                                         className="action-btn"
                                         onClick={() => onViewSkills(colonistInfo.name)}
                                     >
-                                        📚 View Skills
+                                        📚 Skills
                                     </button>
                                 )}
-                                <button
-                                    className="action-btn"
-                                    onClick={() => selectAndViewColonist(colonistId, colonistInfo.name)}
-                                >
-                                    👁️ View in Game
-                                </button>
                             </div>
                         </div>
-                    </div>
-                )}
-            </div>
+                    ) : (
+                        // Large card: Full details with mood breakdown
+                        <div className="colonist-large-view">
+                            <div className="colonist-needs-large">
+                                <div className="mood-breakdown">
+                                    <h4>Mood Breakdown</h4>
+                                    <div className="mood-gauge">
+                                        <div className="mood-bar">
+                                            <div
+                                                className="mood-bar-fill"
+                                                style={{ width: `${moodPercentage}%` }}
+                                            ></div>
+                                        </div>
+                                        <div className="mood-labels">
+                                            <span className="mood-min">😠 0%</span>
+                                            <span className="mood-current">{moodPercentage}%</span>
+                                            <span className="mood-max">😊 100%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="needs-grid">
+                                    <div className="need-card">
+                                        <div className="need-card-header">
+                                            <span className="need-card-icon">🍽️</span>
+                                            <h5>Hunger</h5>
+                                        </div>
+                                        <div className="need-card-content">
+                                            <div className="need-card-bar">
+                                                <div
+                                                    className={`need-card-fill ${getNeedColor(hunger)}`}
+                                                    style={{ width: `${hunger}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="need-card-stats">
+                                                <span className="need-card-value">{hunger}%</span>
+                                                <span className="need-card-status">
+                                                    {hunger >= 70 ? 'Full' : hunger >= 40 ? 'Hungry' : 'Starving'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="need-card">
+                                        <div className="need-card-header">
+                                            <span className="need-card-icon">🛋️</span>
+                                            <h5>Comfort</h5>
+                                        </div>
+                                        <div className="need-card-content">
+                                            <div className="need-card-bar">
+                                                <div
+                                                    className={`need-card-fill ${getNeedColor(comfort)}`}
+                                                    style={{ width: `${comfort}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="need-card-stats">
+                                                <span className="need-card-value">{comfort}%</span>
+                                                <span className="need-card-status">
+                                                    {comfort >= 70 ? 'Comfortable' : comfort >= 40 ? 'Neutral' : 'Uncomfortable'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="need-card">
+                                        <div className="need-card-header">
+                                            <span className="need-card-icon">😴</span>
+                                            <h5>Sleep</h5>
+                                        </div>
+                                        <div className="need-card-content">
+                                            <div className="need-card-bar">
+                                                <div
+                                                    className={`need-card-fill ${getNeedColor(sleep)}`}
+                                                    style={{ width: `${sleep}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="need-card-stats">
+                                                <span className="need-card-value">{sleep}%</span>
+                                                <span className="need-card-status">
+                                                    {sleep >= 70 ? 'Rested' : sleep >= 40 ? 'Tired' : 'Exhausted'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="colonist-actions-full">
+                                    {onViewSkills && (
+                                        <button
+                                            className="action-btn"
+                                            onClick={() => onViewSkills(colonistInfo.name)}
+                                        >
+                                            📚 View Skills
+                                        </button>
+                                    )}
+                                    <button
+                                        className="action-btn"
+                                        onClick={() => selectAndViewColonist(colonistId, colonistInfo.name)}
+                                    >
+                                        👁️ View in Game
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 };
@@ -318,7 +436,7 @@ const ColonistSelector: React.FC<ColonistSelectorProps> = ({
                     autoFocus
                 />
             </div>
-            <div className="colonist-list">
+            <div className="colonist-selector-list">
                 {filteredColonists.length === 0 ? (
                     <div className="no-results">No colonists found</div>
                 ) : (

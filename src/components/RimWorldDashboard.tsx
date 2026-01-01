@@ -154,7 +154,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const presetChangeRef = useRef(false);
 
   // Update the presets and selectedPreset initialization
-  const [presets, setPresets] = useState<{ name: string, layout: Layout }[]>(() => {
+  const [presets, setPresets] = useState<{ name: string, layout: Layout, cardSettings: { [key: string]: any } }[]>(() => {
     const savedPresets = localStorage.getItem('dashboard_presets');
     return savedPresets ? JSON.parse(savedPresets) : [];
   });
@@ -182,14 +182,17 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       if (preset) {
         presetChangeRef.current = true;
         setLayout(preset.layout);
+        setCardSettings(preset.cardSettings || {});
       }
     }
   }, [selectedPreset, presets]); // Run when selectedPreset or presets change
 
+
+
   // Update handleSavePreset to handle auto-save scenarios better
   const handleSavePreset = (presetName: string) => {
     if (presetName) {
-      const newPreset = { name: presetName, layout: layout };
+      const newPreset = { name: presetName, layout: layout, cardSettings: cardSettings };
       const updatedPresets = [...presets.filter(p => p.name !== presetName), newPreset];
       setPresets(updatedPresets);
       localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
@@ -218,6 +221,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       if (preset) {
         presetChangeRef.current = true;
         setLayout(preset.layout);
+        setCardSettings(preset.cardSettings || {});
       }
       setSelectedPreset(presetName);
       localStorage.setItem('last_selected_preset', presetName);
@@ -225,6 +229,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       // When selecting "Create Preset" (empty string)
       presetChangeRef.current = true;
       setLayout(initialLayout);
+      setCardSettings({});
       setSelectedPreset("");
       localStorage.removeItem('last_selected_preset');
     }
@@ -241,30 +246,13 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     };
   }
 
-  const onLayoutChangeDebounced = useCallback(
-    debounce((newLayout: Layout) => {
-      // Auto-save to current preset if one is selected
-      if (selectedPreset) {
-        const updatedPresets = presets.map(p =>
-          p.name === selectedPreset ? { ...p, layout: newLayout } : p
-        );
-        setPresets(updatedPresets);
-        localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
-
-        // Show subtle notification only if layout actually changed (not just order)
-        const autoSaveToastId = `autosave-${selectedPreset}`;
-        const existingToast = document.querySelector(`[data-toast-id="${autoSaveToastId}"]`);
-        if (!existingToast) {
-          addToast({
-            type: 'info',
-            title: `Preset '${selectedPreset}' updated`,
-            duration: 600,
-          });
-        }
-      }
-    }, 400), // Wait 1 second after last layout change
-    [selectedPreset, presets, addToast]
-  );
+  const onLayoutChange = (newLayout: Layout) => {
+    if (presetChangeRef.current) {
+      presetChangeRef.current = false;
+      return;
+    }
+    setLayout(newLayout);
+  };
 
   const handleSelectColonistForCard = (cardId: string, colonistId: number) => {
     setCardSettings(prev => ({
@@ -273,30 +261,21 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }));
   };
 
-  const onLayoutChange = (newLayout: Layout) => {
-    if (presetChangeRef.current) {
-      presetChangeRef.current = false;
-      return;
-    }
-
-    setLayout(newLayout);
-
-    // Auto-save to current preset if one is selected
+  const saveCardSettingsToPreset = useCallback(debounce((settings: { [key: string]: any }) => {
     if (selectedPreset) {
-      onLayoutChangeDebounced(newLayout);
-    } else {
-      // Check if layout matches any existing preset
-      const matchingPreset = presets.find(p =>
-        JSON.stringify(p.layout) === JSON.stringify(newLayout)
-      );
-      if (matchingPreset) {
-        setSelectedPreset(matchingPreset.name);
-        localStorage.setItem('last_selected_preset', matchingPreset.name);
-      } else if (JSON.stringify(layout) !== JSON.stringify(initialLayout)) {
-        setSelectedPreset(""); // Clear preset since layout no longer matches any preset
-      }
+      setPresets(prevPresets => {
+        const updatedPresets = prevPresets.map(p =>
+          p.name === selectedPreset ? { ...p, cardSettings: settings } : p
+        );
+        localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+        return updatedPresets;
+      });
     }
-  };
+  }, 1000), [selectedPreset]);
+
+  useEffect(() => {
+    saveCardSettingsToPreset(cardSettings);
+  }, [cardSettings, saveCardSettingsToPreset]);
 
   const handleDeletePreset = (presetName: string) => {
     if (presetName) {
@@ -319,24 +298,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   };
 
   const onRemoveItem = (itemId: string) => {
-    const newLayout = layout.filter(item => item.i !== itemId);
-    setLayout(newLayout);
-
-    // Auto-save to current preset if one is selected
-    if (selectedPreset) {
-      const updatedPresets = presets.map(p =>
-        p.name === selectedPreset ? { ...p, layout: newLayout } : p
-      );
-      setPresets(updatedPresets);
-      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
-
-      // Show auto-save notification
-      addToast({
-        type: 'info',
-        title: `Preset '${selectedPreset}' updated (card removed)`,
-        duration: 1500,
-      });
-    }
+    setLayout(layout.filter(item => item.i !== itemId));
   };
 
   const onAddItem = (itemId: string) => {
@@ -354,22 +316,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     const newLayout = [...layout, newItem];
     setLayout(newLayout);
     setAddCardMenuOpen(false);
-
-    // Auto-save to current preset if one is selected
-    if (selectedPreset) {
-      const updatedPresets = presets.map(p =>
-        p.name === selectedPreset ? { ...p, layout: newLayout } : p
-      );
-      setPresets(updatedPresets);
-      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
-
-      // Show auto-save notification
-      addToast({
-        type: 'info',
-        title: `Preset '${selectedPreset}' updated (card added)`,
-        duration: 1500,
-      });
-    }
   };
 
   const onDragStop = (
@@ -535,14 +481,21 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       case 'colonist':
         const colonistId = cardSettings[item.i]?.colonistId || 0;
         return (
-            <div key={item.i} className="chart-card">
-                <ColonistCard
-                    colonistId={colonistId}
-                    size={{ w: item.w, h: item.h }}
-                    onViewHealth={handleOpenMedicalTabWithColonist}
-                    onSelectColonist={(id) => handleSelectColonistForCard(item.i, id)}
-                />
-            </div>
+          <div className="colonist-card-wrapper">
+            <ColonistCard
+              colonistId={colonistId}
+              size={{ w: item.w, h: item.h }}
+              onSelectColonist={(newColonistId) => handleSelectColonistForCard(item.i, newColonistId)}
+              onViewHealth={handleOpenMedicalTabWithColonist}
+              onViewSkills={(colonistName) => {
+                // You can implement skills view if needed
+                console.log('View skills for:', colonistName);
+              }}
+              autoRefresh={autoRefresh} // Pass the dashboard's autoRefresh state
+              lastUpdated={lastUpdated} // Pass the dashboard's lastUpdated timestamp
+            />
+          </div>
+
         );
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
