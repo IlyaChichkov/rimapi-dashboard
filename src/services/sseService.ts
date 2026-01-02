@@ -34,49 +34,58 @@ class SseService {
         return this.apiUrl;
     }
 
-    public connect() {
-        if (!this.apiUrl) {
-            console.warn("SSE service API URL not set, connection aborted.");
-            return;
-        }
-
-        if (this.eventSource && this.eventSource.readyState !== this.eventSource.CLOSED) {
-            return;
-        }
-
-        this.setConnectionStatus('connecting');
-        const sseUrl = `${this.apiUrl}/events`;
-        this.eventSource = new EventSource(sseUrl);
-
-        this.eventSource.onopen = () => {
-            this.setConnectionStatus('connected');
-        };
-
-        this.eventSource.onerror = () => {
-            this.setConnectionStatus('disconnected');
-            this.eventSource?.close();
-            this.eventSource = null;
-            // Clear the attached listeners so they can be re-added on reconnect
-            this.eventSourceListeners = {};
-            setTimeout(() => this.connect(), 5000);
-        };
-
-        this.eventSource.onmessage = (event) => {
-            this.internalDispatch('message', event);
-        };
-
-        // Re-attach all existing listeners
-        Object.keys(this.listeners).forEach(event => {
-            this.attachListenerToEventSource(event);
-        });
+    public getReadyState(): number {
+        return this.eventSource?.readyState ?? -1;
     }
 
+    public connect() {
+    if (!this.apiUrl) {
+        console.warn("SSE service API URL not set, connection aborted.");
+        return;
+    }
+
+    if (this.eventSource && this.eventSource.readyState !== EventSource.CLOSED) {
+        return;
+    }
+
+    this.setConnectionStatus('connecting');
+    const sseUrl = `${this.apiUrl}/events`;
+    
+    try {
+        this.eventSource = new EventSource(sseUrl);
+    } catch (e) {
+        console.error("Failed to create EventSource:", e);
+        this.setConnectionStatus('disconnected');
+        return;
+    }
+
+    this.eventSource.onopen = () => {
+        this.setConnectionStatus('connected');
+    };
+
+    this.eventSource.onerror = (error) => {
+        console.error('SSE connection error:', error);
+        this.setConnectionStatus('disconnected');
+        this.eventSource?.close();
+        this.eventSource = null;
+        this.eventSourceListeners = {};
+        setTimeout(() => this.connect(), 5000);
+    };
+
+    // Re-attach all existing listeners
+    Object.keys(this.listeners).forEach(event => {
+        this.attachListenerToEventSource(event);
+    });
+}
+
     private attachListenerToEventSource(event: string) {
+        // Skip for 'message' since we handle it in onmessage
         if (event === 'message' || !this.eventSource || this.eventSourceListeners[event]) {
             return;
         }
 
         const handler = (e: MessageEvent) => {
+            this.incrementEventCount();
             this.internalDispatch(event, e);
         };
 
@@ -93,12 +102,23 @@ class SseService {
 
     private incrementEventCount() {
         this.eventCount++;
-        this.eventCountListeners.forEach(listener => listener(this.eventCount));
+        this.eventCountListeners.forEach(listener => {
+            try {
+                listener(this.eventCount);
+            } catch (e) {
+                console.error('Error in event count listener:', e);
+            }
+        });
     }
 
     private internalDispatch(event: string, messageEvent: MessageEvent) {
-        this.incrementEventCount();
-        this.listeners[event]?.forEach(listener => listener(messageEvent));
+        this.listeners[event]?.forEach(listener => {
+            try {
+                listener(messageEvent);
+            } catch (e) {
+                console.error(`Error in SSE listener for event "${event}":`, e);
+            }
+        });
     }
 
     public addEventListener(event: string, listener: SseListener) {
@@ -107,16 +127,16 @@ class SseService {
         }
         this.listeners[event].push(listener);
 
-        this.attachListenerToEventSource(event);
+        // If we're already connected, attach this listener to the event source
+        // (except for 'message' which is handled by onmessage)
+        if (event !== 'message' && this.eventSource && this.eventSource.readyState === EventSource.OPEN) {
+            this.attachListenerToEventSource(event);
+        }
     }
 
     public removeEventListener(event: string, listener: SseListener) {
         if (this.listeners[event]) {
             this.listeners[event] = this.listeners[event].filter(l => l !== listener);
-            // Note: We are not removing the event listener from the EventSource itself
-            // to keep it simple. This means the service will continue to receive these events
-            // even if there are no active listeners in the components.
-            // If all listeners for an event are removed, we could also remove the EventSource listener.
         }
     }
 
@@ -139,11 +159,16 @@ class SseService {
 
     public addEventCountListener(listener: EventCountListener) {
         this.eventCountListeners.push(listener);
-        listener(this.eventCount);
+        listener(this.eventCount); // Immediately notify with current count
     }
 
     public removeEventCountListener(listener: EventCountListener) {
         this.eventCountListeners = this.eventCountListeners.filter(l => l !== listener);
+    }
+
+    // Method to manually increment count for testing
+    public testIncrementCount() {
+        this.incrementEventCount();
     }
 }
 

@@ -28,6 +28,7 @@ import DevTab from './DevTab';
 import ColonySummary, { ColonySummarySettings } from './ColonySummary';
 import ColonySummarySettingsModal from './ColonySummarySettingsModal';
 import PresetsContextMenu from './PresetsContextMenu';
+import MessageFeedCard from './MessageFeedCard';
 import SseStatusCard from './SseStatusCard';
 import ColonistCard from './ColonistCard';
 
@@ -57,29 +58,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = React.useState<string[]>([]);
 
   const { addToast } = useToast();
-
-  useEffect(() => {
-    const handleWorldEvent = (event: MessageEvent) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data?.letter?.className === 'StandardLetter') {
-          addToast({
-            type: 'info',
-            title: 'New message',
-            message: data.letter.label,
-          });
-        }
-      } catch (error) {
-        console.error('Error handling world event:', error);
-      }
-    };
-
-    sseService.addEventListener('world_event', handleWorldEvent);
-
-    return () => {
-      sseService.removeEventListener('world_event', handleWorldEvent);
-    };
-  }, [addToast]);
 
   const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'mood') => {
     const sorted = [...colonists];
@@ -173,6 +151,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     { i: 'population', x: 4, y: 2, w: 4, h: 2 },
     { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2 },
     { i: 'sseStatus', x: 0, y: 4, w: 4, h: 2 },
+    { i: 'messageFeed', x: 4, y: 4, w: 8, h: 2 },
   ];
 
   const [layout, setLayout] = useState<Layout>(initialLayout);
@@ -446,7 +425,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -559,6 +538,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         );
       case 'sseStatus':
         return <SseStatusCard />;
+      case 'messageFeed':
+        return <MessageFeedCard />;
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
     }
