@@ -146,13 +146,11 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const sortedColonists = getSortedColonists(colonists, sortBy);
 
   const initialLayout: Layout = [
-    { i: 'colonists', x: 0, y: 0, w: 6, h: 2 },
-    { i: 'resources', x: 6, y: 0, w: 6, h: 2 },
-    { i: 'power', x: 0, y: 2, w: 4, h: 2 },
-    { i: 'population', x: 4, y: 2, w: 4, h: 2 },
-    { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2 },
-    { i: 'sseStatus', x: 0, y: 4, w: 4, h: 2 },
-    { i: 'messageFeed', x: 4, y: 4, w: 8, h: 2 },
+    { i: 'colonists', x: 0, y: 0, w: 6, h: 2, isBounded: true },
+    { i: 'resources', x: 8, y: 0, w: 6, h: 2, isBounded: true },
+    { i: 'power', x: 0, y: 8, w: 4, h: 2, isBounded: true },
+    { i: 'population', x: 4, y: 2, w: 4, h: 2, isBounded: true },
+    { i: 'colonySummary', x: 8, y: 2, w: 4, h: 2, isBounded: true },
   ];
 
   const [layout, setLayout] = useState<Layout>(initialLayout);
@@ -160,6 +158,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const trashRef = useRef<HTMLDivElement>(null);
   const { width, containerRef, mounted } = useContainerWidth();
   const presetChangeRef = useRef(false);
+
 
   // Update the presets and selectedPreset initialization
   const [presets, setPresets] = useState<{ name: string, layout: Layout, cardSettings: { [key: string]: any } }[]>(() => {
@@ -280,12 +279,20 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   }, 1000), [selectedPreset, addToast]);
 
   const onLayoutChange = (newLayout: Layout) => {
+    // Skip processing if this change was triggered by a preset
     if (presetChangeRef.current) {
       presetChangeRef.current = false;
       return;
     }
-    setLayout(newLayout);
-    saveLayoutToPreset(newLayout);
+
+    // Make all items bounded
+    const boundedLayout = newLayout.map(item => ({
+      ...item,
+      isBounded: true
+    }));
+
+    setLayout(boundedLayout);
+    saveLayoutToPreset(boundedLayout);
   };
 
   const handleSelectColonistForCard = (cardId: string, colonistId: number) => {
@@ -555,31 +562,34 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     switch (activeTab) {
       case 'dashboard':
         return (
-          <div className="tab-content dashboard-tab">
-            <div className="dashboard-grid-container">
-              <ReactGridLayout
-                className="layout"
-                layout={layout}
-                width={1800} // Fixed to match header/tabs width
-                onLayoutChange={onLayoutChange}
-                onDragStop={onDragStop as any}
-                onDrag={onDrag as any}
+          <div className="tab-content dashboard-tab" >
+            <div className="dashboard-grid-container" ref={containerRef}>
+              {(mounted) && (
+                <ReactGridLayout
+                  key={`grid-${width}`} // Force remount when width changes
+                  className="layout"
+                  layout={initialLayout}
+                  width={width} // Fixed to match header/tabs width
+                  onLayoutChange={onLayoutChange}
+                  onDragStop={onDragStop as any}
+                  onDrag={onDrag as any}
 
-                dragConfig={{
-                  enabled: true,
-                  cancel: '.faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
-                }}
+                  dragConfig={{
+                    enabled: true,
+                    cancel: '.faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
+                  }}
 
-              >
-                {layout.map(item => (
-                  <div key={item.i} className="grid-item">
-                    <div className="grid-item-content">
-                      {renderCard(item)}
+                >
+                  {initialLayout.map(item => (
+                    <div key={item.i} className="grid-item">
+                      <div className="grid-item-content">
+                        {renderCard(item)}
+                      </div>
+                      <div className="react-resizable-handle" />
                     </div>
-                    <div className="react-resizable-handle" />
-                  </div>
-                ))}
-              </ReactGridLayout>
+                  ))}
+                </ReactGridLayout>
+              )}
             </div>
           </div>
         );
