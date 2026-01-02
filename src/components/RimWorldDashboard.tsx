@@ -161,6 +161,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     initialWidth: 960
   });
   const presetChangeRef = useRef(false);
+  const deleteChangeRef = useRef(false);
 
   useEffect(() => {
     if (activeTab === 'dashboard') {
@@ -307,6 +308,10 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       presetChangeRef.current = false;
       return;
     }
+    if (deleteChangeRef.current) {
+      deleteChangeRef.current = false;
+      return;
+    }
 
     // Make all items bounded
     const boundedLayout = newLayout.map(item => ({
@@ -414,6 +419,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       const isOverTrash = e.clientX > trashRect.left && e.clientX < trashRect.right &&
         e.clientY > trashRect.top && e.clientY < trashRect.bottom;
       if (isOverTrash) {
+        deleteChangeRef.current = true;
         const newLayout = layout.filter(item => item.i !== newItem.i);
         setLayout(newLayout);
 
@@ -755,7 +761,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         <ColonySummarySettingsModal
           isOpen={!!editingCardId}
           onClose={() => setEditingCardId(null)}
-          settings={cardSettings[editingCardId]}
+          settings={cardSettings[editingCardId] || { showColonists: true, showAnimals: true, showItems: true, showWealth: true }}
           onSettingsChange={(newSettings) => {
             handleCardSettingsChange(editingCardId, newSettings);
           }}
