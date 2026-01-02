@@ -19,6 +19,7 @@ import {
   Faction,
   PlayerFaction,
   FactionRelations,
+  Caravan,
 } from "../types";
 
 // -----------------------------
@@ -557,4 +558,8 @@ export const rimworldApi = {
   async fetchFactionRelations(id: number): Promise<FactionRelations | null> {
     return getJson<FactionRelations>(`/faction/relations?id=${id}`);
   },
+  
+  async fetchCaravans(): Promise<Caravan[] | null> {
+    return getJson<Caravan[]>(`/world/caravans`);
+  }
 };

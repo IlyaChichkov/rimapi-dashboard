@@ -24,7 +24,7 @@ import ModsTab from './ModsTab';
 import ResourcesDashboard from './ResourcesDashboard';
 import { useToast } from './ToastContext';
 import DevTab from './DevTab';
-
+import CaravanListCard from './CaravanListCard';
 import ColonySummary, { ColonySummarySettings } from './ColonySummary';
 import ColonySummarySettingsModal from './ColonySummarySettingsModal';
 import PresetsContextMenu from './PresetsContextMenu';
@@ -462,7 +462,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed', 'factionRelations'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed', 'factionRelations', 'caravanList'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -485,6 +485,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const renderCard = (item: Layout[number]) => {
     const cardId = item.i.split('_')[0];
     switch (cardId) {
+      case 'caravanList':
+        return <CaravanListCard />;
       case 'colonists':
         return (
           <div className="chart-card-content">

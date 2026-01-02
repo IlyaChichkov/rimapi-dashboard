@@ -283,87 +283,82 @@ export interface ResourcesData {
 export type LogLevel = 'info' | 'warn' | 'error' | 'debug' | 'other';
 
 export interface LogEntry {
-
   id: number;
-
   time: string;
-
   level: LogLevel;
-
   message: string;
-
   jsonPretty?: string;
-
 }
 
 
 
 export interface ApiResponse<T> {
-
   success: boolean;
-
   data: T;
-
   errors: string[];
-
   warnings: string[];
-
   timestamp: string;
-
 }
 
 
 
 export interface PlayerFaction {
-
   load_id: number;
-
   def_name: string;
-
   name: string;
-
   is_player: boolean;
-
   leader_title: string;
-
   leader_id: number;
-
 }
 
 
 
 export interface Faction {
-
   load_id: number;
-
   def_name: string;
-
   name: string;
-
   is_player: boolean;
-
   relation: string;
-
   goodwill: number;
-
 }
 
 
 
 export interface FactionRelation {
-
   goodwill: number;
-
   relation_kind: string;
-
 }
 
 
 
 export interface FactionRelations {
-
   id: number;
-
   relations: { [key: string]: FactionRelation };
+}
 
+
+export interface CaravanPawn {
+  id: number;
+  name: string;
+}
+
+export interface CaravanItem {
+  thing_id: number;
+  def_name: string;
+  label: string;
+  stack_count: number;
+  market_value: number;
+}
+
+export interface Caravan {
+  id: number;
+  name: string;
+  is_player_controlled: boolean;
+  tile: number;
+  pawns: CaravanPawn[];
+  items: CaravanItem[];
+  mass_usage: number;
+  mass_capacity: number;
+  forageability: string;
+  visibility: string;
 }
