@@ -26,7 +26,7 @@ const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChang
     <div className="colony-summary-card">
       <div className="card-header">
         <h3>Colony Summary</h3>
-        <button className="layout-drag-ignore settings-btn" onClick={onOpenSettings}>⚙️</button>
+        <button className="settings-btn layout-drag-ignore" onClick={onOpenSettings}>⚙️</button>
       </div>
       <div className="summary-stats-grid">
         {settings.showColonists && (
