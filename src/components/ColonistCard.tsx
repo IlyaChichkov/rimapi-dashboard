@@ -139,7 +139,7 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
         return (
             <div className="colonist-card-wrapper empty">
                 <p>Select a colonist to display</p>
-                <button className="select-colonist-btn" onClick={() => setIsSelecting(true)}>
+                <button className="select-colonist-btn layout-drag-ignore" onClick={() => setIsSelecting(true)}>
                     Select Colonist
                 </button>
             </div>
@@ -433,7 +433,7 @@ const ColonistSelector: React.FC<ColonistSelectorProps> = ({
                     filteredColonists.map(col => (
                         <div
                             key={col.id}
-                            className={`colonist-item ${currentColonistId === col.id ? 'selected' : ''}`}
+                            className={`colonist-item ${currentColonistId === col.id ? 'selected' : ''} layout-drag-ignore`}
                             onClick={() => onSelect(col.id)}
                         >
                             <span className="colonist-name">{col.name}</span>

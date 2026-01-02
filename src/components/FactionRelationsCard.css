@@ -31,6 +31,7 @@
 .faction-count {
     font-size: 0.8em;
     color: rgba(255, 255, 255, 0.5);
+    margin-right: 8px;
 }
 
 /* 3. Grid Wrapper (Scrollable Area) */

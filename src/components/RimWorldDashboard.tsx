@@ -572,10 +572,24 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       case 'messageFeed':
         return <MessageFeedCard />;
       case 'factionRelations':
-        return <FactionRelationsCard
-          settings={cardSettings[item.i]}
-          onSettingsChange={(newSettings) => handleCardSettingsChange(item.i, newSettings)}
-        />
+        return (
+          <div className="faction-card-wrapper">
+            <FactionRelationsCard
+              settings={cardSettings[item.i]} // Pass saved settings
+              onSettingsChange={(newSettings) => {
+                // Update card settings with layout data
+                setCardSettings(prev => ({
+                  ...prev,
+                  [item.i]: {
+                    ...prev[item.i],
+                    ...newSettings
+                  }
+                }));
+              }}
+            />
+          </div>
+        );
+
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
     }
@@ -598,7 +612,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   onDrag={onDrag as any}
                   dragConfig={{
                     enabled: true,
-                    cancel: '.select-colonist-btn, .colonist-item, .faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
+                    cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle)'
                   }}
                 >
                   {layout.map(item => (

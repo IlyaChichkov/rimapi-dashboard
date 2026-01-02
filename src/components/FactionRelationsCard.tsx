@@ -16,9 +16,19 @@ interface FactionLayoutItem {
   static?: boolean;
 }
 
+type SortType = 'default' | 'goodwill-asc' | 'goodwill-desc' | 'name-asc' | 'name-desc';
+
 interface FactionRelationsCardProps {
-  settings?: { layout?: FactionLayoutItem[] };
-  onSettingsChange?: (newSettings: { layout: FactionLayoutItem[] }) => void;
+  settings?: {
+    layout?: FactionLayoutItem[];
+    layouts?: Record<string, FactionLayoutItem[]>;
+    sortType?: SortType;
+  };
+  onSettingsChange?: (newSettings: {
+    layout?: FactionLayoutItem[];
+    layouts?: Record<string, FactionLayoutItem[]>;
+    sortType?: SortType;
+  }) => void;
 }
 
 const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
@@ -30,18 +40,22 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [breakpoint, setBreakpoint] = useState<string>('lg');
   const [cols, setCols] = useState<number>(4);
+  const [sortType, setSortType] = useState<SortType>(settings?.sortType || 'default');
+  const [sortedFactions, setSortedFactions] = useState<Faction[]>([]);
 
-  // Initialize with empty array if no settings
+  // Initialize with saved settings or empty arrays
   const [currentLayout, setCurrentLayout] = useState<FactionLayoutItem[]>(
     settings?.layout || []
   );
 
-  const [layouts, setLayouts] = useState<Record<string, FactionLayoutItem[]>>({
-    lg: settings?.layout || [],
-    md: [],
-    sm: [],
-    xs: []
-  });
+  const [layouts, setLayouts] = useState<Record<string, FactionLayoutItem[]>>(
+    settings?.layouts || {
+      lg: settings?.layout || [],
+      md: [],
+      sm: [],
+      xs: []
+    }
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState<number>(0);
@@ -111,9 +125,60 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     fetchFactions();
   }, []);
 
-  // Generate initial layout when factions are loaded
+  // Sort factions based on sortType
+  const sortFactions = useCallback((factionsToSort: Faction[], type: SortType): Faction[] => {
+    const sorted = [...factionsToSort];
+
+    switch (type) {
+      case 'goodwill-asc':
+        return sorted.sort((a, b) => a.goodwill - b.goodwill);
+
+      case 'goodwill-desc':
+        return sorted.sort((a, b) => b.goodwill - a.goodwill);
+
+      case 'name-asc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+
+      case 'name-desc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+
+      case 'default':
+      default:
+        // Default sorting: allies first, then neutral, then hostile
+        return sorted.sort((a, b) => {
+          const getPriority = (goodwill: number) => {
+            if (goodwill >= 80) return 1; // Ally - highest priority
+            if (goodwill > -80 && goodwill < 80) return 2; // Neutral
+            return 3; // Hostile - lowest priority
+          };
+
+          const priorityDiff = getPriority(a.goodwill) - getPriority(b.goodwill);
+          if (priorityDiff !== 0) return priorityDiff;
+
+          // If same priority, sort by name
+          return a.name.localeCompare(b.name);
+        });
+    }
+  }, []);
+
+  // Update sorted factions when factions or sortType changes
   useEffect(() => {
-    if (factions.length === 0 || currentLayout.length > 0) return;
+    if (factions.length === 0) return;
+    const newSortedFactions = sortFactions(factions, sortType);
+    setSortedFactions(newSortedFactions);
+  }, [factions, sortType, sortFactions]);
+
+  // Generate layout when sorted factions change OR when sortType changes
+  useEffect(() => {
+    if (sortedFactions.length === 0) return;
+
+    // Check if we should regenerate layout
+    const shouldRegenerateLayout = !settings?.layout ||
+      (settings?.sortType !== sortType) ||
+      currentLayout.length === 0 ||
+      currentLayout.length !== sortedFactions.length;
+
+    if (!shouldRegenerateLayout) return;
 
     const generateResponsiveLayouts = () => {
       // Generate layouts for each breakpoint
@@ -128,7 +193,7 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
       Object.keys(newLayouts).forEach(bp => {
         const bpCols = bp === 'lg' ? 5 : bp === 'md' ? 4 : bp === 'sm' ? 3 : 2;
 
-        factions.forEach((faction, index) => {
+        sortedFactions.forEach((faction, index) => {
           newLayouts[bp].push({
             i: faction.load_id.toString(),
             x: index % bpCols,
@@ -145,13 +210,18 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
       setLayouts(newLayouts);
       setCurrentLayout(newLayouts.lg);
 
+      // Save layouts and sort type to settings
       if (onSettingsChange) {
-        onSettingsChange({ layout: newLayouts.lg });
+        onSettingsChange({
+          layout: newLayouts.lg,
+          layouts: newLayouts,
+          sortType
+        });
       }
     };
 
     generateResponsiveLayouts();
-  }, [factions, currentLayout.length, onSettingsChange]);
+  }, [sortedFactions, sortType, settings?.layout, settings?.sortType, currentLayout.length, onSettingsChange]);
 
   // Handle layout change for all breakpoints
   const handleLayoutChange = useCallback((
@@ -161,10 +231,15 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     setCurrentLayout(layout);
     setLayouts(allLayouts);
 
+    // Save both current layout and all layouts to settings
     if (onSettingsChange) {
-      onSettingsChange({ layout });
+      onSettingsChange({
+        layout: layout,
+        layouts: allLayouts,
+        sortType
+      });
     }
-  }, [onSettingsChange]);
+  }, [onSettingsChange, sortType]);
 
   const handleBreakpointChange = useCallback((
     newBreakpoint: string,
@@ -179,6 +254,57 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     }
   }, [layouts]);
 
+  // Handle sort type change
+  const handleSortChange = useCallback((newSortType: SortType) => {
+    setSortType(newSortType);
+
+    // When sort type changes, we'll regenerate layout in the useEffect above
+  }, []);
+
+  // Cycle through sort types
+  const handleSortButtonClick = useCallback(() => {
+    const sortOrder: SortType[] = ['default', 'goodwill-asc', 'goodwill-desc', 'name-asc', 'name-desc'];
+    const currentIndex = sortOrder.indexOf(sortType);
+    const nextIndex = (currentIndex + 1) % sortOrder.length;
+    handleSortChange(sortOrder[nextIndex]);
+  }, [sortType, handleSortChange]);
+
+  // Get sort button icon based on current sort type
+  const getSortIcon = () => {
+    switch (sortType) {
+      case 'default':
+        return '↕️';
+      case 'goodwill-asc':
+        return '↑❤️';
+      case 'goodwill-desc':
+        return '↓❤️';
+      case 'name-asc':
+        return '↑A';
+      case 'name-desc':
+        return '↓A';
+      default:
+        return '↕️';
+    }
+  };
+
+  // Get sort button title/tooltip
+  const getSortTitle = () => {
+    switch (sortType) {
+      case 'default':
+        return 'Sort by: Default (Ally → Neutral → Hostile) - Click to change';
+      case 'goodwill-asc':
+        return 'Sort by: Goodwill (Low to High) - Click to change';
+      case 'goodwill-desc':
+        return 'Sort by: Goodwill (High to Low) - Click to change';
+      case 'name-asc':
+        return 'Sort by: Name (A to Z) - Click to change';
+      case 'name-desc':
+        return 'Sort by: Name (Z to A) - Click to change';
+      default:
+        return 'Sort factions - Click to change';
+    }
+  };
+
   const getRelationClass = (goodwill: number) => {
     if (goodwill <= -80) return 'hostile';
     if (goodwill > -80 && goodwill < 80) return 'neutral';
@@ -191,11 +317,21 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     <div className="faction-relations-card" ref={containerRef}>
       <div className="faction-header">
         <h2>Faction Relations</h2>
-        <span className="faction-count">({factions.length})</span>
+        <div>
+          <span className="faction-count">({sortedFactions.length})</span>
+          <button
+            onClick={handleSortButtonClick}
+            className="sort-button layout-drag-ignore"
+            title={getSortTitle()}
+          >
+            <span className="sort-icon">{getSortIcon()}</span>
+            <span className="sort-text">Sort</span>
+          </button>
+        </div>
       </div>
 
       <div className="faction-grid-wrapper">
-        {containerWidth > 0 && currentLayout.length > 0 && factions.length > 0 && (
+        {containerWidth > 0 && currentLayout.length > 0 && sortedFactions.length > 0 && (
           <ResponsiveGridLayout
             className={`faction-inner-grid breakpoint-${breakpoint}`}
             layouts={layouts}
@@ -217,14 +353,14 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
             maxRows={Infinity}
             compactor={{ type: 'vertical', allowOverlap: false, compact: (layout, cols) => layout }}
           >
-            {factions.map((faction) => {
+            {sortedFactions.map((faction) => {
               const relClass = getRelationClass(faction.goodwill);
               return (
                 <div
                   key={faction.load_id}
                   className={`faction-item ${relClass}`}
                 >
-                  <div className="faction-item-content">
+                  <div className="faction-item-content layout-drag-ignore">
                     <div className="faction-details">
                       <span className="faction-name" title={faction.name}>
                         {faction.name}
