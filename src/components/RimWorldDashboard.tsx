@@ -156,9 +156,32 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [layout, setLayout] = useState<Layout>(initialLayout);
   const [isAddCardMenuOpen, setAddCardMenuOpen] = useState(false);
   const trashRef = useRef<HTMLDivElement>(null);
-  const { width, containerRef, mounted } = useContainerWidth();
+  const { width, containerRef, mounted, measureWidth } = useContainerWidth({
+    measureBeforeMount: true,
+    initialWidth: 960
+  });
   const presetChangeRef = useRef(false);
 
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      // Force measurement when dashboard tab is selected
+      const timer = setTimeout(() => {
+        measureWidth();
+      }, 50); // Small delay to ensure DOM is ready
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, measureWidth]);
+
+  // Also measure on initial mount and after data loads
+  useEffect(() => {
+    if (!loading && data && activeTab === 'dashboard') {
+      const timer = setTimeout(() => {
+        measureWidth();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, data, activeTab, measureWidth]);
 
   // Update the presets and selectedPreset initialization
   const [presets, setPresets] = useState<{ name: string, layout: Layout, cardSettings: { [key: string]: any } }[]>(() => {
@@ -568,19 +591,17 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 <ReactGridLayout
                   key={`grid-${width}`} // Force remount when width changes
                   className="layout"
-                  layout={initialLayout}
+                  layout={layout}
                   width={width} // Fixed to match header/tabs width
                   onLayoutChange={onLayoutChange}
                   onDragStop={onDragStop as any}
                   onDrag={onDrag as any}
-
                   dragConfig={{
                     enabled: true,
-                    cancel: '.faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
+                    cancel: '.select-colonist-btn, .colonist-item, .faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
                   }}
-
                 >
-                  {initialLayout.map(item => (
+                  {layout.map(item => (
                     <div key={item.i} className="grid-item">
                       <div className="grid-item-content">
                         {renderCard(item)}
@@ -591,7 +612,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 </ReactGridLayout>
               )}
             </div>
-          </div>
+          </div >
         );
       case 'medical':
         return <MedicalTab

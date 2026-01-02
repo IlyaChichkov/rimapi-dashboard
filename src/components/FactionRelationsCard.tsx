@@ -1,20 +1,19 @@
 // src/components/FactionRelationsCard.tsx
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Responsive, LayoutItem } from 'react-grid-layout'; // Import LayoutItem, not Layout
-import 'react-grid-layout/css/styles.css';
-import 'react-resizable/css/styles.css';
+import { ResponsiveGridLayout } from 'react-grid-layout';
 import { Faction } from '../types';
 import { rimworldApi } from '../services/rimworldApi';
 import './FactionRelationsCard.css';
 
-// Use LayoutItem as the base type
-interface FactionLayoutItem extends LayoutItem {
+interface FactionLayoutItem {
   i: string;
   x: number;
   y: number;
   w: number;
   h: number;
   isResizable?: boolean;
+  isDraggable?: boolean;
+  static?: boolean;
 }
 
 interface FactionRelationsCardProps {
@@ -29,14 +28,23 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
   const [factions, setFactions] = useState<Faction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [breakpoint, setBreakpoint] = useState<string>('lg');
+  const [cols, setCols] = useState<number>(4);
 
   // Initialize with empty array if no settings
   const [currentLayout, setCurrentLayout] = useState<FactionLayoutItem[]>(
     settings?.layout || []
   );
 
-  const [width, setWidth] = useState(0);
+  const [layouts, setLayouts] = useState<Record<string, FactionLayoutItem[]>>({
+    lg: settings?.layout || [],
+    md: [],
+    sm: [],
+    xs: []
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number>(0);
 
   // SINGLE ResizeObserver
   useEffect(() => {
@@ -50,11 +58,7 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
       rafId = requestAnimationFrame(() => {
         if (!entries[0]) return;
         const newWidth = entries[0].contentRect.width;
-
-        setWidth(prev => {
-          if (Math.abs(prev - newWidth) < 5) return prev;
-          return newWidth;
-        });
+        setContainerWidth(newWidth);
       });
     });
 
@@ -64,6 +68,31 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
       cancelAnimationFrame(rafId);
     };
   }, []);
+
+  // Update breakpoint and columns based on container width
+  useEffect(() => {
+    if (containerWidth === 0) return;
+
+    let newBreakpoint = 'lg';
+    let newCols = 4;
+
+    if (containerWidth >= 1200) {
+      newBreakpoint = 'lg';
+      newCols = 5;
+    } else if (containerWidth >= 900) {
+      newBreakpoint = 'md';
+      newCols = 4;
+    } else if (containerWidth >= 600) {
+      newBreakpoint = 'sm';
+      newCols = 3;
+    } else {
+      newBreakpoint = 'xs';
+      newCols = 2;
+    }
+
+    setBreakpoint(newBreakpoint);
+    setCols(newCols);
+  }, [containerWidth]);
 
   // Fetch Data
   useEffect(() => {
@@ -84,47 +113,71 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
 
   // Generate initial layout when factions are loaded
   useEffect(() => {
-    if (factions.length === 0) return;
+    if (factions.length === 0 || currentLayout.length > 0) return;
 
-    // Only generate layout if we don't have one already
-    if (currentLayout.length === 0) {
-      const itemsPerRow = 4;
-      const newLayout: FactionLayoutItem[] = factions.map((faction, index) => ({
-        i: faction.load_id.toString(),
-        x: (index % itemsPerRow),
-        y: Math.floor(index / itemsPerRow),
-        w: 1,
-        h: 1,
-        isResizable: false
-      }));
+    const generateResponsiveLayouts = () => {
+      // Generate layouts for each breakpoint
+      const newLayouts: Record<string, FactionLayoutItem[]> = {
+        lg: [],
+        md: [],
+        sm: [],
+        xs: []
+      };
 
-      setCurrentLayout(newLayout);
+      // Generate for each breakpoint
+      Object.keys(newLayouts).forEach(bp => {
+        const bpCols = bp === 'lg' ? 5 : bp === 'md' ? 4 : bp === 'sm' ? 3 : 2;
+
+        factions.forEach((faction, index) => {
+          newLayouts[bp].push({
+            i: faction.load_id.toString(),
+            x: index % bpCols,
+            y: Math.floor(index / bpCols),
+            w: 1,
+            h: 1,
+            isResizable: false,
+            isDraggable: true,
+            static: false
+          });
+        });
+      });
+
+      setLayouts(newLayouts);
+      setCurrentLayout(newLayouts.lg);
 
       if (onSettingsChange) {
-        onSettingsChange({ layout: newLayout });
+        onSettingsChange({ layout: newLayouts.lg });
       }
-    }
+    };
+
+    generateResponsiveLayouts();
   }, [factions, currentLayout.length, onSettingsChange]);
 
-  // Correct handler signature
+  // Handle layout change for all breakpoints
   const handleLayoutChange = useCallback((
-    layout: LayoutItem[], // Array of LayoutItems
-    allLayouts: Record<string, LayoutItem[]> // Record of arrays
+    layout: FactionLayoutItem[],
+    allLayouts: Record<string, FactionLayoutItem[]>
   ) => {
-    const cleanLayout: FactionLayoutItem[] = layout.map(l => ({
-      i: l.i,
-      x: l.x,
-      y: l.y,
-      w: l.w,
-      h: l.h,
-      isResizable: false
-    }));
+    setCurrentLayout(layout);
+    setLayouts(allLayouts);
 
-    setCurrentLayout(cleanLayout);
     if (onSettingsChange) {
-      onSettingsChange({ layout: cleanLayout });
+      onSettingsChange({ layout });
     }
   }, [onSettingsChange]);
+
+  const handleBreakpointChange = useCallback((
+    newBreakpoint: string,
+    newCols: number
+  ) => {
+    setBreakpoint(newBreakpoint);
+    setCols(newCols);
+
+    // Update current layout when breakpoint changes
+    if (layouts[newBreakpoint]) {
+      setCurrentLayout(layouts[newBreakpoint]);
+    }
+  }, [layouts]);
 
   const getRelationClass = (goodwill: number) => {
     if (goodwill <= -80) return 'hostile';
@@ -142,23 +195,27 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
       </div>
 
       <div className="faction-grid-wrapper">
-        {/* Check both width and layout */}
-        {width > 100 && currentLayout.length > 0 && (
-          <Responsive
-            className="faction-inner-grid"
-            layouts={{ lg: currentLayout }}
-            breakpoints={{ lg: 0 }}
-            cols={{ lg: 4 }}
+        {containerWidth > 0 && currentLayout.length > 0 && factions.length > 0 && (
+          <ResponsiveGridLayout
+            className={`faction-inner-grid breakpoint-${breakpoint}`}
+            layouts={layouts}
+            breakpoints={{ lg: 1200, md: 900, sm: 600, xs: 0 }}
+            cols={{ lg: 5, md: 4, sm: 3, xs: 2 }}
             rowHeight={80}
-            width={width}
+            width={containerWidth}
             margin={[10, 10]}
+            containerPadding={[10, 10]}
             onLayoutChange={handleLayoutChange as any}
-            // Remove all drag event handlers - let the library handle them
+            onBreakpointChange={handleBreakpointChange}
             dragConfig={{
               enabled: true,
-              handle: '.faction-item',
+              handle: '.drag-handle',
+              threshold: 3
             }}
             resizeConfig={{ enabled: false }}
+            autoSize={true}
+            maxRows={Infinity}
+            compactor={{ type: 'vertical', allowOverlap: false, compact: (layout, cols) => layout }}
           >
             {factions.map((faction) => {
               const relClass = getRelationClass(faction.goodwill);
@@ -169,8 +226,12 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
                 >
                   <div className="faction-item-content">
                     <div className="faction-details">
-                      <span className="faction-name" title={faction.name}>{faction.name}</span>
-                      <span className="faction-relation-text">{faction.relation}</span>
+                      <span className="faction-name" title={faction.name}>
+                        {faction.name}
+                      </span>
+                      <span className="faction-relation-text">
+                        {faction.relation}
+                      </span>
                     </div>
                     <div className="faction-goodwill">
                       <span className="faction-goodwill-label">Goodwill</span>
@@ -179,15 +240,13 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
                       </span>
                     </div>
                   </div>
-                  <div
-                    className="drag-handle drag-indicator"
-                  >
+                  <div className="drag-handle drag-indicator" title="Drag to rearrange">
                     ⋮⋮
                   </div>
                 </div>
               );
             })}
-          </Responsive>
+          </ResponsiveGridLayout>
         )}
       </div>
     </div>

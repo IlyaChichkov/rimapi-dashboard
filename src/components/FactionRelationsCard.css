@@ -201,6 +201,7 @@
 
 /* Ensure the drag handle captures events properly */
 .drag-handle {
+  display: contents;
   cursor: grab;
   user-select: none;
   touch-action: none;
@@ -234,6 +235,7 @@
 
 /* Content area should not be draggable */
 .faction-item-content {
+  margin-right: 12px;
   pointer-events: auto;
   /* Make content non-draggable */
   user-select: none;

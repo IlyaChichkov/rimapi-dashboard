@@ -1226,39 +1226,3 @@
   justify-content: center;
   min-height: 0;
 }
-
-/* Add these styles */
-.dashboard-tab {
-  width: 100% !important;
-  display: block !important;
-  position: relative !important;
-  overflow: hidden !important;
-}
-
-.dashboard-grid-container {
-  width: 100% !important;
-  min-width: 100% !important;
-  position: relative !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  box-sizing: border-box !important;
-}
-
-.layout {
-  width: 100% !important;
-  min-width: 100% !important;
-  position: relative !important;
-  margin: 0 !important;
-  background: transparent !important;
-}
-
-.grid-item {
-  box-sizing: border-box !important;
-}
-
-.react-grid-layout {
-  width: 100% !important;
-  min-width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
