@@ -189,3 +189,71 @@
   pointer-events: auto;
 }
 
+
+/* FactionRelationsCard.css */
+
+/* Reset pointer events to allow normal flow */
+.faction-relations-card,
+.faction-grid-wrapper,
+.faction-inner-grid {
+  pointer-events: auto;
+}
+
+/* Ensure the drag handle captures events properly */
+.drag-handle {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 4px;
+  z-index: 100;
+  /* Allow drag handle to capture events */
+  pointer-events: all;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Make sure the faction item doesn't interfere */
+.faction-item {
+  position: relative;
+  /* Allow events to pass through to children */
+  pointer-events: none;
+}
+
+/* But allow the drag handle to receive events */
+.faction-item .drag-handle {
+  pointer-events: all;
+}
+
+/* Content area should not be draggable */
+.faction-item-content {
+  pointer-events: auto;
+  /* Make content non-draggable */
+  user-select: none;
+}
+
+/* When item is being dragged */
+.react-grid-item.react-draggable-dragging {
+  z-index: 1000 !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  cursor: grabbing;
+  /* During drag, disable pointer events on content */
+  pointer-events: none;
+}
+
+.react-grid-item.react-draggable-dragging .faction-item-content {
+  pointer-events: none;
+}
+
+/* Ensure the drag handle is still interactive during drag */
+.react-grid-item.react-draggable-dragging .drag-handle {
+  pointer-events: all;
+  cursor: grabbing;
+}

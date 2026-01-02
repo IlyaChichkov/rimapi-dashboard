@@ -564,6 +564,12 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 onLayoutChange={onLayoutChange}
                 onDragStop={onDragStop as any}
                 onDrag={onDrag as any}
+
+                dragConfig={{
+                  enabled: true,
+                  cancel: '.faction-item:not(.drag-handle), .faction-item-content, .faction-details, .faction-goodwill'
+                }}
+
               >
                 {layout.map(item => (
                   <div key={item.i} className="grid-item">

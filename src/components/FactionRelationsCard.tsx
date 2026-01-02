@@ -1,13 +1,14 @@
 // src/components/FactionRelationsCard.tsx
-import React, { useState, useEffect, useRef } from 'react';
-import { Responsive } from 'react-grid-layout';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Responsive, LayoutItem } from 'react-grid-layout'; // Import LayoutItem, not Layout
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { Faction } from '../types';
 import { rimworldApi } from '../services/rimworldApi';
 import './FactionRelationsCard.css';
 
-interface FactionLayoutItem {
+// Use LayoutItem as the base type
+interface FactionLayoutItem extends LayoutItem {
   i: string;
   x: number;
   y: number;
@@ -15,69 +16,6 @@ interface FactionLayoutItem {
   h: number;
   isResizable?: boolean;
 }
-
-/**
- * Calculates the grid layout based on the container's available pixel dimensions.
- * * @param width - The current pixel width of the container
- * @param height - The current pixel height of the container
- * @param factions - The data items to layout
- * @param currentLayout - The existing layout (to preserve positions if needed)
- */
-export const calculateLayout = (
-  width: number,
-  height: number,
-  factions: Faction[],
-  currentLayout: FactionLayoutItem[]
-): FactionLayoutItem[] => {
-  const GRID_COLUMNS = 4;
-  const MIN_CARD_PIXEL_WIDTH = 150; // Reduced for more items per row
-
-  // Calculate how many items can physically fit
-  const maxItemsPerRow = Math.floor(width / MIN_CARD_PIXEL_WIDTH) || 1;
-
-  // For 1032px width and 150px min: maxItemsPerRow = 6
-
-  // We want to fill the grid efficiently
-  let itemsPerRow: number;
-  let itemW: number;
-
-  if (maxItemsPerRow >= 4) {
-    // Use 4 items per row to fill all columns
-    itemsPerRow = 4;
-    itemW = 1; // Each takes 1 column
-  } else if (maxItemsPerRow >= 2) {
-    itemsPerRow = 2;
-    itemW = 2; // Each takes 2 columns
-  } else {
-    itemsPerRow = 1;
-    itemW = 4; // Full width
-  }
-
-  console.log(`Width: ${width}, ItemsPerRow: ${itemsPerRow}, ItemW: ${itemW}`);
-
-  const newLayout: FactionLayoutItem[] = factions.map((faction, index) => {
-    const existing = currentLayout.find(l => l.i === faction.load_id.toString());
-    if (existing) return existing;
-
-    const row = Math.floor(index / itemsPerRow);
-    const col = index % itemsPerRow;
-    const x = col * itemW;
-
-    // Set height to be proportional to width for better appearance
-    const itemH = itemW === 1 ? 1 : 1.5; // Taller for wider items
-
-    return {
-      i: faction.load_id.toString(),
-      x: x,
-      y: row,
-      w: itemW,
-      h: itemH, // Use dynamic height
-      isResizable: false
-    };
-  });
-
-  return newLayout;
-};
 
 interface FactionRelationsCardProps {
   settings?: { layout?: FactionLayoutItem[] };
@@ -89,61 +27,42 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
   onSettingsChange
 }) => {
   const [factions, setFactions] = useState<Faction[]>([]);
-  const [layout, setLayout] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // State for Container Dimensions
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  // Initialize with empty array if no settings
+  const [currentLayout, setCurrentLayout] = useState<FactionLayoutItem[]>(
+    settings?.layout || []
+  );
 
-  // 1. Precise Dimension Tracking
+  const [width, setWidth] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // SINGLE ResizeObserver
   useEffect(() => {
-    if (!wrapperRef.current) return;
+    const element = containerRef.current;
+    if (!element) return;
 
-    const observer = new ResizeObserver(() => {
-      // Wrap in rAF for performance and to avoid loop errors
-      window.requestAnimationFrame(() => {
-        if (!wrapperRef.current) return;
+    let rafId: number;
+    const observer = new ResizeObserver((entries) => {
+      cancelAnimationFrame(rafId);
 
-        const { clientWidth, clientHeight } = wrapperRef.current;
+      rafId = requestAnimationFrame(() => {
+        if (!entries[0]) return;
+        const newWidth = entries[0].contentRect.width;
 
-        // Only update if dimensions actually changed
-        setDimensions(prev => {
-          if (prev.width === clientWidth && prev.height === clientHeight) return prev;
-          return { width: clientWidth, height: clientHeight };
+        setWidth(prev => {
+          if (Math.abs(prev - newWidth) < 5) return prev;
+          return newWidth;
         });
       });
     });
 
-    observer.observe(wrapperRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [currentLayout, setCurrentLayout] = useState<FactionLayoutItem[]>(settings?.layout || []);
-
-  // Initialize width to 0 so we don't render a broken layout on first paint
-  const [width, setWidth] = useState(500);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  // 1. ROBUST RESIZE OBSERVER
-  useEffect(() => {
-    const element = cardRef.current;
-    if (!element) return;
-
-    const observer = new ResizeObserver(() => {
-      // Wrap in rAF to prevent "ResizeObserver loop limit exceeded"
-      window.requestAnimationFrame(() => {
-        if (element) {
-          // offsetWidth is safer than contentRect for grid containers
-          setWidth(element.offsetWidth);
-        }
-      });
-    });
-
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // Fetch Data
@@ -151,7 +70,9 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     const fetchFactions = async () => {
       try {
         const response = await rimworldApi.fetchAllFactions();
-        if (response) setFactions(response);
+        if (response) {
+          setFactions(response);
+        }
       } catch (err) {
         setError('Failed to fetch factions');
       } finally {
@@ -161,66 +82,49 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     fetchFactions();
   }, []);
 
-  // Sync Factions with Layout
+  // Generate initial layout when factions are loaded
   useEffect(() => {
     if (factions.length === 0) return;
 
-    setCurrentLayout((prevLayout) => {
-      const newLayout = [...prevLayout];
-      let layoutChanged = false;
+    // Only generate layout if we don't have one already
+    if (currentLayout.length === 0) {
+      const itemsPerRow = 4;
+      const newLayout: FactionLayoutItem[] = factions.map((faction, index) => ({
+        i: faction.load_id.toString(),
+        x: (index % itemsPerRow),
+        y: Math.floor(index / itemsPerRow),
+        w: 1,
+        h: 1,
+        isResizable: false
+      }));
 
-      factions.forEach((faction, index) => {
-        const exists = newLayout.find(l => l.i === faction.load_id.toString());
-        if (!exists) {
-          layoutChanged = true;
-          newLayout.push({
-            i: faction.load_id.toString(),
-            x: (index * 2) % 4,
-            y: Math.floor(index / 2),
-            w: 2,
-            h: 1,
-            isResizable: false
-          });
-        }
-      });
+      setCurrentLayout(newLayout);
 
-      if (layoutChanged) {
-        if (onSettingsChange) {
-          setTimeout(() => onSettingsChange({ layout: newLayout }), 0);
-        }
-        return newLayout;
+      if (onSettingsChange) {
+        onSettingsChange({ layout: newLayout });
       }
-      return prevLayout;
-    });
-  }, [factions, onSettingsChange]);
-
-  useEffect(() => {
-    if (dimensions.width === 0 || factions.length === 0) return;
-
-    // Call your function here
-    const newLayout = calculateLayout(
-      dimensions.width,
-      dimensions.height,
-      factions,
-      layout
-    );
-
-    setLayout(newLayout);
-
-    // Notify parent if needed
-    if (onSettingsChange) {
-      // Debounce this in real app
-      setTimeout(() => onSettingsChange({ layout: newLayout }), 0);
     }
-  }, [dimensions.width, dimensions.height, factions.length]);
+  }, [factions, currentLayout.length, onSettingsChange]);
 
-  const handleLayoutChange = (layout: any[]) => {
+  // Correct handler signature
+  const handleLayoutChange = useCallback((
+    layout: LayoutItem[], // Array of LayoutItems
+    allLayouts: Record<string, LayoutItem[]> // Record of arrays
+  ) => {
     const cleanLayout: FactionLayoutItem[] = layout.map(l => ({
-      i: l.i, x: l.x, y: l.y, w: l.w, h: l.h, isResizable: false
+      i: l.i,
+      x: l.x,
+      y: l.y,
+      w: l.w,
+      h: l.h,
+      isResizable: false
     }));
+
     setCurrentLayout(cleanLayout);
-    if (onSettingsChange) onSettingsChange({ layout: cleanLayout });
-  };
+    if (onSettingsChange) {
+      onSettingsChange({ layout: cleanLayout });
+    }
+  }, [onSettingsChange]);
 
   const getRelationClass = (goodwill: number) => {
     if (goodwill <= -80) return 'hostile';
@@ -228,42 +132,41 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     return 'ally';
   };
 
+  if (error) return <div className="faction-card-error">{error}</div>;
+
   return (
-    <div className="faction-relations-card">
+    <div className="faction-relations-card" ref={containerRef}>
       <div className="faction-header">
         <h2>Faction Relations</h2>
-        <span>({factions.length})</span>
+        <span className="faction-count">({factions.length})</span>
       </div>
 
-      {/* The Wrapper determines the size */}
-      <div
-        className="faction-grid-wrapper"
-        ref={wrapperRef}
-        onMouseDown={e => e.stopPropagation()}
-        onTouchStart={e => e.stopPropagation()}
-      >
-        {dimensions.width > 0 && (
+      <div className="faction-grid-wrapper">
+        {/* Check both width and layout */}
+        {width > 100 && currentLayout.length > 0 && (
           <Responsive
             className="faction-inner-grid"
             layouts={{ lg: currentLayout }}
             breakpoints={{ lg: 0 }}
-            cols={{ lg: 4 }}  // ← Make sure this is 4
-            rowHeight={60}
-            width={width}  // ← Make sure width is being passed correctly
+            cols={{ lg: 4 }}
+            rowHeight={80}
+            width={width}
             margin={[10, 10]}
             onLayoutChange={handleLayoutChange as any}
+            // Remove all drag event handlers - let the library handle them
             dragConfig={{
               enabled: true,
-              handle: '.drag-handle'
+              handle: '.faction-item',
             }}
             resizeConfig={{ enabled: false }}
-            // Add containerPadding if needed
-            containerPadding={[0, 0]}
           >
             {factions.map((faction) => {
               const relClass = getRelationClass(faction.goodwill);
               return (
-                <div key={faction.load_id} className={`faction-item ${relClass}`}>
+                <div
+                  key={faction.load_id}
+                  className={`faction-item ${relClass}`}
+                >
                   <div className="faction-item-content">
                     <div className="faction-details">
                       <span className="faction-name" title={faction.name}>{faction.name}</span>
@@ -276,7 +179,11 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
                       </span>
                     </div>
                   </div>
-                  <div className="drag-handle drag-indicator">⋮⋮</div>
+                  <div
+                    className="drag-handle drag-indicator"
+                  >
+                    ⋮⋮
+                  </div>
                 </div>
               );
             })}
