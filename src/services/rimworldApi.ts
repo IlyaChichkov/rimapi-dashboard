@@ -16,6 +16,9 @@ import {
   ItemImageResponse,
   ResourcesData,
   Position,
+  Faction,
+  PlayerFaction,
+  FactionRelations,
 } from "../types";
 
 // -----------------------------
@@ -541,5 +544,17 @@ export const rimworldApi = {
 
   async loadGame(name: string): Promise<void> {
     await postNoBody(`/game/load?name=${encodeURIComponent(name)}`);
+  },
+
+  async fetchPlayerFaction(): Promise<PlayerFaction | null> {
+    return getJson<PlayerFaction>('/faction/player');
+  },
+
+  async fetchAllFactions(): Promise<Faction[] | null> {
+    return getJson<Faction[]>('/factions');
+  },
+
+  async fetchFactionRelations(id: number): Promise<FactionRelations | null> {
+    return getJson<FactionRelations>(`/faction/relations?id=${id}`);
   },
 };

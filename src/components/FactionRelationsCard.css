@@ -1,0 +1,191 @@
+/* src/components/FactionRelationsCard.css */
+
+/* 1. Main Card Container */
+.faction-relations-card {
+    position: absolute; /* Fill grid item */
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Background handled by parent grid item usually */
+}
+
+/* 2. Header */
+.faction-header {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.faction-header h2 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: white;
+}
+
+.faction-count {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* 3. Grid Wrapper (Scrollable Area) */
+.faction-grid-wrapper {
+    flex: 1 1 auto;
+    min-height: 0; /* Critical for scroll */
+    overflow-y: auto;
+    overflow-x: hidden;
+    position: relative;
+    padding-bottom: 20px; /* Space for scrolling past bottom items */
+}
+
+/* Scrollbar Styles */
+.faction-grid-wrapper::-webkit-scrollbar { width: 6px; }
+.faction-grid-wrapper::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+.faction-grid-wrapper::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+/* 4. Faction Item (The Draggable Chips) */
+.faction-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    border-radius: 8px;
+    cursor: grab;
+    transition: box-shadow 0.2s, transform 0.1s;
+    user-select: none;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+}
+
+.faction-item:active {
+    cursor: grabbing;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    z-index: 100 !important; /* Pop on drag */
+}
+
+.faction-item-content {
+    display: flex;
+    justify-content: space-between; /* Creates two-column feel */
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+}
+
+.faction-details {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Prevent long names from breaking layout */
+}
+
+.faction-name {
+    font-size: 0.85em;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: white;
+}
+
+.faction-relation-text {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: capitalize;
+}
+
+.faction-goodwill {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-left: 10px; /* Space from the name column */
+    white-space: nowrap;
+}
+
+.faction-goodwill-label {
+    font-size: 0.6em;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.faction-value {
+    font-size: 1.1em;
+    font-family: 'Monaco', monospace;
+    font-weight: 700;
+}
+
+.drag-indicator {
+    color: rgba(255,255,255,0.2);
+    font-size: 1.2em;
+    margin-left: 8px;
+}
+
+/* 5. Relation Colors */
+
+/* Hostile (Red) */
+.faction-item.hostile {
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(255, 107, 107, 0.1));
+    border-color: rgba(255, 107, 107, 0.4);
+}
+.faction-item.hostile .faction-value { color: #ff6b6b; }
+.faction-item.hostile:hover { border-color: #ff6b6b; }
+
+/* Neutral (Blue) */
+.faction-item.neutral {
+    background: linear-gradient(135deg, rgba(77, 171, 247, 0.2), rgba(77, 171, 247, 0.1));
+    border-color: rgba(77, 171, 247, 0.4);
+}
+.faction-item.neutral .faction-value { color: #4dabf7; }
+.faction-item.neutral:hover { border-color: #4dabf7; }
+
+/* Ally (Green) */
+.faction-item.ally {
+    background: linear-gradient(135deg, rgba(81, 207, 102, 0.2), rgba(81, 207, 102, 0.1));
+    border-color: rgba(81, 207, 102, 0.4);
+}
+.faction-item.ally .faction-value { color: #51cf66; }
+.faction-item.ally:hover { border-color: #51cf66; }
+
+/* 6. Utility Loading/Error */
+.faction-card-loading, .faction-card-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255,255,255,0.5);
+}
+.faction-card-error { color: #ff6b6b; }
+
+/* Add this to your CSS */
+.faction-inner-grid .react-grid-item {
+  /* This allows child elements to receive events */
+  pointer-events: auto;
+}
+
+/* Only the drag handle should be draggable */
+.faction-inner-grid .drag-handle {
+  cursor: move;
+  touch-action: none; /* Important for touch devices */
+}
+
+/* The rest of the faction item should not be draggable */
+.faction-item {
+  pointer-events: auto;
+}
+
+.faction-item-content {
+  /* This prevents accidental drags on the content */
+  pointer-events: none;
+}
+
+/* But allow interaction with specific elements if needed */
+.faction-item-content .faction-name,
+.faction-item-content .faction-value {
+  pointer-events: auto;
+}
+

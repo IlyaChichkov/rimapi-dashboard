@@ -31,6 +31,7 @@ import PresetsContextMenu from './PresetsContextMenu';
 import MessageFeedCard from './MessageFeedCard';
 import SseStatusCard from './SseStatusCard';
 import ColonistCard from './ColonistCard';
+import FactionRelationsCard from './FactionRelationsCard';
 
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
@@ -425,7 +426,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed'];
+  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed', 'factionRelations'];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -540,6 +541,11 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         return <SseStatusCard />;
       case 'messageFeed':
         return <MessageFeedCard />;
+      case 'factionRelations':
+        return <FactionRelationsCard
+          settings={cardSettings[item.i]}
+          onSettingsChange={(newSettings) => handleCardSettingsChange(item.i, newSettings)}
+        />
       default:
         return <div key={item.i} className="chart-card"><h3>{cardId}</h3><p>Card content not implemented.</p></div>;
     }
