@@ -1,0 +1,110 @@
+/* src/components/AddCardModal.css */
+
+.add-card-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.add-card-modal-content {
+    background: rgba(30, 30, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.2s ease-out;
+}
+
+.add-card-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.add-card-header h2 {
+    margin: 0;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.add-card-close-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1.8rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.add-card-close-btn:hover { color: white; }
+
+/* Grid of Options */
+.add-card-grid {
+    padding: 20px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 15px;
+}
+
+.card-selection-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    gap: 10px;
+    height: 100%;
+}
+
+.card-selection-item:hover {
+    background: rgba(77, 171, 247, 0.15);
+    border-color: #4dabf7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.card-select-icon {
+    font-size: 2rem;
+    margin-bottom: 5px;
+}
+
+.card-select-info h3 {
+    margin: 0 0 5px 0;
+    color: #e0e0e0;
+    font-size: 1.1rem;
+}
+
+.card-selection-item:hover .card-select-info h3 {
+    color: white;
+}
+
+.card-select-info p {
+    margin: 0;
+    color: #888;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

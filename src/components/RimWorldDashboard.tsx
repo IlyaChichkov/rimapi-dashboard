@@ -18,6 +18,7 @@ import ConnectionErrorScreen from './ConnectionErrorScreen';
 import Footer from './Footer';
 import { DashboardCardRegistry } from './DashboardCardRegistry';
 import { useToast } from './ToastContext';
+import AddCardModal, { CardDefinition } from './AddCardModal';
 
 // Tabs
 import ResearchCards from './ResearchCards';
@@ -37,6 +38,22 @@ interface RimWorldDashboardProps {
   onGameStateChange: () => void;
 }
 
+// --- DEFINE CARD METADATA ---
+const CARD_DEFINITIONS: CardDefinition[] = [
+  { id: 'gameInfo', title: 'Game Info', description: 'Date, weather, storyteller, and sync status.', icon: '🌍' },
+  { id: 'colonists', title: 'Colonist Charts', description: 'Charts for mood, health, and needs overview.', icon: '📊' },
+  { id: 'resources', title: 'Resource Summary', description: 'Distribution of items and wealth categories.', icon: '📦' },
+  { id: 'power', title: 'Power Grid', description: 'Generation vs. Consumption battery status.', icon: '⚡' },
+  { id: 'population', title: 'Population', description: 'Counts for colonists, prisoners, and enemies.', icon: '👥' },
+  { id: 'messageFeed', title: 'Message Feed', description: 'Live log of in-game letters and messages.', icon: '📩' },
+  { id: 'factionRelations', title: 'Factions', description: 'List of factions and goodwill status.', icon: '🤝' },
+  { id: 'currentResearch', title: 'Research', description: 'Current project progress bar.', icon: '🔬' },
+  { id: 'colonist', title: 'Single Colonist', description: 'Detailed inspector for a specific pawn.', icon: '👤' },
+  { id: 'colonySummary', title: 'Colony Summary', description: 'Text-based stats like total wealth.', icon: '📝' },
+  { id: 'caravanList', title: 'Caravans', description: 'Active world map caravans.', icon: '🐫' },
+  { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
+];
+
 const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   apiUrl, onResetConfig, onGameStateChange
 }) => {
@@ -55,7 +72,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   // 3. Local UI State
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
-  const [isAddCardMenuOpen, setAddCardMenuOpen] = useState(false);
+  const [isAddCardModalOpen, setAddCardModalOpen] = useState(false);
   const [isPresetsModalOpen, setPresetsModalOpen] = useState(false); // Renamed for clarity
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = useState<string[]>([]);
@@ -346,14 +363,15 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           <div className="dashboard-controls-left">
             {/* ADD CARD BUTTON */}
             <div className="add-card-container">
-              <button className="add-card-btn" onClick={() => setAddCardMenuOpen(!isAddCardMenuOpen)}>Add Card</button>
-              {isAddCardMenuOpen && (
-                <div className="add-card-menu">
-                  {availableCards.map(cardId => (
-                    <button key={cardId} onClick={() => { onAddItem(cardId); setAddCardMenuOpen(false); }}>{cardId}</button>
-                  ))}
-                </div>
-              )}
+              {/* 1. UPDATED ADD CARD BUTTON */}
+              <div className="add-card-container">
+                <button
+                  className="add-card-btn"
+                  onClick={() => setAddCardModalOpen(true)} // Open the new modal
+                >
+                  Add Widget
+                </button>
+              </div>
             </div>
 
             {/* PRESET SELECT BUTTON */}
@@ -449,6 +467,13 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         defaultBgUrl={defaultBgImage}
         currentBlur={backgroundBlur}
         onSave={handleSaveSettings}
+      />
+
+      <AddCardModal
+        isOpen={isAddCardModalOpen}
+        onClose={() => setAddCardModalOpen(false)}
+        onAdd={onAddItem}
+        availableCards={CARD_DEFINITIONS}
       />
     </div>
   );
