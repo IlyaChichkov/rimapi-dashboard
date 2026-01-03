@@ -298,28 +298,47 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         }}
       />
 
-      {/* --- HEADER --- */}
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1>RimWorld Colony Dashboard</h1>
-        </div>
-        <div className="header-controls">
-          <button onClick={() => setAutoRefresh(!autoRefresh)} className={`auto-refresh-btn ${autoRefresh ? 'active' : ''}`}>
-            Auto Refresh: {autoRefresh ? 'ON' : 'OFF'}
-          </button>
-          <button onClick={refresh} className="refresh-btn">Refresh Now</button>
-          <button onClick={onResetConfig} className="refresh-btn">Change API URL</button>
-        </div>
-      </header>
+      {/* --- UNIFIED NAVBAR --- */}
+      <nav className="dashboard-navbar">
 
-      {/* --- TABS --- */}
-      <div className="tabs-navigation">
-        {(['dashboard', 'medical', 'research', 'colonists', 'resources', 'tools'] as DashboardTab[]).map(tab => (
-          <button key={tab} className={`tab-button ${activeTab === tab ? 'active' : ''}`} onClick={() => setActiveTab(tab)}>
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
+        {/* Left: Brand */}
+        <div className="nav-brand">
+          <h1>RimWorld Dashboard</h1>
+        </div>
+
+        {/* Center: Tabs */}
+        <div className="nav-tabs">
+          {(['dashboard', 'medical', 'research', 'colonists', 'resources', 'tools'] as DashboardTab[]).map(tab => (
+            <button
+              key={tab}
+              className={`nav-tab-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Right: Controls */}
+        <div className="nav-controls">
+          <button
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`nav-ctrl-btn auto ${autoRefresh ? 'active' : ''}`}
+            title="Toggle Auto-Refresh"
+          >
+            {autoRefresh ? '⚡ On' : '⏸️ Off'}
           </button>
-        ))}
-      </div>
+
+          <button onClick={refresh} className="nav-ctrl-btn primary" title="Force Refresh">
+            🔄 Refresh
+          </button>
+
+          <button onClick={onResetConfig} className="nav-ctrl-btn" title="Change API Configuration">
+            ⚙️ API
+          </button>
+        </div>
+
+      </nav>
 
       {/* --- DASHBOARD ACTIONS (Add Card / Presets) --- */}
       {activeTab === 'dashboard' && (

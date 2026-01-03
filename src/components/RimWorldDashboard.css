@@ -57,23 +57,6 @@
   color: white;
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 25px;
-  width: 100%;
-  margin: 0 auto;
-  margin-bottom: 30px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
 .change-url-btn {
   padding: 12px 24px;
   border: none;
@@ -630,50 +613,6 @@
 .filter-option {
   color: black;
   background-color: #5a6268;
-}
-
-/* Tabs Navigation */
-.tabs-navigation {
-  display: flex;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 8px;
-  width: 100%;
-  margin: 0 auto;
-  margin-bottom: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  gap: 8px;
-}
-
-.tab-button {
-  flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #b0b0b0;
-  font-size: 1em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.tab-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  transform: translateY(-2px);
-}
-
-.tab-button.active {
-  background: rgba(77, 171, 247, 0.2);
-  color: #4dabf7;
-  border: 1px solid rgba(77, 171, 247, 0.4);
-  box-shadow: 0 4px 12px rgba(77, 171, 247, 0.3);
 }
 
 .footer-spacer {
@@ -1324,4 +1263,150 @@
   background: rgba(40, 167, 69, 0.3);
   box-shadow: 0 0 15px rgba(40, 167, 69, 0.2); /* Green Glow */
   border-color: #69db7c;
+}
+
+
+
+/* --- CENTERED FLOATING NAVBAR --- */
+.dashboard-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Constraint & Centering */
+    width: 98%;           /* Leave a tiny gap on small screens */
+    max-width: 1800px;    /* MATCHES YOUR GRID MAX-WIDTH */
+    margin: 10px auto 20px auto; /* Centered with spacing */
+    
+    padding: 12px 25px;
+    box-sizing: border-box;
+
+    /* Floating Glass Style */
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px; /* Rounded corners again */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* LEFT: Title */
+.nav-brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    white-space: nowrap;
+}
+
+/* CENTER: Tabs */
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex: 1; /* Allow it to take space between title and buttons */
+    
+    /* Background for the tab pill container */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tab Buttons */
+.nav-tab-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: #bbb;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab-btn.active {
+    background: rgba(77, 171, 247, 0.3); /* Blue tint */
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* RIGHT: Controls */
+.nav-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nav-ctrl-btn {
+    padding: 8px 16px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.nav-ctrl-btn.primary {
+    background: rgba(77, 171, 247, 0.2);
+    border-color: rgba(77, 171, 247, 0.3);
+    color: #74c0fc;
+}
+
+.nav-ctrl-btn.primary:hover {
+    background: rgba(77, 171, 247, 0.3);
+    color: white;
+}
+
+.nav-ctrl-btn.auto.active {
+    background: rgba(64, 192, 87, 0.2);
+    border-color: rgba(64, 192, 87, 0.3);
+    color: #69db7c;
+}
+
+/* Responsive: Stack on Mobile */
+@media (max-width: 1000px) {
+    .dashboard-navbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 0; /* Optional: Reset radius on full mobile width */
+        width: 100%;
+        margin-top: 0;
+    }
+    
+    .nav-brand { text-align: center; }
+    
+    .nav-tabs {
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+    
+    .nav-controls {
+        justify-content: center;
+    }
 }
