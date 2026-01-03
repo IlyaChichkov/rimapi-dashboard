@@ -63,7 +63,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const trashRef = useRef<HTMLDivElement>(null);
   const ignoreLayoutChangeRef = useRef(false);
 
-  const [backgroundImage, setBackgroundImage] = useState<string>(() => {
+  const [targetBgImage, setTargetBgImage] = useState<string>(() => {
     return localStorage.getItem('dashboard_bg') || defaultBgImage;
   });
 
@@ -74,12 +74,43 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
 
+  const [visibleBgImage, setVisibleBgImage] = useState<string>(defaultBgImage);
+
+  // IMAGE PRELOADER EFFECT
+  useEffect(() => {
+    // If the image we want is already visible, do nothing
+    if (targetBgImage === visibleBgImage) return;
+
+    // Create a new image object in memory to download the file
+    const img = new Image();
+    img.src = targetBgImage;
+
+    // Only swap the background when it's fully loaded
+    img.onload = () => {
+      setVisibleBgImage(targetBgImage);
+    };
+
+    // Fallback: If image fails, you might want to revert or just do nothing
+    img.onerror = () => {
+      console.warn("Failed to load background:", targetBgImage);
+      // Optional: Revert to default if custom fails?
+      // setVisibleBgImage(defaultBgImage); 
+    };
+
+  }, [targetBgImage, visibleBgImage]);
+
   // Helper to settings
   const handleSaveSettings = (newUrl: string, newBlur: number) => {
-    setBackgroundImage(newUrl);
+    // 1. Update visual state (Current View)
+    setTargetBgImage(newUrl);
     setBackgroundBlur(newBlur);
     localStorage.setItem('dashboard_bg', newUrl);
     localStorage.setItem('dashboard_bg_blur', newBlur.toString());
+
+    if (selectedPreset) {
+      savePreset(selectedPreset, newUrl, newBlur);
+      addToast({ type: 'success', title: `Settings saved to preset "${selectedPreset}"` });
+    }
   };
 
   // React Grid Layout Sizing
@@ -103,7 +134,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   useEffect(() => {
     if (presetBgImage) {
-      setBackgroundImage(presetBgImage);
+      setTargetBgImage(presetBgImage);
       localStorage.setItem('dashboard_bg', presetBgImage);
 
       const newBlur = presetBgBlur || 0;
@@ -112,7 +143,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
       addToast({ type: 'info', title: 'Background loaded from preset', duration: 2000 });
     } else {
-      setBackgroundImage(defaultBgImage);
+      setTargetBgImage(defaultBgImage);
       setBackgroundBlur(0);
     }
   }, [presetBgImage, presetBgBlur, addToast]);
@@ -251,7 +282,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       <div
         className="dashboard-background"
         style={{
-          backgroundImage: `url(${backgroundImage})`,
+          backgroundImage: `url(${visibleBgImage})`,
           filter: `blur(${backgroundBlur}px)`
         }}
       />
@@ -353,7 +384,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         presets={presets}
         selectedPreset={selectedPreset}
         onSave={(name) => {
-          const success = savePreset(name, backgroundImage, backgroundBlur);
+          const success = savePreset(name, targetBgImage, backgroundBlur);
           if (success) addToast({ type: 'success', title: 'Preset saved!' });
         }}
         onSelect={(name) => {
@@ -368,7 +399,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       <DashboardSettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
-        currentBgUrl={backgroundImage}
+        currentBgUrl={targetBgImage}
         defaultBgUrl={defaultBgImage}
         currentBlur={backgroundBlur}
         onSave={handleSaveSettings}
