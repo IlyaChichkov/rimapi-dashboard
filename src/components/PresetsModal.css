@@ -346,3 +346,40 @@
     margin-right: 8px;
     font-size: 1.2em;
 }
+
+/* src/components/PresetsModal.css */
+
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.1em;
+}
+
+.header-icon-btn:hover {
+    background: rgba(77, 171, 247, 0.2);
+    border-color: #4dabf7;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.header-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 5px;
+}

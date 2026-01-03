@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import './PresetsModal.css';
 import { DashboardPreset } from '../types/dashboardTypes';
 
@@ -10,13 +10,17 @@ interface PresetsModalProps {
     onSave: (name: string) => void;
     onSelect: (name: string) => void;
     onDelete: (name: string) => void;
-    onRename: (oldName: string, newName: string) => boolean; // Updated Prop
+    onRename: (oldName: string, newName: string) => boolean;
+    onExport: () => void;
+    onImport: (file: File) => void;
 }
 
 const PresetsModal: React.FC<PresetsModalProps> = ({
-    isOpen, onClose, presets, selectedPreset, onSave, onSelect, onDelete, onRename
+    isOpen, onClose, presets, selectedPreset, onSave,
+    onSelect, onDelete, onRename, onExport, onImport
 }) => {
     const [newPresetName, setNewPresetName] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // State for renaming
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -71,13 +75,44 @@ const PresetsModal: React.FC<PresetsModalProps> = ({
         }
     };
 
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            onImport(file);
+        }
+        // Reset input so importing the same file again works if needed
+        if (fileInputRef.current) fileInputRef.current.value = '';
+    };
+
     return (
         <div className="presets-modal-overlay" onClick={onClose}>
             <div className="presets-modal-content" onClick={(e) => e.stopPropagation()}>
 
                 <div className="presets-modal-header">
                     <h2>Dashboard Presets</h2>
-                    <button onClick={onClose} className="presets-close-btn">&times;</button>
+
+                    <div className="header-actions-group">
+                        <button
+                            className="header-icon-btn"
+                            title="Import JSON"
+                            onClick={handleImportClick}
+                        >
+                            📥
+                        </button>
+                        <button
+                            className="header-icon-btn"
+                            title="Export JSON"
+                            onClick={onExport}
+                        >
+                            📤
+                        </button>
+                        <div className="header-separator"></div>
+                        <button onClick={onClose} className="presets-close-btn">&times;</button>
+                    </div>
                 </div>
 
                 <div className="presets-modal-body">

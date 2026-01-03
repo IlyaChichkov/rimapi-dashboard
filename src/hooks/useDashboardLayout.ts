@@ -184,6 +184,45 @@ export const useDashboardLayout = () => {
     return true;
   };
 
+  const exportPresets = () => {
+    return JSON.stringify(presets, null, 2);
+  };
+
+  const importPresets = (jsonString: string) => {
+    try {
+      const imported = JSON.parse(jsonString);
+      
+      // Basic validation: ensure it's an array and items look like presets
+      if (!Array.isArray(imported)) return false;
+      const isValid = imported.every((p: any) => p.name && Array.isArray(p.layout));
+      
+      if (!isValid) return false;
+
+      // Option A: Overwrite everything
+      // setPresets(imported);
+      // localStorage.setItem('dashboard_presets', JSON.stringify(imported));
+
+      // Option B: Merge (Avoid duplicates by checking names)
+      // This keeps existing presets unless the imported one has the same name, then it overwrites.
+      const merged = [...presets];
+      imported.forEach((newP: DashboardPreset) => {
+        const index = merged.findIndex(p => p.name === newP.name);
+        if (index >= 0) {
+          merged[index] = newP; // Overwrite existing
+        } else {
+          merged.push(newP); // Add new
+        }
+      });
+
+      setPresets(merged);
+      localStorage.setItem('dashboard_presets', JSON.stringify(merged));
+      return true;
+    } catch (e) {
+      console.error("Failed to parse presets", e);
+      return false;
+    }
+  };
+
   return {
     layout,
     cardSettings,
@@ -198,6 +237,8 @@ export const useDashboardLayout = () => {
     savePreset,
     deletePreset,
     setSelectedPreset,
-    renamePreset
+    renamePreset,
+    exportPresets,
+    importPresets,
   };
 };

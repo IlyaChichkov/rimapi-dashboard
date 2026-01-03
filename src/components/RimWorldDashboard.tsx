@@ -49,7 +49,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const {
     layout, cardSettings, presets, selectedPreset,
     handleLayoutChange, handleCardSettingsChange, onAddItem, onRemoveItem,
-    savePreset, deletePreset, setSelectedPreset, presetBgImage, presetBgBlur, renamePreset
+    savePreset, deletePreset, setSelectedPreset, presetBgImage, presetBgBlur,
+    renamePreset, exportPresets, importPresets,
   } = useDashboardLayout();
 
   // 3. Local UI State
@@ -396,6 +397,28 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         onDelete={(name) => {
           deletePreset(name);
           addToast({ type: 'success', title: 'Preset deleted' });
+        }}
+        onExport={() => {
+          const json = exportPresets();
+          const blob = new Blob([json], { type: 'application/json' });
+          const href = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = href;
+          link.download = `rimworld_dashboard_presets_${new Date().toISOString().slice(0, 10)}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          addToast({ type: 'success', title: 'Presets exported to file' });
+        }}
+        onImport={(file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target?.result as string;
+            const success = importPresets(text);
+            if (success) addToast({ type: 'success', title: 'Presets imported successfully' });
+            else addToast({ type: 'error', title: 'Invalid preset file' });
+          };
+          reader.readAsText(file);
         }}
       />
 
