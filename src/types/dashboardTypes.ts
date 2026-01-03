@@ -10,6 +10,7 @@ export interface DashboardPreset {
   name: string;
   layout: Layout;
   cardSettings: CardSettings;
+  backgroundImage?: string;
 }
 
 export interface DashboardLayoutState {

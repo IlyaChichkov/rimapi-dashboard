@@ -3,6 +3,7 @@ import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import './RimWorldDashboard.css';
+import defaultBgImage from '../assets/defaultBackground.jpg';
 
 // Hooks
 import { useRimWorldData } from '../hooks/useRimworldData';
@@ -27,7 +28,8 @@ import DevTab from './DevTab';
 
 // UI Helpers
 import ColonySummarySettingsModal from './ColonySummarySettingsModal';
-import PresetsContextMenu from './PresetsContextMenu';
+import PresetsModal from './PresetsModal'; // Using the Modal now
+import DashboardSettingsModal from './DashboardSettingsModal';
 
 interface RimWorldDashboardProps {
   apiUrl: string;
@@ -47,18 +49,31 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const {
     layout, cardSettings, presets, selectedPreset,
     handleLayoutChange, handleCardSettingsChange, onAddItem, onRemoveItem,
-    savePreset, deletePreset, setSelectedPreset
+    savePreset, deletePreset, setSelectedPreset, presetBgImage
   } = useDashboardLayout();
 
   // 3. Local UI State
   const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
   const [isAddCardMenuOpen, setAddCardMenuOpen] = useState(false);
-  const [isPresetsMenuOpen, setPresetsMenuOpen] = useState(false);
+  const [isPresetsModalOpen, setPresetsModalOpen] = useState(false); // Renamed for clarity
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = useState<string[]>([]);
 
   const { addToast } = useToast();
   const trashRef = useRef<HTMLDivElement>(null);
+  const ignoreLayoutChangeRef = useRef(false);
+
+  const [backgroundImage, setBackgroundImage] = useState<string>(() => {
+    return localStorage.getItem('dashboard_bg') || defaultBgImage;
+  });
+
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+
+  // Helper to save background
+  const handleSaveBackground = (newUrl: string) => {
+    setBackgroundImage(newUrl);
+    localStorage.setItem('dashboard_bg', newUrl);
+  };
 
   // React Grid Layout Sizing
   const { width, containerRef, mounted, measureWidth } = useContainerWidth({
@@ -79,6 +94,16 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     'caravanList', 'currentResearch'
   ];
 
+  useEffect(() => {
+    if (presetBgImage) {
+      setBackgroundImage(presetBgImage);
+      localStorage.setItem('dashboard_bg', presetBgImage);
+      addToast({ type: 'info', title: 'Background loaded from preset', duration: 2000 });
+    } else {
+      setBackgroundImage(defaultBgImage);
+    }
+  }, [presetBgImage, addToast]);
+
   // -- Handlers --
 
   const handleResizeStop = () => {
@@ -94,8 +119,20 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       const isOverTrash = e.clientX > trashRect.left && e.clientX < trashRect.right &&
         e.clientY > trashRect.top && e.clientY < trashRect.bottom;
       if (isOverTrash) {
+        // 1. Block layout saves
+        ignoreLayoutChangeRef.current = true;
+
+        // 2. Delete the item
         onRemoveItem(newItem.i);
         trashRef.current.classList.remove('over');
+
+        // 3. Unblock layout saves after a short delay
+        // This covers all the extra events ReactGridLayout fires immediately after dropping
+        setTimeout(() => {
+          ignoreLayoutChangeRef.current = false;
+        }, 200);
+
+        return;
       }
     }
     handleLayoutChange(layout);
@@ -142,8 +179,14 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   className="layout"
                   layout={layout}
                   width={width}
-                  onLayoutChange={handleLayoutChange}
-                  // Restored "as any" casts exactly as requested to fix TS errors
+                  onLayoutChange={(newLayout) => {
+                    // Check if we are deleting
+                    console.log('onLayoutChange, ignoreLayoutChangeRef=', ignoreLayoutChangeRef.current)
+                    if (ignoreLayoutChangeRef.current) {
+                      return;
+                    }
+                    handleLayoutChange(newLayout);
+                  }}
                   onDragStop={onDragStop as any}
                   onDrag={onDrag as any}
                   onResizeStop={handleResizeStop as any}
@@ -192,6 +235,11 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   return (
     <div className="rimworld-dashboard">
+      <div
+        className="dashboard-background"
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      />
+
       {/* --- HEADER --- */}
       <header className="dashboard-header">
         <div className="header-left">
@@ -226,6 +274,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       {activeTab === 'dashboard' && (
         <div className="dashboard-actions-bar">
           <div className="dashboard-controls-left">
+            {/* ADD CARD BUTTON */}
             <div className="add-card-container">
               <button className="add-card-btn" onClick={() => setAddCardMenuOpen(!isAddCardMenuOpen)}>Add Card</button>
               {isAddCardMenuOpen && (
@@ -237,24 +286,24 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
               )}
             </div>
 
+            {/* PRESET SELECT BUTTON */}
             <div className="presets-container">
-              <button className="presets-btn" onClick={() => setPresetsMenuOpen(!isPresetsMenuOpen)}>
-                {selectedPreset ? `Preset: ${selectedPreset}` : 'Create Preset'}
+              <button
+                className="presets-btn"
+                onClick={() => setPresetsModalOpen(true)}
+              >
+                {selectedPreset ? `Preset: ${selectedPreset}` : 'Presets / Save'}
               </button>
-              {isPresetsMenuOpen && (
-                <PresetsContextMenu
-                  presets={presets}
-                  selectedPreset={selectedPreset}
-                  onSave={(name) => {
-                    const success = savePreset(name);
-                    if (success) addToast({ type: 'success', title: 'Preset saved' });
-                    return success;
-                  }}
-                  onSelect={(name) => { setSelectedPreset(name); setPresetsMenuOpen(false); }}
-                  onDelete={(name) => { deletePreset(name); addToast({ type: 'success', title: 'Preset deleted' }); }}
-                  onClose={() => setPresetsMenuOpen(false)}
-                />
-              )}
+            </div>
+
+            {/* PRESET SETTINGS BUTTON */}
+            <div className="settings-container">
+              <button
+                className="settings-btn-trigger"
+                onClick={() => setSettingsModalOpen(true)}
+              >
+                Preset Settings
+              </button>
             </div>
           </div>
           <div className="trash-zone" ref={trashRef}><span>🗑️ Drag here to delete</span></div>
@@ -271,7 +320,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       <div className='footer-spacer'></div>
       <Footer />
 
-      {/* --- MODALS --- */}
+      {/* --- MODALS (Placed at Root Level to fix Z-Index issues) --- */}
       {editingCardId && (
         <ColonySummarySettingsModal
           isOpen={!!editingCardId}
@@ -280,6 +329,34 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           onSettingsChange={(newS) => handleCardSettingsChange(editingCardId, newS)}
         />
       )}
+
+      {/* Presets Modal - Now correctly placed at root level */}
+      <PresetsModal
+        isOpen={isPresetsModalOpen}
+        onClose={() => setPresetsModalOpen(false)}
+        presets={presets}
+        selectedPreset={selectedPreset}
+        onSave={(name) => {
+          // PASS backgroundImage HERE
+          const success = savePreset(name, backgroundImage);
+          if (success) addToast({ type: 'success', title: 'Preset saved with background!' });
+        }}
+        onSelect={(name) => {
+          setSelectedPreset(name);
+        }}
+        onDelete={(name) => {
+          deletePreset(name);
+          addToast({ type: 'success', title: 'Preset deleted' });
+        }}
+      />
+
+      <DashboardSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        currentBgUrl={backgroundImage}
+        defaultBgUrl={defaultBgImage}
+        onSave={handleSaveBackground}
+      />
     </div>
   );
 };

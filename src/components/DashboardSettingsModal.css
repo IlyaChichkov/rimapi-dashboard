@@ -1,0 +1,166 @@
+/* src/components/DashboardSettingsModal.css */
+
+.settings-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px;
+    animation: settingsFadeIn 0.2s ease-out;
+}
+
+.settings-modal-content {
+    background: #1e1e1e;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: settingsSlideIn 0.3s ease-out;
+    color: #fff;
+}
+
+@keyframes settingsSlideIn {
+    from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes settingsFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.settings-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.settings-modal-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: white;
+}
+
+.settings-close-btn {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+}
+
+.settings-close-btn:hover {
+    color: white;
+}
+
+.settings-modal-body {
+    padding: 24px;
+}
+
+.settings-section h3 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    color: #4dabf7;
+}
+
+.settings-hint {
+    color: #888;
+    font-size: 0.9em;
+    margin-bottom: 15px;
+}
+
+.settings-input-group {
+    margin-bottom: 20px;
+}
+
+.settings-input {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 8px;
+    color: white;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: #4dabf7;
+}
+
+.settings-preview {
+    margin-bottom: 25px;
+}
+
+.settings-preview label {
+    display: block;
+    margin-bottom: 8px;
+    color: #aaa;
+    font-size: 0.9em;
+}
+
+.bg-preview-box {
+    width: 100%;
+    height: 150px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-size: cover;
+    background-position: center;
+    background-color: #333;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-btn {
+    padding: 10px 20px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: all 0.2s;
+}
+
+.settings-btn.primary {
+    background: #4dabf7;
+    color: white;
+}
+
+.settings-btn.primary:hover {
+    background: #3b8dbf;
+}
+
+.settings-btn.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+}
+
+.settings-btn.secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+}

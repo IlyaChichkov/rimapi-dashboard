@@ -11,19 +11,18 @@
 }
 
 /* Background image with overlay */
-.rimworld-dashboard::before {
-  content: '';
+.dashboard-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/public/assets/bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
   z-index: -2;
+  transition: background-image 0.5s ease-in-out; /* Smooth transition when changing */
 }
 
 /* Dark overlay for better readability */
@@ -34,8 +33,28 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6); /* Adjust opacity as needed */
+  background: rgba(0, 0, 0, 0.6);
   z-index: -1;
+  pointer-events: none; /* Ensure clicks pass through */
+}
+
+/* Add style for the new Settings button */
+.settings-btn-trigger {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(77, 171, 247, 0.4);
+}
+
+.settings-btn-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .dashboard-header {

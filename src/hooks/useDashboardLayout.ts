@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from 'react-grid-layout';
-import { useToast } from '../components/ToastContext'; // Adjust path if needed
+import { useToast } from '../components/ToastContext';
 import { DashboardPreset, CardSettings } from '../types/dashboardTypes';
 import { ColonySummarySettings } from '../components/ColonySummary';
 
@@ -19,6 +19,9 @@ export const useDashboardLayout = () => {
   const [layout, setLayout] = useState<Layout>(INITIAL_LAYOUT);
   const [cardSettings, setCardSettings] = useState<CardSettings>({});
   
+  // NEW: State to hold the background image of the currently loaded preset
+  const [presetBgImage, setPresetBgImage] = useState<string | null>(null);
+  
   const [presets, setPresets] = useState<DashboardPreset[]>(() => {
     const saved = localStorage.getItem('dashboard_presets');
     return saved ? JSON.parse(saved) : [];
@@ -26,7 +29,6 @@ export const useDashboardLayout = () => {
 
   const [selectedPreset, setSelectedPreset] = useState<string>(() => {
     const last = localStorage.getItem('last_selected_preset') || "";
-    // Verify validity
     const saved = localStorage.getItem('dashboard_presets');
     if (last && saved) {
       const parsed = JSON.parse(saved);
@@ -35,7 +37,6 @@ export const useDashboardLayout = () => {
     return "";
   });
 
-  // -- Refs for avoiding loops --
   const presetChangeRef = useRef(false);
 
   // -- Effects --
@@ -48,6 +49,7 @@ export const useDashboardLayout = () => {
         presetChangeRef.current = true;
         setLayout(preset.layout);
         setCardSettings(preset.cardSettings || {});
+        setPresetBgImage(preset.backgroundImage || null);
       }
     }
   }, [selectedPreset, presets]);
@@ -55,12 +57,7 @@ export const useDashboardLayout = () => {
   // -- Actions --
 
   const handleCardSettingsChange = (cardId: string, newSettings: any) => {
-    setCardSettings(prev => {
-      const updated = { ...prev, [cardId]: newSettings };
-      // Debounced save logic would happen here in a real implementation
-      // For now we rely on the user manually saving preset or auto-save hooks
-      return updated;
-    });
+    setCardSettings(prev => ({ ...prev, [cardId]: newSettings }));
   };
 
   const handleLayoutChange = (newLayout: Layout) => {
@@ -69,19 +66,26 @@ export const useDashboardLayout = () => {
       return;
     }
     
-    // Ensure bounded
     const bounded = newLayout.map(item => ({ ...item, isBounded: true }));
     setLayout(bounded);
     
-    // Here you would trigger auto-save if required
+    // Auto-save logic (only updates layout, preserves existing BG)
     if (selectedPreset) {
-       updatePresetInStorage(selectedPreset, bounded, cardSettings);
+       const currentPreset = presets.find(p => p.name === selectedPreset);
+       const currentBg = currentPreset?.backgroundImage; // Preserve existing BG
+       updatePresetInStorage(selectedPreset, bounded, cardSettings, currentBg);
     }
   };
 
-  const updatePresetInStorage = (name: string, newLayout: Layout, newSettings: CardSettings) => {
+  // UPDATED: Now accepts optional bgImage
+  const updatePresetInStorage = (name: string, newLayout: Layout, newSettings: CardSettings, bgImage?: string) => {
      const updatedPresets = presets.map(p => 
-        p.name === name ? { ...p, layout: newLayout, cardSettings: newSettings } : p
+        p.name === name ? { 
+          ...p, 
+          layout: newLayout, 
+          cardSettings: newSettings,
+          backgroundImage: bgImage !== undefined ? bgImage : p.backgroundImage 
+        } : p
      );
      setPresets(updatedPresets);
      localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
@@ -89,11 +93,8 @@ export const useDashboardLayout = () => {
 
   const onAddItem = (itemId: string) => {
     const newItemId = `${itemId}_${new Date().getTime()}`;
-    const newItem = {
-      i: newItemId, x: (layout.length * 4) % 12, y: Infinity, w: 4, h: 2
-    };
+    const newItem = { i: newItemId, x: 0, y: Infinity, w: 4, h: 2 };
 
-    // Default settings init
     if (itemId === 'colonist') handleCardSettingsChange(newItemId, { colonistId: 0 });
     if (itemId === 'colonySummary') handleCardSettingsChange(newItemId, { showColonists: true, showAnimals: true, showItems: true, showWealth: true } as ColonySummarySettings);
 
@@ -101,7 +102,8 @@ export const useDashboardLayout = () => {
     setLayout(newLayout);
     
     if (selectedPreset) {
-      updatePresetInStorage(selectedPreset, newLayout, cardSettings);
+      const currentPreset = presets.find(p => p.name === selectedPreset);
+      updatePresetInStorage(selectedPreset, newLayout, cardSettings, currentPreset?.backgroundImage);
     }
   };
 
@@ -109,14 +111,23 @@ export const useDashboardLayout = () => {
     const newLayout = layout.filter(item => item.i !== itemId);
     setLayout(newLayout);
     if (selectedPreset) {
-       updatePresetInStorage(selectedPreset, newLayout, cardSettings);
+       const currentPreset = presets.find(p => p.name === selectedPreset);
+       updatePresetInStorage(selectedPreset, newLayout, cardSettings, currentPreset?.backgroundImage);
        addToast({ type: 'info', title: 'Item removed', duration: 1500 });
     }
   };
 
-  const savePreset = (name: string) => {
+  // UPDATED: Now accepts currentBackgroundImage
+  const savePreset = (name: string, currentBackgroundImage?: string) => {
     if (!name) return false;
-    const newPreset = { name, layout, cardSettings };
+    
+    const newPreset: DashboardPreset = { 
+      name, 
+      layout, 
+      cardSettings,
+      backgroundImage: currentBackgroundImage
+    };
+    
     const updated = [...presets.filter(p => p.name !== name), newPreset];
     
     setPresets(updated);
@@ -138,6 +149,7 @@ export const useDashboardLayout = () => {
     cardSettings,
     presets,
     selectedPreset,
+    presetBgImage, // Export this so the main component can listen to it
     handleLayoutChange,
     handleCardSettingsChange,
     onAddItem,
