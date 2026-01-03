@@ -67,27 +67,48 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
     return <div className="no-data">No colonist data available</div>;
   }
 
+  // Helper to determine color based on mood percentage
+  const getMoodColor = (moodPercent: number, isBorder: boolean = false) => {
+    // Colors (R, G, B)
+    const red = '255, 99, 132';     // Critical Break (< 20%)
+    const orange = '255, 159, 64';  // Major Break (< 35%)
+    const yellow = '255, 205, 86';  // Minor Break (< 50%)
+    const green = '75, 192, 192';   // Stable (> 50%)
+    const blue = '54, 162, 235';    // Happy (> 80%)
+
+    const opacity = isBorder ? '1' : '0.8';
+
+    if (moodPercent <= 20) return `rgba(${red}, ${opacity})`;
+    if (moodPercent <= 35) return `rgba(${orange}, ${opacity})`;
+    if (moodPercent <= 50) return `rgba(${yellow}, ${opacity})`;
+    if (moodPercent >= 80) return `rgba(${blue}, ${opacity})`;
+    return `rgba(${green}, ${opacity})`;
+  };
+
+  const moodValues = validColonists.map(c => (c.mood || 0) * 100);
+
   const data = {
     labels: validColonists.map(c => c.name),
     datasets: [
       {
         label: 'Mood',
-        data: validColonists.map(c => ((c.mood || 0) * 100)),
-        backgroundColor: 'rgba(255, 206, 86, 0.8)',
-        borderColor: 'rgba(255, 206, 86, 1)',
+        data: moodValues,
+        // Map over values to generate an array of colors
+        backgroundColor: moodValues.map(mood => getMoodColor(mood, false)),
+        borderColor: moodValues.map(mood => getMoodColor(mood, true)),
         borderWidth: 1,
       },
     ],
   };
 
   const options = {
-    ...chartOptions,
+    ...chartOptions, // Assuming this is imported from somewhere in your project
     scales: {
       x: {
         ticks: {
           color: '#eff8fdff',
           font: {
-            weight: 'bold' as const, // Use 'as const' for string literals
+            weight: 'bold' as const,
           },
         },
       },
@@ -97,9 +118,24 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
         title: {
           display: true,
           text: 'Percentage (%)'
+        },
+        grid: {
+          color: 'rgba(255, 255, 255, 0.1)'
         }
       },
     },
+    plugins: {
+      legend: {
+        display: false // Hide legend since colors vary
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context: any) {
+            return `Mood: ${context.raw.toFixed(1)}%`;
+          }
+        }
+      }
+    }
   };
 
   return <Bar data={data} options={options} />;

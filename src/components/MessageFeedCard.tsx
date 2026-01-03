@@ -1,5 +1,5 @@
 // src/components/MessageFeedCard.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { messageStore, Message } from '../services/messageStore';
 import './MessageFeedCard.css';
@@ -7,7 +7,9 @@ import './MessageFeedCard.css';
 const MessageFeedCard: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>(messageStore.getMessages());
     const [hoveredMessage, setHoveredMessage] = useState<Message | null>(null);
-    const [cursorY, setCursorY] = useState(0);
+
+    // CHANGED: Track both X and Y coordinates
+    const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         const handleMessagesChange = (newMessages: Message[]) => {
@@ -32,7 +34,8 @@ const MessageFeedCard: React.FC = () => {
     };
 
     const handleMouseEnter = (e: React.MouseEvent, message: Message) => {
-        setCursorY(e.clientY);
+        // CHANGED: Capture X and Y
+        setCursorPos({ x: e.clientX, y: e.clientY });
         setHoveredMessage(message);
     };
 
@@ -40,23 +43,20 @@ const MessageFeedCard: React.FC = () => {
         setHoveredMessage(null);
     };
 
-    // 1. Logic to determine CSS class based on tags
     const getSeverityClass = (tags: string[]): string => {
         if (tags.includes('NegativeEvent')) return 'severity-negative';
         if (tags.includes('PositiveEvent')) return 'severity-positive';
         if (tags.includes('NeutralEvent')) return 'severity-neutral';
-        return ''; // Default fallback
+        return '';
     };
 
-    // 2. Updated Icon logic to reflect tags
     const getMessageIcon = (message: Message) => {
         const tags = message.tags || [];
 
-        if (tags.includes('NegativeEvent')) return '💀'; // or ⚔️ or ⚠️
-        if (tags.includes('PositiveEvent')) return '🎉'; // or 💰 or ✅
+        if (tags.includes('NegativeEvent')) return '💀';
+        if (tags.includes('PositiveEvent')) return '🎉';
         if (tags.includes('NeutralEvent')) return 'ℹ️';
 
-        // Fallback to type-based icons
         switch (message.type) {
             case 'letter': return '📨';
             default: return '💬';
@@ -66,19 +66,33 @@ const MessageFeedCard: React.FC = () => {
     const renderTooltip = () => {
         if (!hoveredMessage) return null;
 
-        // Apply same severity color to tooltip header
         const severityClass = getSeverityClass(hoveredMessage.tags);
+
+        // CHANGED: Dynamic Positioning Logic
+        const tooltipWidth = 320; // Matches CSS width
+        const viewportWidth = window.innerWidth;
+
+        // Determine if we should show to the Left or Right of the cursor
+        // If cursor is on the right half of the screen, show tooltip to the Left
+        const showOnLeft = cursorPos.x > (viewportWidth / 2);
+
+        const style: React.CSSProperties = {
+            // Keep vertical clamp logic
+            top: Math.min(cursorPos.y - 20, window.innerHeight - 300),
+            // Dynamic Horizontal positioning
+            left: showOnLeft ? 'auto' : cursorPos.x + 20,
+            right: showOnLeft ? (viewportWidth - cursorPos.x + 20) : 'auto'
+        };
 
         return createPortal(
             <div
                 className={`message-hover-tooltip ${severityClass}`}
-                style={{ top: Math.min(cursorY - 20, window.innerHeight - 250) }}
+                style={style}
             >
                 <div className="detail-header">
                     <h4>{getMessageIcon(hoveredMessage)} {hoveredMessage.label}</h4>
                 </div>
                 <div className="detail-content">
-                    {/* Optional: Show tags in tooltip */}
                     {hoveredMessage.tags.length > 0 && (
                         <div className="detail-tags">
                             {hoveredMessage.tags.map(tag => (
@@ -120,7 +134,6 @@ const MessageFeedCard: React.FC = () => {
                     </div>
                 ) : (
                     messages.map((message) => {
-                        // Get the class for this specific message
                         const severityClass = getSeverityClass(message.tags);
                         const isHovered = hoveredMessage?.id === message.id;
 

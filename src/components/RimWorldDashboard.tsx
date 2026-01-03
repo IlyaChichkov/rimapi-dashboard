@@ -564,16 +564,10 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
               colonistId={colonistId}
               size={{ w: item.w, h: item.h }}
               onSelectColonist={(newColonistId) => handleSelectColonistForCard(item.i, newColonistId)}
-              onViewHealth={handleOpenMedicalTabWithColonist}
-              onViewSkills={(colonistName) => {
-                // You can implement skills view if needed
-                console.log('View skills for:', colonistName);
-              }}
-              autoRefresh={autoRefresh} // Pass the dashboard's autoRefresh state
-              lastUpdated={lastUpdated} // Pass the dashboard's lastUpdated timestamp
+              autoRefresh={autoRefresh}
+              lastUpdated={lastUpdated}
             />
           </div>
-
         );
       case 'sseStatus':
         return <SseStatusCard />;
@@ -594,6 +588,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   }
                 }));
               }}
+              autoRefresh={autoRefresh}
+              lastUpdated={lastUpdated}
             />
           </div>
         );
@@ -711,7 +707,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           <div className="dashboard-controls-left">
             <div className="add-card-container">
               <button className="add-card-btn" onClick={() => setAddCardMenuOpen(!isAddCardMenuOpen)}>
-                ✨ Add Card
+                Add Card
               </button>
               {isAddCardMenuOpen && (
                 <div className="add-card-menu">
@@ -725,7 +721,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
             </div>
             <div className="presets-container">
               <button className="presets-btn" onClick={() => setPresetsMenuOpen(!isPresetsMenuOpen)}>
-                {selectedPreset || 'Create Preset'}
+                {(selectedPreset ? (`Preset: ${selectedPreset}`) : null) || 'Create Preset'}
               </button>
               {isPresetsMenuOpen && (
                 <PresetsContextMenu

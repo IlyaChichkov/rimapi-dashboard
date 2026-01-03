@@ -37,6 +37,7 @@
 /* 3. Grid Wrapper (Scrollable Area) */
 .faction-grid-wrapper {
     flex: 1 1 auto;
+    padding: 6px;
     min-height: 0; /* Critical for scroll */
     overflow-y: auto;
     overflow-x: hidden;

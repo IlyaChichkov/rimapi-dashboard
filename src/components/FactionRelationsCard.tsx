@@ -29,11 +29,15 @@ interface FactionRelationsCardProps {
     layouts?: Record<string, FactionLayoutItem[]>;
     sortType?: SortType;
   }) => void;
+  autoRefresh?: boolean;
+  lastUpdated?: Date | null;
 }
 
 const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
   settings,
-  onSettingsChange
+  onSettingsChange,
+  autoRefresh = false,
+  lastUpdated = null
 }) => {
   const [factions, setFactions] = useState<Faction[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -108,20 +112,39 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
     setCols(newCols);
   }, [containerWidth]);
 
+  const fetchFactions = useCallback(async (isBackgroundRefresh = false) => {
+    try {
+      // Only show loading spinner on first load
+      if (!isBackgroundRefresh && factions.length === 0) {
+        setLoading(true);
+      }
+
+      const response = await rimworldApi.fetchAllFactions();
+      if (response) {
+        setFactions(response);
+        setError(null);
+      }
+    } catch (err: any) {
+      // THE FIX: Check if the error is an AbortError and ignore it
+      if (err.name === 'AbortError' || err.message?.includes('aborted')) {
+        console.log('Faction fetch aborted (component unmounted or updated)');
+        return;
+      }
+
+      // Only show visual error if it's not a background refresh
+      if (!isBackgroundRefresh) {
+        // You can uncomment this if you want to see the error in the UI
+        // setError('Failed to fetch factions');
+        console.error('Failed to fetch factions:', err);
+      }
+    } finally {
+      // Only turn off loading if the component is still mounted (React handles state update safety usually, but good practice)
+      setLoading(false);
+    }
+  }, [factions.length]);
+
   // Fetch Data
   useEffect(() => {
-    const fetchFactions = async () => {
-      try {
-        const response = await rimworldApi.fetchAllFactions();
-        if (response) {
-          setFactions(response);
-        }
-      } catch (err) {
-        setError('Failed to fetch factions');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchFactions();
   }, []);
 
@@ -160,6 +183,12 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
         });
     }
   }, []);
+
+  useEffect(() => {
+    if (autoRefresh && lastUpdated) {
+      fetchFactions();
+    }
+  }, [lastUpdated, autoRefresh, fetchFactions]);
 
   // Update sorted factions when factions or sortType changes
   useEffect(() => {

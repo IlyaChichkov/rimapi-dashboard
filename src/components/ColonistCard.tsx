@@ -14,7 +14,6 @@ interface ColonistCardProps {
     lastUpdated?: Date | null;
 }
 
-// Update the ColonistCard component to show needs instead of health/age
 const ColonistCard: React.FC<ColonistCardProps> = ({
     colonistId,
     size,
