@@ -12,6 +12,8 @@ import SseStatusCard from './SseStatusCard';
 import DashboardResearchCard from './DashboardResearchCard';
 import MessageFeedCard from './MessageFeedCard';
 import FactionRelationsCard from './FactionRelationsCard';
+import DashboardCard from './DashboardCard';
+import { GameInfoCard } from './GameInfoCard';
 
 interface CardRegistryProps {
     item: Layout[number];
@@ -24,16 +26,19 @@ interface CardRegistryProps {
     resources: any;
     power: any;
     creatures: any;
+    autoRefresh: boolean;
     getSortedColonists: (cols: any[], sort: 'name' | 'mood') => any[];
 }
 
 export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
     item, data, cardSettings, onSettingsChange, onOpenSettings,
-    colonists, resources, power, creatures, getSortedColonists
+    colonists, resources, power, creatures, getSortedColonists,
+    autoRefresh
 }) => {
 
     const cardId = item.i.split('_')[0];
     const settings = cardSettings[item.i] || {};
+    const handleOpenSettings = () => onOpenSettings(item.i);
 
     // Local state for sorting (could be moved up if needed globally)
     const [sortBy, setSortBy] = React.useState<'name' | 'mood'>('name');
@@ -129,7 +134,7 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
                         colonistId={settings.colonistId || 0}
                         size={{ w: item.w, h: item.h }}
                         onSelectColonist={(id) => onSettingsChange(item.i, { ...settings, colonistId: id })}
-                        autoRefresh={true}
+                        autoRefresh={autoRefresh}
                         lastUpdated={new Date()} // Passed from parent ideally
                     />
                 </div>
@@ -138,6 +143,14 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
         case 'sseStatus': return <SseStatusCard />;
         case 'currentResearch': return <DashboardResearchCard />;
         case 'messageFeed': return <MessageFeedCard />;
+        case 'gameInfo':
+            return (
+                <GameInfoCard
+                    map_datetime={data?.map_datetime || {}}
+                    weather={data?.weather || {}}
+                    gameState={data?.gameState || {}}
+                />
+            );
 
         case 'factionRelations':
             return (
@@ -145,7 +158,7 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
                     <FactionRelationsCard
                         settings={settings}
                         onSettingsChange={(newS) => onSettingsChange(item.i, newS)}
-                        autoRefresh={true}
+                        autoRefresh={autoRefresh}
                         lastUpdated={new Date()}
                     />
                 </div>

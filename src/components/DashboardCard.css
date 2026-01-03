@@ -1,0 +1,88 @@
+/* src/components/DashboardCard.css */
+
+.dashboard-card {
+    background: rgba(30, 30, 30, 0.6); /* Dark semi-transparent background */
+    backdrop-filter: blur(12px);         /* Glass blur effect */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.dashboard-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Header */
+.dashboard-card-header {
+    padding: 10px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    /* This makes the header draggable in ReactGridLayout if you set drag-handle class here,
+       but usually RGL handles the whole item. */
+    cursor: grab; 
+}
+
+.dashboard-card-header:active {
+    cursor: grabbing;
+}
+
+.dashboard-card-title {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Actions (Settings Icon) */
+.dashboard-card-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.card-settings-btn {
+    background: transparent;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    font-size: 1.1rem;
+    padding: 2px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: all 0.2s;
+    opacity: 0.6;
+}
+
+.card-settings-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+    transform: rotate(45deg); /* Nice little rotation effect */
+}
+
+/* Body */
+.dashboard-card-body {
+    flex: 1;
+    overflow: hidden; /* Important for charts to stay contained */
+    position: relative;
+    padding: 0; /* Let children handle padding if needed, or set padding: 10px here */
+}
+
+/* Drag handle style specifically if used */
+.drag-handle {
+    cursor: grab;
+}

@@ -1,0 +1,147 @@
+/* src/components/GameInfoCard.css */
+
+.game-info-card {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    padding: 0 16px; /* Slightly reduced padding */
+    
+    display: flex;
+    align-items: center;
+    /* Use 'space-between' but rely on flex-grow for items */
+    justify-content: space-between; 
+    gap: 12px;
+    color: #e0e0e0;
+    overflow: hidden;
+    position: relative;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    
+    /* CRITICAL FIXES FOR OVERFLOW: */
+    flex: 1;          /* Allow items to grow/shrink equally */
+    min-width: 0;     /* Allow flex item to shrink below content size */
+    max-width: 33%;   /* Prevent any single item from dominating */
+    overflow: hidden; /* Cut off anything that sticks out */
+}
+
+.info-icon {
+    font-size: 1.6em;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    opacity: 0.9;
+    flex-shrink: 0; /* Icon should never shrink */
+}
+
+.info-text-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.2;
+    
+    /* Ensure this container also respects the parent width */
+    flex: 1;
+    min-width: 0; 
+    overflow: hidden;
+}
+
+.info-label {
+    font-size: 0.7em;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #888;
+    margin-bottom: 3px;
+    font-weight: 600;
+    
+    /* Truncate label if crazy small */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* --- TRUNCATION RULES --- */
+
+/* Standard single-line value */
+.info-value {
+    font-size: 0.95em;
+    font-weight: 600;
+    color: white;
+    
+    /* Force Truncation */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block; /* Required for ellipsis to work */
+    width: 100%;
+}
+
+/* Container for split lines */
+.info-split-value {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 100%;      /* Take full width of parent */
+    min-width: 0;     /* Allow shrinking */
+}
+
+/* Top line */
+.info-main {
+    font-size: 0.95em;
+    font-weight: 700;
+    color: #fff;
+    
+    /* Force Truncation */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+/* Bottom line */
+.info-sub {
+    font-size: 0.8em;
+    color: #4dabf7;
+    font-weight: 500;
+    
+    /* Force Truncation */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+.info-sub.temperature {
+    color: #fab005; 
+}
+
+/* Separator */
+.info-separator {
+    width: 1px;
+    height: 35px;
+    background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.2), transparent);
+    flex-shrink: 0; /* Never shrink the line */
+}
+
+/* Last Sync */
+.last-sync-compact {
+    position: absolute;
+    bottom: 2px;
+    right: 8px;
+    font-size: 0.6em;
+    color: rgba(255, 255, 255, 0.2);
+    font-style: italic;
+    pointer-events: none;
+    z-index: 10; /* Ensure it floats above */
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .game-info-card {
+        padding: 0 10px;
+        gap: 8px;
+    }
+    .info-icon { font-size: 1.4em; }
+    .info-label { display: none; } /* Hide labels on mobile to give data room */
+}

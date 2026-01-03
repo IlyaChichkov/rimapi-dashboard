@@ -54,11 +54,9 @@ const chartColors = {
   }
 };
 
-// --- FIX IS HERE ---
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
-  // 1. ADD THIS: Delays resize slightly to prevent thrashing
   resizeDelay: 20,
   plugins: {
     legend: {
