@@ -1,4 +1,3 @@
-// src/components/RimWorldCharts.tsx
 import React from 'react';
 import {
   Chart as ChartJS,
@@ -15,7 +14,6 @@ import {
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Colonist, ResourceSummary, CreaturesSummary, PowerInfo } from '../types';
 
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -29,18 +27,15 @@ ChartJS.register(
 );
 
 const chartColors = {
-  // Primary theme colors
   primary: {
-    blue: 'rgba(86, 156, 214, 0.8)',     // Soft blue - main theme
-    teal: 'rgba(75, 192, 192, 0.8)',      // Teal for positive metrics
-    green: 'rgba(102, 187, 106, 0.8)',    // Soft green for good status
-    yellow: 'rgba(255, 193, 7, 0.8)',     // Amber yellow for warnings
-    orange: 'rgba(255, 149, 0, 0.8)',     // Orange for medium alerts
-    red: 'rgba(239, 83, 80, 0.8)',        // Soft red for critical alerts
-    purple: 'rgba(171, 71, 188, 0.8)',    // Purple for neutral/misc
+    blue: 'rgba(86, 156, 214, 0.8)',
+    teal: 'rgba(75, 192, 192, 0.8)',
+    green: 'rgba(102, 187, 106, 0.8)',
+    yellow: 'rgba(255, 193, 7, 0.8)',
+    orange: 'rgba(255, 149, 0, 0.8)',
+    red: 'rgba(239, 83, 80, 0.8)',
+    purple: 'rgba(171, 71, 188, 0.8)',
   },
-
-  // Alternative shades for variety
   alternative: {
     blue: 'rgba(66, 165, 245, 0.8)',
     green: 'rgba(56, 142, 60, 0.8)',
@@ -48,8 +43,6 @@ const chartColors = {
     red: 'rgba(229, 57, 53, 0.8)',
     purple: 'rgba(142, 36, 170, 0.8)',
   },
-
-  // Border colors (slightly darker)
   border: {
     blue: 'rgba(86, 156, 214, 1)',
     teal: 'rgba(75, 192, 192, 1)',
@@ -61,10 +54,12 @@ const chartColors = {
   }
 };
 
-
+// --- FIX IS HERE ---
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
+  // 1. ADD THIS: Delays resize slightly to prevent thrashing
+  resizeDelay: 20,
   plugins: {
     legend: {
       position: 'top' as const,
@@ -86,25 +81,12 @@ const chartOptions = {
       },
     },
   },
-  // Add these properties
-  onResize: (chart: any, size: any) => {
-    // Force chart to redraw on resize
-    chart.resize();
-  },
+  // 2. REMOVED: onResize function (This was causing the crash loop)
+
   animation: {
-    duration: 0, // Disable animations for smoother resizing
+    duration: 0,
   },
-  // Add transition for smoother resizing
-  transitions: {
-    active: {
-      animation: {
-        duration: 0
-      }
-    }
-  }
 };
-
-
 
 // Chart 1: Colonist Mood and Health
 interface ColonistStatsProps {
@@ -118,14 +100,12 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
     return <div className="no-data">No colonist data available</div>;
   }
 
-  // Helper to determine color based on mood percentage
   const getMoodColor = (moodPercent: number, isBorder: boolean = false) => {
-    // Colors (R, G, B)
-    const red = '255, 99, 132';     // Critical Break (< 20%)
-    const orange = '255, 159, 64';  // Major Break (< 35%)
-    const yellow = '255, 205, 86';  // Minor Break (< 50%)
-    const green = '75, 192, 192';   // Stable (> 50%)
-    const blue = '54, 162, 235';    // Happy (> 80%)
+    const red = '255, 99, 132';
+    const orange = '255, 159, 64';
+    const yellow = '255, 205, 86';
+    const green = '75, 192, 192';
+    const blue = '54, 162, 235';
 
     const opacity = isBorder ? '1' : '0.8';
 
@@ -144,7 +124,6 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
       {
         label: 'Mood',
         data: moodValues,
-        // Map over values to generate an array of colors
         backgroundColor: moodValues.map(mood => getMoodColor(mood, false)),
         borderColor: moodValues.map(mood => getMoodColor(mood, true)),
         borderWidth: 1,
@@ -153,14 +132,12 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
   };
 
   const options = {
-    ...chartOptions, // Assuming this is imported from somewhere in your project
+    ...chartOptions,
     scales: {
       x: {
         ticks: {
           color: '#eff8fdff',
-          font: {
-            weight: 'bold' as const,
-          },
+          font: { weight: 'bold' as const },
         },
       },
       y: {
@@ -170,15 +147,11 @@ export const ColonistStatsChart: React.FC<ColonistStatsProps> = ({ colonists }) 
           display: true,
           text: 'Percentage (%)'
         },
-        grid: {
-          color: 'rgba(255, 255, 255, 0.1)'
-        }
+        grid: { color: 'rgba(255, 255, 255, 0.1)' }
       },
     },
     plugins: {
-      legend: {
-        display: false // Hide legend since colors vary
-      },
+      legend: { display: false },
       tooltip: {
         callbacks: {
           label: function (context: any) {
@@ -205,27 +178,10 @@ export const ResourcesChart: React.FC<ResourcesChartProps> = ({ resources }) => 
   }
 
   const resourcesChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-        labels: {
-          color: '#eff8fdff',
-          font: {
-            weight: 'bold' as const,
-          },
-        },
-      },
-    },
-    // Add this to explicitly disable scales
+    ...chartOptions, // Inherit base options (safe resize)
     scales: {
-      x: {
-        display: false, // Hide x-axis
-      },
-      y: {
-        display: false, // Hide y-axis
-      },
+      x: { display: false },
+      y: { display: false },
     },
   };
 
@@ -275,7 +231,8 @@ export const PowerChart: React.FC<PowerChartProps> = ({ power }) => {
           chartColors.border.green,
           chartColors.border.red,
           chartColors.border.blue,
-        ]
+        ],
+        borderWidth: 1,
       },
     ],
   };
@@ -300,9 +257,9 @@ export const PopulationChart: React.FC<PopulationChartProps> = ({ creatures }) =
           creatures?.enemies_count || 0,
         ],
         backgroundColor: [
-          'rgba(75, 192, 192, 0.8)',    // Colonists - Green
-          'rgba(255, 206, 86, 0.8)',    // Prisoners - Yellow
-          'rgba(255, 99, 132, 0.8)',    // Enemies - Red
+          'rgba(75, 192, 192, 0.8)',
+          'rgba(255, 206, 86, 0.8)',
+          'rgba(255, 99, 132, 0.8)',
         ],
         borderWidth: 1,
       },
@@ -311,9 +268,3 @@ export const PopulationChart: React.FC<PopulationChartProps> = ({ creatures }) =
 
   return <Bar data={data} options={chartOptions} />;
 };
-
-// Simple Skills Chart
-interface SkillsChartProps {
-  colonists: Colonist[];
-}
-
