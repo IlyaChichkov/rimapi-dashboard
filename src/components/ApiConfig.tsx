@@ -2,6 +2,9 @@
 import React, { useState } from 'react';
 import './ApiConfig.css';
 
+const TESTED_MOD_VERSION = "1.6.1";
+
+
 interface ApiConfigProps {
   onApiUrlChange: (url: string) => void;
   currentUrl: string;
@@ -32,11 +35,9 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl, onRes
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Basic URL validation
     try {
       const url = new URL(inputUrl);
       if (url.protocol === 'http:' || url.protocol === 'https:') {
-        // Test the connection before proceeding
         const isConnected = await testConnection(inputUrl);
         if (isConnected) {
           onApiUrlChange(inputUrl);
@@ -57,7 +58,6 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl, onRes
     const defaultUrl = 'http://localhost:8765/api/v1';
     setInputUrl(defaultUrl);
 
-    // Test default connection
     const isConnected = await testConnection(defaultUrl);
     if (isConnected) {
       onApiUrlChange(defaultUrl);
@@ -74,18 +74,20 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl, onRes
 
   return (
     <div className="api-config-screen">
-      <div className="api-config-content">
-        <div className="config-header">
-          <div className="config-icon">🎮</div>
-          <h1 className="config-title">RimWorld Colony Dashboard</h1>
-          <p className="config-subtitle">Connect to your RimWorld game</p>
+      <div className="ac-content">
+
+        {/* Header Section */}
+        <div className="ac-header">
+          <div className="ac-icon">📡</div>
+          <h1 className="ac-title">RimWorld Dashboard</h1>
+          <p className="ac-subtitle">Connect to your local colony</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="api-config-form">
-          <div className="input-group">
-            <label htmlFor="api-url" className="input-label">
-              RIMAPI Server URL
-            </label>
+        <form onSubmit={handleSubmit} className="ac-form">
+
+          {/* URL Input */}
+          <div className="ac-input-group">
+            <label htmlFor="api-url" className="ac-label">Server URL</label>
             <input
               id="api-url"
               type="text"
@@ -95,125 +97,89 @@ const ApiConfig: React.FC<ApiConfigProps> = ({ onApiUrlChange, currentUrl, onRes
                 setIsValid(true);
               }}
               placeholder="http://localhost:8765/api/v1"
-              className={`url-input ${!isValid ? 'input-connect-error' : ''}`}
+              className={`ac-input ${!isValid ? 'ac-input-error' : ''}`}
               disabled={isTesting}
             />
             {!isValid && (
-              <div className="error-message">
-                ❌ Unable to connect. Please check the URL and ensure RimWorld is running with RIMAPI mod.
+              <div className="ac-error-message">
+                ❌ Connection failed. Ensure RimWorld is running with RIMAPI.
               </div>
             )}
           </div>
 
-          <div className="quick-connect">
-            <span className="quick-connect-label">Quick Connect:</span>
-            <div className="quick-buttons">
-              <button
-                type="button"
-                onClick={() => handleQuickConnect('http://localhost:8765/api/v1')}
-                className="quick-btn"
-              >
-                localhost:8765
+          {/* Version Info (Read-Only) */}
+          <div className="ac-info-row">
+            <span className="ac-info-label">Dashboard Compatibility:</span>
+            <span className="ac-version-badge">Tested with RimAPI v{TESTED_MOD_VERSION}</span>
+          </div>
+
+          {/* Quick Connect Buttons */}
+          <div className="ac-quick-connect">
+            <span className="ac-quick-label">Presets:</span>
+            <div className="ac-quick-buttons">
+              <button type="button" onClick={() => handleQuickConnect('http://localhost:8765/api/v1')} className="ac-quick-btn">
+                Localhost
               </button>
-              <button
-                type="button"
-                onClick={() => handleQuickConnect('http://127.0.0.1:8765/api/v1')}
-                className="quick-btn"
-              >
-                127.0.0.1:8765
+              <button type="button" onClick={() => handleQuickConnect('http://127.0.0.1:8765/api/v1')} className="ac-quick-btn">
+                127.0.0.1
               </button>
             </div>
           </div>
 
-          <div className="action-buttons">
-            <button
-              type="submit"
-              className="connect-btn"
-              disabled={isTesting}
-            >
-              {isTesting ? (
-                <>
-                  <div className="button-spinner"></div>
-                  Testing Connection...
-                </>
-              ) : (
-                <>
-                  Connect
-                </>
-              )}
+          {/* Main Actions */}
+          <div className="ac-action-buttons">
+            <button type="submit" className="ac-btn ac-btn-primary" disabled={isTesting}>
+              {isTesting ? 'Connecting...' : 'Connect'}
             </button>
-            <button
-              type="button"
-              onClick={handleUseDefault}
-              className="default-btn"
-              disabled={isTesting}
-            >
-              Use Default
+            <button type="button" onClick={handleUseDefault} className="ac-btn ac-btn-secondary" disabled={isTesting}>
+              Default
             </button>
-            {onResetConfig && (
-              <button
-                type="button"
-                onClick={onResetConfig}
-                className="reset-btn"
-                disabled={isTesting}
-              >
-                Change URL
-              </button>
-            )}
           </div>
         </form>
 
-        <div className="setup-guide">
-          <h3 className="guide-title">Setup Instructions</h3>
-          <div className="guide-steps">
-            <div className="step">
-              <div className="step-content">
-                <p className="step-title">1. Install RIMAPI Mod</p>
-                <p>Download and enable the RIMAPI mod in your RimWorld game</p>
+        {/* Setup Guide with Link */}
+        <div className="ac-setup-guide">
+          <h3 className="ac-guide-title">Setup Instructions</h3>
+          <div className="ac-guide-steps">
+            <div className="ac-step">
+              <span className="ac-step-num">1</span>
+              <div className="ac-step-content">
+                <p>Download <strong>RIMAPI</strong> mod from GitHub.</p>
+                <a
+                  href="https://github.com/IlyaChichkov/RIMAPI/tags"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ac-mod-link"
+                >
+                  📦 View Latest Releases
+                </a>
               </div>
             </div>
-            <div className="step">
-              <div className="step-content">
-                <p className="step-title">2. Start RimWorld</p>
-                <p>Launch RimWorld with the RIMAPI mod enabled</p>
-              </div>
+            <div className="ac-step">
+              <span className="ac-step-num">2</span>
+              <p>Enable mod in RimWorld & Start a save.</p>
             </div>
-            <div className="step">
-              <div className="step-content">
-                <p className="step-title">3. Enter API URL</p>
-                <p>Use the default URL or your custom RIMAPI endpoint</p>
-              </div>
-            </div>
-            <div className="step">
-              <div className="step-content">
-                <p className="step-title">4. Connect & Enjoy</p>
-                <p>Monitor your colony in real-time!</p>
-              </div>
+            <div className="ac-step">
+              <span className="ac-step-num">3</span>
+              <p>Enter the URL above (default is usually correct).</p>
             </div>
           </div>
         </div>
 
-        <div className="config-tip">
-          💡 <strong>Pro Tip:</strong> {getRandomConfigTip()}
+        <div className="ac-footer">
+          <span className="ac-footer-text">Need help or want to chat?</span>
+          <a
+            href="https://discord.gg/Css9b9BgnM"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ac-discord-link"
+          >
+            <span className="discord-icon">👾</span> Join our Discord
+          </a>
         </div>
       </div>
     </div>
   );
-};
-
-// Fun RimWorld-themed configuration tips
-const getRandomConfigTip = () => {
-  const tips = [
-    "Make sure your colonists are safe before checking the dashboard!",
-    "A connected dashboard is happier than a colonist with fine meals!",
-    "This dashboard works better than a skilled doctor in a medical emergency!",
-    "Keep an eye on your power grid - it's more reliable than solar flares!",
-    "Monitor moods closely, they change faster than the weather!",
-    "A well-connected colony is a prosperous colony!",
-    "Even the ancient ones would be impressed with this technology!",
-    "Your colony stats are now safer than in a mountain base!"
-  ];
-  return tips[Math.floor(Math.random() * tips.length)];
 };
 
 export default ApiConfig;
