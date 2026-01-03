@@ -32,7 +32,7 @@ import MessageFeedCard from './MessageFeedCard';
 import SseStatusCard from './SseStatusCard';
 import ColonistCard from './ColonistCard';
 import FactionRelationsCard from './FactionRelationsCard';
-import { ResponsiveChartWrapper } from './ResponsiveChartWrapper';
+import DashboardResearchCard from './DashboardResearchCard';
 
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
@@ -476,7 +476,11 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }, 50);
   }, []);
 
-  const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed', 'factionRelations', 'caravanList'];
+  const availableCards = [
+    'colonists', 'resources', 'power', 'population',
+    'colonySummary', 'colonist', 'sseStatus', 'messageFeed',
+    'factionRelations', 'caravanList', 'currentResearch'
+  ];
 
   if (loading && !data && !error) {
     return <LoadingScreen />;
@@ -499,21 +503,13 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const renderCard = (item: Layout[number]) => {
     const cardId = item.i.split('_')[0];
 
-    // 1. Define styles to force the flex container to shrink correctly
-    const cardContentStyle: React.CSSProperties = {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100%',
-      overflow: 'hidden' // Prevents spillover during resize
-    };
-
     switch (cardId) {
       case 'caravanList':
         return <CaravanListCard />;
 
       case 'colonists':
         return (
-          <div className="chart-card-content" style={cardContentStyle}>
+          <div className="chart-card-content">
             <div className="chart-header">
               <h3>Mood</h3>
               <div className="chart-corner-container">
@@ -527,16 +523,15 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 </div>
               </div>
             </div>
-            {/* Applied chartContainerStyle here */}
-            <ResponsiveChartWrapper>
+            <div className="chart-container">
               {colonists.length > 0 ? <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} /> : <div className="no-data">No colonist data available</div>}
-            </ResponsiveChartWrapper>
+            </div>
           </div>
         );
 
       case 'resources':
         return (
-          <div className="chart-card-content" style={cardContentStyle}>
+          <div className="chart-card-content">
             <div className="chart-header">
               <h3>Resource Distribution</h3>
               <div className="resource-total">Total: {resources.total_items || 0} items</div>
@@ -597,6 +592,8 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         );
       case 'sseStatus':
         return <SseStatusCard />;
+      case 'currentResearch':
+        return <DashboardResearchCard />;
       case 'messageFeed':
         return <MessageFeedCard />;
       case 'factionRelations':

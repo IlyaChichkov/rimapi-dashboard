@@ -561,5 +561,9 @@ export const rimworldApi = {
   
   async fetchCaravans(): Promise<Caravan[] | null> {
     return getJson<Caravan[]>(`/world/caravans`);
-  }
+  },
+
+  async fetchResearchProgress(): Promise<ResearchProgress | null> {
+    return getJson<ResearchProgress>('/research/progress');
+  },
 };
