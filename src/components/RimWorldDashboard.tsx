@@ -51,7 +51,7 @@ const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'colonist', title: 'Single Colonist', description: 'Detailed inspector for a specific pawn.', icon: '👤' },
   { id: 'colonySummary', title: 'Colony Summary', description: 'Text-based stats like total wealth.', icon: '📝' },
   { id: 'caravanList', title: 'Caravans', description: 'Active world map caravans.', icon: '🐫' },
-  { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
+  // { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
 ];
 
 const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
@@ -153,12 +153,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       setIsDashboardReady(false);
     }
   }, [activeTab, measureWidth, loading]);
-
-  const availableCards = [
-    'colonists', 'resources', 'power', 'population', 'colonySummary',
-    'colonist', 'sseStatus', 'messageFeed', 'factionRelations',
-    'caravanList', 'currentResearch', 'gameInfo'
-  ];
 
   useEffect(() => {
     if (presetBgImage) {
