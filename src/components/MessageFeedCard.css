@@ -1,0 +1,431 @@
+/* src/components/MessageFeedCard.css */
+
+/* 1. FORCE THE CARD TO FILL THE GRID ITEM */
+.message-feed-card {
+    position: absolute; /* bypassing intermediate wrappers */
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    
+    /* Layout */
+    display: flex;
+    flex-direction: column;
+    
+    /* Styling */
+    /* Remove background if handled by parent, or keep if needed: */
+    /* background: rgba(30, 30, 40, 0.6); */ 
+    overflow: hidden; 
+}
+
+/* 2. HEADER: Fixed Height */
+.card-header {
+    flex: 0 0 auto; /* Don't shrink */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    height: 40px; /* Explicit height helps stability */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-sizing: border-box;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: white;
+}
+
+.message-count {
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75em;
+    font-weight: 600;
+}
+
+.clear-btn {
+    background: transparent;
+    color: rgba(255, 107, 107, 0.8);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75em;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-btn:hover {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+}
+
+/* 3. LIST: FILL REMAINING SPACE & SCROLL */
+.message-list {
+    flex: 1 1 auto; /* Grow to fill space */
+    height: 100%; /* Ensure it tries to fill */
+    min-height: 0; /* CRITICAL: Allows flex child to scroll */
+    
+    overflow-y: auto; /* Show vertical scrollbar */
+    overflow-x: hidden;
+    
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    box-sizing: border-box;
+}
+
+/* Scrollbar Visibility */
+.message-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.message-list::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.message-list::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.message-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* Empty State */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(255, 255, 255, 0.4);
+    text-align: center;
+    padding: 20px;
+}
+
+.empty-icon {
+    font-size: 2em;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+/* Message Items */
+.message-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.02);
+    cursor: default;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.message-item:hover, .message-item.hovered {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.message-icon {
+    font-size: 1.1em;
+    margin-top: 1px;
+}
+
+.message-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.message-title {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+}
+
+.message-label {
+    font-weight: 600;
+    color: #e0e0e0;
+    font-size: 0.85em;
+}
+
+.message-time {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.message-preview {
+    font-size: 0.8em;
+    color: rgba(255, 255, 255, 0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Tooltip (No changes needed, but included for completeness) */
+.message-hover-tooltip {
+    position: fixed;
+    right: 340px; 
+    width: 300px;
+    background: rgba(20, 20, 30, 0.98);
+    border: 1px solid rgba(77, 171, 247, 0.4);
+    border-radius: 6px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    pointer-events: none;
+    animation: fadeIn 0.1s ease-out;
+    padding: 0;
+}
+
+@media (max-width: 1400px) {
+    .message-hover-tooltip {
+        right: auto;
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 20px;
+        top: auto !important;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-hover-tooltip .detail-header {
+    background: rgba(77, 171, 247, 0.15);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-hover-tooltip .detail-header h4 {
+    margin: 0;
+    color: #4dabf7;
+    font-size: 0.85em;
+    text-transform: uppercase;
+}
+
+.message-hover-tooltip .detail-content {
+    padding: 12px;
+}
+
+.message-hover-tooltip .detail-text {
+    color: #ddd;
+    font-size: 0.9em;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    margin-bottom: 8px;
+}
+
+.message-hover-tooltip .meta-time {
+    font-size: 0.75em;
+    color: #666;
+    display: block;
+    text-align: right;
+}
+
+/* Items */
+.message-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 10px; background: rgba(255, 255, 255, 0.03); border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.02); cursor: default; transition: background 0.2s; flex-shrink: 0; }
+.message-item:hover, .message-item.hovered { background: rgba(255, 255, 255, 0.08); }
+.message-icon { font-size: 1.1em; margin-top: 1px; }
+.message-content { flex: 1; min-width: 0; }
+.message-title { display: flex; justify-content: space-between; margin-bottom: 2px; }
+.message-label { font-weight: 600; color: #e0e0e0; font-size: 0.85em; }
+.message-time { font-size: 0.75em; color: rgba(255, 255, 255, 0.4); }
+.message-preview { font-size: 0.8em; color: rgba(255, 255, 255, 0.6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* --- TOOLTIP FIXES START HERE --- */
+
+.message-hover-tooltip {
+    position: fixed;
+    right: 340px; 
+    width: 380px;
+    /* Max height ensures very long messages don't go offscreen vertically */
+    max-height: 88vh; 
+    display: flex;
+    flex-direction: column;
+    background: rgba(20, 20, 30, 0.98);
+    border: 1px solid rgba(77, 171, 247, 0.4);
+    border-radius: 6px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    pointer-events: none;
+    animation: fadeIn 0.1s ease-out;
+    padding: 0;
+    /* Ensure content doesn't bleed out of corners */
+    overflow: hidden; 
+}
+
+@media (max-width: 1400px) {
+    .message-hover-tooltip {
+        right: auto; left: 50%; transform: translateX(-50%); bottom: 20px; top: auto !important;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message-hover-tooltip .detail-header {
+    flex: 0 0 auto;
+    background: rgba(77, 171, 247, 0.15);
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.message-hover-tooltip .detail-header h4 {
+    margin: 0; color: #4dabf7; font-size: 0.85em; text-transform: uppercase;
+    /* Ensure header title doesn't overflow */
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.message-hover-tooltip .detail-content {
+    padding: 12px;
+    overflow-y: auto; /* Allow tooltip itself to scroll if content is massive */
+}
+
+.message-hover-tooltip .detail-text {
+    color: #ddd;
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    
+    /* CRITICAL FIXES FOR TEXT WRAPPING */
+    white-space: pre-wrap; /* Preserve existing line breaks */
+    word-break: break-word; /* Force long words/URLs to break */
+    overflow-wrap: break-word; /* Modern standard alias for the above */
+}
+
+.message-hover-tooltip .meta-time {
+    font-size: 0.75em; color: #666; display: block; text-align: right;
+}
+
+/* src/components/MessageFeedCard.css */
+
+/* ... (Keep existing layout styles for .message-feed-card, .card-header, .message-list) ... */
+
+/* Message Items Base */
+.message-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px; /* Slightly squarer for game feel */
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left-width: 4px; /* Make left border thicker for status indication */
+    cursor: default;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+/* --- TAG BASED STYLES --- */
+
+/* Negative Event (Red) */
+.message-item.severity-negative {
+    border-left-color: #ff6b6b;
+    background: linear-gradient(90deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+.message-item.severity-negative .message-label {
+    color: #ff6b6b;
+}
+
+/* Positive Event (Green/Gold) */
+.message-item.severity-positive {
+    border-left-color: #51cf66; /* Or #fcc419 for Gold */
+    background: linear-gradient(90deg, rgba(81, 207, 102, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+.message-item.severity-positive .message-label {
+    color: #51cf66;
+}
+
+/* Neutral Event (Blue/Gray) */
+.message-item.severity-neutral {
+    border-left-color: #4dabf7;
+    background: linear-gradient(90deg, rgba(77, 171, 247, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+.message-item.severity-neutral .message-label {
+    color: #4dabf7;
+}
+
+/* Default/Unknown (Dark Gray) */
+.message-item:not(.severity-negative):not(.severity-positive):not(.severity-neutral) {
+    border-left-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Hover Effects */
+.message-item:hover, .message-item.hovered {
+    transform: translateX(2px);
+    background-color: rgba(255, 255, 255, 0.08); /* Generic lighten on top of gradient */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+/* ... (Keep icon, content, title styles) ... */
+
+/* TOOLTIP STYLES UPDATE */
+
+.message-hover-tooltip {
+    /* ... keep existing base styles ... */
+    border-left: 4px solid rgba(255, 255, 255, 0.2); /* Default border */
+}
+
+/* Tooltip Color Matching */
+.message-hover-tooltip.severity-negative {
+    border-color: #ff6b6b; /* Full border color for tooltip */
+    box-shadow: 0 5px 20px rgba(255, 107, 107, 0.15);
+}
+.message-hover-tooltip.severity-negative .detail-header {
+    background: rgba(255, 107, 107, 0.15);
+}
+.message-hover-tooltip.severity-negative .detail-header h4 {
+    color: #ff6b6b;
+}
+
+.message-hover-tooltip.severity-positive {
+    border-color: #51cf66;
+    box-shadow: 0 5px 20px rgba(81, 207, 102, 0.15);
+}
+.message-hover-tooltip.severity-positive .detail-header {
+    background: rgba(81, 207, 102, 0.15);
+}
+.message-hover-tooltip.severity-positive .detail-header h4 {
+    color: #51cf66;
+}
+
+.message-hover-tooltip.severity-neutral {
+    border-color: #4dabf7;
+    box-shadow: 0 5px 20px rgba(77, 171, 247, 0.15);
+}
+
+/* New: Tags inside Tooltip */
+.detail-tags {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.tag-badge {
+    font-size: 0.7em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ... (Keep rest of tooltip styles) ... */

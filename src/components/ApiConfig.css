@@ -1,6 +1,5 @@
-
-
 /* src/components/ApiConfig.css */
+
 .api-config-screen {
   position: fixed;
   top: 0;
@@ -12,454 +11,355 @@
   align-items: center;
   z-index: 9999;
   padding: 20px;
-  box-sizing: border-box; /* Add this */
-}
-
-/* Background image with dark overlay */
-.api-config-screen::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/public/assets/bg.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  z-index: -2;
-}
-
-.api-config-screen::after {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  z-index: -1;
-}
-
-.api-config-content {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(77, 171, 247, 0.3);
-  border-radius: 20px;
-  padding: 50px 40px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: slideInUp 0.8s ease-out;
-  box-sizing: border-box; /* Add this */
-}
-
-.config-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.config-icon {
-  font-size: 4em;
-  margin-bottom: 20px;
-  animation: bounce 2s infinite;
-}
-
-.config-title {
-  color: white;
-  font-size: 2.2em;
-  margin-bottom: 10px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  font-weight: 700;
-  background: linear-gradient(45deg, #4dabf7, #ff6b35);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.config-subtitle {
-  color: #b0b0b0;
-  font-size: 1.2em;
-  margin: 0;
-}
-
-.api-config-form {
-  margin-bottom: 40px;
-}
-
-.input-group {
-  margin-bottom: 25px;
-}
-
-.input-label {
-  display: block;
-  color: white;
-  font-size: 1.1em;
-  margin-bottom: 12px;
-  font-weight: 600;
-}
-
-.url-input {
-  width: 100%;
-  padding: 15px 20px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 12px;
-  font-size: 1.1em;
-  color: white;
-  transition: all 0.3s ease;
-  font-family: 'Courier New', monospace;
-  box-sizing: border-box; /* FIX: Add this line */
-}
-
-.url-input:focus {
-  outline: none;
-  border-color: #4dabf7;
-  background: rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 0 3px rgba(77, 171, 247, 0.3);
-}
-
-.url-input.input-connect-error {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.1);
-}
-
-.url-input::placeholder {
-  color: #888;
-}
-
-.error-message {
-  color: #ff6b6b;
-  font-size: 0.95em;
-  margin-top: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-}
-
-.quick-connect {
-  margin-bottom: 30px;
-}
-
-.quick-connect-label {
-  display: block;
-  text-align: left;
-  color: #b0b0b0;
-  font-size: 0.95em;
-  margin-bottom: 10px;
-  font-weight: 600;
-}
-
-.quick-buttons {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.quick-btn {
-  padding: 8px 16px;
-  background: rgba(77, 171, 247, 0.2);
-  border: 1px solid rgba(77, 171, 247, 0.4);
-  border-radius: 8px;
-  color: #4dabf7;
-  font-size: 0.9em;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: 'Courier New', monospace;
-  box-sizing: border-box; /* Add this for consistency */
-}
-
-.quick-btn:hover {
-  background: rgba(77, 171, 247, 0.3);
-  transform: translateY(-1px);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.connect-btn, .default-btn, .reset-btn {
-  min-width: 140px;
-  padding: 16px 24px;
-  border: none;
-  border-radius: 12px;
-  font-size: 1.1em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box; /* Add this for consistency */
-}
-
-.connect-btn {
-  background: linear-gradient(45deg, #4dabf7, #339af0);
-  color: white;
-}
-
-.connect-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(77, 171, 247, 0.4);
-  background: linear-gradient(45deg, #339af0, #228be6);
-}
-
-.connect-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.default-btn {
-  background: rgba(255, 107, 53, 0.9);
-  color: white;
-}
-
-.default-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
-  background: rgba(255, 107, 53, 1);
-}
-
-.reset-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.reset-btn:hover:not(:disabled) {
-  background: #5a6268;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-}
-
-.button-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2px solid transparent;
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.setup-guide {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  padding: 20px 30px;
-  margin-bottom: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: #121212; /* Fallback */
   box-sizing: border-box;
 }
 
-.setup-guide h3 {
-  margin-top: 0;
-  margin-bottom: 12;
+/* Unique Overlay */
+.api-config-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, #2a2a2a 0%, #000000 100%);
+    z-index: -1;
 }
 
-.guide-title {
-  color: white;
-  font-size: 1.4em;
-  margin-bottom: 25px;
-  text-align: center;
-  font-weight: 600;
-}
-
-.guide-steps {
+/* --- Main Container --- */
+.ac-content {
+  width: 100%;
+  max-width: 480px;
+  
+  /* Glass Style */
+  background: rgba(30, 30, 30, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  
+  padding: 35px;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  color: #e0e0e0;
+  box-sizing: border-box;
 }
 
-.step {
-  display: flex;
-  align-items: flex-start;
-  gap: 15px;
+/* --- Header --- */
+.ac-header {
+  text-align: center;
+  margin-bottom: 5px;
 }
 
-.step-number {
+.ac-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+  filter: drop-shadow(0 0 10px rgba(77, 171, 247, 0.3));
+}
+
+.ac-title {
+  font-size: 1.6rem;
+  margin: 0;
   color: white;
-  width: 32px;
-  height: 32px;
+  font-weight: 700;
+}
+
+.ac-subtitle {
+  color: #888;
+  margin: 5px 0 0 0;
+  font-size: 0.9rem;
+}
+
+/* --- Form --- */
+.ac-form {
+  display: flex;
+  flex-direction: column;
+  /* Reduced gap because input-group now has its own margin-bottom cushion */
+  gap: 10px; 
+}
+
+.ac-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative; /* Acts as anchor for absolute positioning */
+  
+  /* CRITICAL FIX: Always reserve 25px of space below for the error message.
+     This ensures the next element (Version dropdown) never moves. */
+  margin-bottom: 25px; 
+}
+
+.ac-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #aaa;
+  font-weight: 600;
+}
+
+.ac-input {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px 15px;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding doesn't increase width */
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.ac-input:focus {
+  border-color: #4dabf7;
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+/* RENAME THIS SELECTOR */
+.ac-input.ac-input-error {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.05);
+  margin: 0; /* Force reset margin just in case */
+}
+
+/* OPTIONAL: Add specific focus state for error */
+.ac-input.ac-input-error:focus {
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
+}
+
+.ac-error-message {
+  /* ABSOLUTE POSITIONING FIX */
+  position: absolute;
+  top: 100%; /* Pushes it exactly below the input group */
+  left: 0;
+  width: 100%;
+  
+  color: #ff6b6b;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 5px; /* Tiny gap between input and error */
+  
+  animation: fadeIn 0.2s ease-out;
+  pointer-events: none; /* Ensures it doesn't block clicks on things below it */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- Version Info Row --- */
+.ac-info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 0 2px;
+}
+
+.ac-info-label {
+    color: #666;
+}
+
+.ac-version-badge {
+    background: rgba(255, 255, 255, 0.1);
+    color: #4dabf7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+    font-family: monospace;
+}
+
+/* --- Buttons --- */
+.ac-quick-connect {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.85rem;
+}
+
+.ac-quick-label {
+  color: #666;
+}
+
+.ac-quick-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.ac-quick-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #888;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.2s;
+}
+
+.ac-quick-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.ac-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 5px;
+}
+
+.ac-btn {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1rem;
+}
+
+.ac-btn-primary {
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  border: 1px solid rgba(77, 171, 247, 0.3);
+}
+
+.ac-btn-primary:hover:not(:disabled) {
+  background: rgba(77, 171, 247, 0.3);
+  color: white;
+  box-shadow: 0 0 15px rgba(77, 171, 247, 0.2);
+}
+
+.ac-btn-secondary {
+  background: transparent;
+  color: #888;
+  border: 1px solid transparent;
+}
+
+.ac-btn-secondary:hover {
+  color: #ccc;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.ac-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* --- Guide Panel --- */
+.ac-setup-guide {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  padding: 15px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-top: 10px;
+}
+
+.ac-guide-title {
+  margin: 0 0 12px 0;
+  font-size: 0.85rem;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ac-guide-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ac-step {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.ac-step-num {
+  background: rgba(255, 255, 255, 0.1);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
-  font-size: 0.9em;
+  font-size: 0.7rem;
+  color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box; /* Add this */
+  margin-top: 3px;
 }
 
-.step-content h4 {
-  color: white;
-  margin: 0 0 5px 0;
-  font-size: 1.1em;
+.ac-step-content {
+    flex: 1;
 }
 
-.step-content .step-title {
-  color: white;
-  margin: 0 0 5px 0;
-  font-size: 1.1em;
+.ac-step-content p, .ac-step p {
+  margin: 0 0 2px 0;
+  font-size: 0.85rem;
+  color: #aaa;
+  line-height: 1.4;
 }
 
-.step-content p {
-  color: #b0b0b0;
-  margin: 0;
-  line-height: 1.5;
-  text-align: left;
+.ac-mod-link {
+  display: inline-block;
+  color: #4dabf7;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 2px;
+  transition: color 0.2s;
+  padding: 2px 0;
 }
 
-.config-tip {
-  background: rgba(255, 107, 53, 0.1);
-  border-radius: 12px;
-  padding: 15px 20px;
-  border-left: 4px solid #ff6b35;
-  color: #ffa87a;
-  font-size: 0.95em;
-  line-height: 1.5;
-  box-sizing: border-box; /* Add this */
+.ac-mod-link:hover {
+  color: #74c0fc;
+  text-decoration: underline;
 }
 
-.config-tip strong {
-  color: #ff8c42;
-}
-
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-10px);
-  }
-  60% {
-    transform: translateY(-5px);
-  }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* RimWorld theme variations */
-.api-config-content.rimworld-theme {
-  background: linear-gradient(135deg, 
-    rgba(30, 60, 114, 0.95) 0%, 
-    rgba(42, 82, 152, 0.95) 100%);
-  border: 1px solid rgba(255, 107, 53, 0.4);
-}
-
-.rimworld-theme .config-title {
-  background: linear-gradient(45deg, #ff6b35, #ff8c42);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.rimworld-theme .connect-btn {
-  background: linear-gradient(45deg, #ff6b35, #ff8c42);
-}
-
-.rimworld-theme .connect-btn:hover:not(:disabled) {
-  background: linear-gradient(45deg, #ff8c42, #ff6b35);
-}
-
-/* Responsive design */
-@media (max-width: 768px) {
-  .api-config-screen {
-    padding: 15px;
-  }
-  
-  .api-config-content {
-    padding: 40px 30px;
-    width: 95%; /* Adjust width for mobile */
-  }
-  
-  .config-title {
-    font-size: 1.8em;
-  }
-  
-  .config-icon {
-    font-size: 3em;
-  }
-  
-  .action-buttons {
+/* --- Footer / Discord Link --- */
+.ac-footer {
+    display: flex;
     flex-direction: column;
-  }
-  
-  .connect-btn, .default-btn {
-    min-width: auto;
-    width: 100%;
-  }
-  
-  .setup-guide {
-    padding: 25px 20px;
-  }
-  
-  .guide-steps {
-    gap: 15px;
-  }
-  
-  .url-input {
-    padding: 12px 16px; /* Slightly smaller padding on mobile */
-    font-size: 1em;
-  }
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-@media (max-width: 480px) {
-  .api-config-content {
-    padding: 30px 20px;
-    width: 100%; /* Full width on very small screens */
-    margin: 10px;
-  }
-  
-  .config-title {
-    font-size: 1.6em;
-  }
-  
-  .quick-buttons {
-    flex-direction: column;
-  }
-  
-  .quick-btn {
-    width: 100%;
-    text-align: center;
-  }
-  
-  .step {
-    flex-direction: column;
-    text-align: center;
-    gap: 10px;
-  }
-  
-  .step-number {
-    align-self: center;
-  }
-  
-  .url-input {
-    padding: 10px 14px; /* Even smaller padding on very small screens */
-  }
+.ac-footer-text {
+    font-size: 0.8rem;
+    color: #666;
 }
 
-/* Global box-sizing reset for consistency */
-.api-config-screen * {
-  box-sizing: border-box;
+.ac-discord-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(88, 101, 242, 0.15); /* Discord Blue-ish Tint */
+    color: #7289da;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    border: 1px solid rgba(88, 101, 242, 0.3);
+}
+
+.ac-discord-link:hover {
+    background: rgba(88, 101, 242, 0.3);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(88, 101, 242, 0.2);
+}
+
+.discord-icon {
+    font-size: 1.1em;
 }

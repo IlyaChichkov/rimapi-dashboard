@@ -1,75 +1,36 @@
-// src/components/RimWorldDashboard.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  ColonistStatsChart,
-  ResourcesChart,
-  PowerChart,
-  PopulationChart,
-} from './RimWorldCharts';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
+import 'react-grid-layout/css/styles.css';
+import 'react-resizable/css/styles.css';
+import './RimWorldDashboard.css';
+import defaultBgImage from '../assets/defaultBackground.jpg';
+
+// Hooks
+import { useRimWorldData } from '../hooks/useRimworldData';
+import { useDashboardLayout } from '../hooks/useDashboardLayout';
+
+// Types
+import { DashboardTab } from '../types/dashboardTypes';
+
+// Sub-components
 import LoadingScreen from './LoadingScreen';
 import ConnectionErrorScreen from './ConnectionErrorScreen';
-import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
-import { Colonist, RimWorldData } from '../types';
-import './RimWorldDashboard.css';
-import ResearchCards from './ResearchCards';
-import ColonistsTab from './ColonistsTab';
 import Footer from './Footer';
-import MedicalAlertsCard from './MedicalAlertsCard';
-import ModsTab from './ModsTab';
-import ResourcesDashboard from './ResourcesDashboard';
+import { DashboardCardRegistry } from './DashboardCardRegistry';
 import { useToast } from './ToastContext';
+import AddCardModal, { CardDefinition } from './AddCardModal';
+
+// Tabs
+import ResearchCards from './ResearchCards';
+import MedicalAlertsCard from './MedicalAlertsCard';
+import ColonistsTab from './ColonistsTab';
+import ResourcesDashboard from './ResourcesDashboard';
 import DevTab from './DevTab';
 
-const getChartSize = (colonistsCount: number): number => {
-  if (colonistsCount <= 5) return 1;    // Normal size
-  if (colonistsCount <= 10) return 2;   // 2x width
-  if (colonistsCount <= 15) return 3;   // 3x width
-  return 4;                             // 4x width for 16+ colonists
-};
-
-// Tab types
-type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
-
-const renderColonistCharts = (colonists: Colonist[]) => {
-  if (colonists.length <= 10) {
-    return (
-      <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
-        {/* Single chart for <= 10 colonists */}
-        <div className="chart-header">
-          <h3>Colonist Health & Mood</h3>
-          <div className="colonist-count-badge">
-            {colonists.length} Colonists
-          </div>
-        </div>
-        <div className="chart-container">
-          <ColonistStatsChart colonists={colonists} />
-        </div>
-      </div>
-    );
-  }
-
-  // Split colonists into chunks for mobile
-  const chunkSize = 8;
-  const chunks = [];
-  for (let i = 0; i < colonists.length; i += chunkSize) {
-    chunks.push(colonists.slice(i, i + chunkSize));
-  }
-
-  return chunks.map((chunk, index) => (
-    <div key={index} className="chart-card colonist-stats-card mobile-split">
-      <div className="chart-header">
-        <h3>Colonists {index * chunkSize + 1}-{index * chunkSize + chunk.length}</h3>
-        <div className="colonist-count-badge">
-          {chunk.length} Colonists
-        </div>
-      </div>
-      <div className="chart-container">
-        <ColonistStatsChart colonists={chunk} />
-      </div>
-    </div>
-  ));
-};
-
+// UI Helpers
+import ColonySummarySettingsModal from './ColonySummarySettingsModal';
+import PresetsModal from './PresetsModal'; // Using the Modal now
+import DashboardSettingsModal from './DashboardSettingsModal';
 
 interface RimWorldDashboardProps {
   apiUrl: string;
@@ -77,786 +38,437 @@ interface RimWorldDashboardProps {
   onGameStateChange: () => void;
 }
 
-const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
-  apiUrl,
-  onResetConfig,
-  onGameStateChange
-}) => {
-  const [data, setData] = useState<RimWorldData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  const colonistsDetailed = data?.colonistsDetailed || [];
+// --- DEFINE CARD METADATA ---
+const CARD_DEFINITIONS: CardDefinition[] = [
+  { id: 'gameInfo', title: 'Game Info', description: 'Date, weather, storyteller, and sync status.', icon: '🌍' },
+  { id: 'colonists', title: 'Colonist Charts', description: 'Charts for mood, health, and needs overview.', icon: '📊' },
+  { id: 'resources', title: 'Resource Summary', description: 'Distribution of items and wealth categories.', icon: '📦' },
+  { id: 'power', title: 'Power Grid', description: 'Generation vs. Consumption battery status.', icon: '⚡' },
+  { id: 'population', title: 'Population', description: 'Counts for colonists, prisoners, and enemies.', icon: '👥' },
+  { id: 'messageFeed', title: 'Message Feed', description: 'Live log of in-game letters and messages.', icon: '📩' },
+  { id: 'factionRelations', title: 'Factions', description: 'List of factions and goodwill status.', icon: '🤝' },
+  { id: 'currentResearch', title: 'Research', description: 'Current project progress bar.', icon: '🔬' },
+  { id: 'colonist', title: 'Single Colonist', description: 'Detailed inspector for a specific pawn.', icon: '👤' },
+  { id: 'colonySummary', title: 'Colony Summary', description: 'Text-based stats like total wealth.', icon: '📝' },
+  { id: 'caravanList', title: 'Caravans', description: 'Active world map caravans.', icon: '🐫' },
+  // { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
+];
 
-  const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
-  const [medicalTabColonistFilter, setMedicalTabColonistFilter] = React.useState<string[]>([]);
+const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
+  apiUrl, onResetConfig, onGameStateChange
+}) => {
+  // 1. Data Hook
+  const {
+    data, loading, error, lastUpdated, autoRefresh, setAutoRefresh, refresh, getSortedColonists
+  } = useRimWorldData(apiUrl, onGameStateChange);
+
+  // 2. Layout Hook
+  const {
+    layout, cardSettings, presets, selectedPreset,
+    handleLayoutChange, handleCardSettingsChange, onAddItem, onRemoveItem,
+    savePreset, deletePreset, setSelectedPreset, presetBgImage, presetBgBlur,
+    renamePreset, exportPresets, importPresets,
+  } = useDashboardLayout();
+
+  // 3. Local UI State
+  const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
+  const [isAddCardModalOpen, setAddCardModalOpen] = useState(false);
+  const [isPresetsModalOpen, setPresetsModalOpen] = useState(false); // Renamed for clarity
+  const [editingCardId, setEditingCardId] = useState<string | null>(null);
+  const [medicalTabColonistFilter, setMedicalTabColonistFilter] = useState<string[]>([]);
+  const [isDashboardReady, setIsDashboardReady] = useState(false);
 
   const { addToast } = useToast();
+  const trashRef = useRef<HTMLDivElement>(null);
+  const ignoreLayoutChangeRef = useRef(false);
 
-  // Add this function to sort colonists
-  const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'health' | 'mood') => {
-    const sorted = [...colonists];
-    switch (sortBy) {
-      case 'health':
-        return sorted.sort((a, b) => (b.health || 0) - (a.health || 0));
-      case 'mood':
-        return sorted.sort((a, b) => (b.mood || 0) - (a.mood || 0));
-      case 'name':
-      default:
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    }
-  }, []);
+  const [targetBgImage, setTargetBgImage] = useState<string>(() => {
+    return localStorage.getItem('dashboard_bg') || defaultBgImage;
+  });
 
-  // Check screen size for responsive behavior
+  const [backgroundBlur, setBackgroundBlur] = useState<number>(() => {
+    const saved = localStorage.getItem('dashboard_bg_blur');
+    return saved ? parseInt(saved) : 0;
+  });
+
+  const [isSettingsModalOpen, setSettingsModalOpen] = useState(false);
+
+  const [visibleBgImage, setVisibleBgImage] = useState<string>(defaultBgImage);
+
+  // IMAGE PRELOADER EFFECT
   useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth <= 768);
+    // If the image we want is already visible, do nothing
+    if (targetBgImage === visibleBgImage) return;
+
+    // Create a new image object in memory to download the file
+    const img = new Image();
+    img.src = targetBgImage;
+
+    // Only swap the background when it's fully loaded
+    img.onload = () => {
+      setVisibleBgImage(targetBgImage);
     };
 
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
+    // Fallback: If image fails, you might want to revert or just do nothing
+    img.onerror = () => {
+      console.warn("Failed to load background:", targetBgImage);
+      // Optional: Revert to default if custom fails?
+      // setVisibleBgImage(defaultBgImage); 
+    };
 
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
+  }, [targetBgImage, visibleBgImage]);
 
-  // Set API URL when component mounts or URL changes
+  // Helper to settings
+  const handleSaveSettings = (newUrl: string, newBlur: number) => {
+    // 1. Update visual state (Current View)
+    setTargetBgImage(newUrl);
+    setBackgroundBlur(newBlur);
+    localStorage.setItem('dashboard_bg', newUrl);
+    localStorage.setItem('dashboard_bg_blur', newBlur.toString());
+
+    if (selectedPreset) {
+      savePreset(selectedPreset, newUrl, newBlur);
+      addToast({ type: 'success', title: `Settings saved to preset "${selectedPreset}"` });
+    }
+  };
+
+  // React Grid Layout Sizing
+  const { width, containerRef, mounted, measureWidth } = useContainerWidth({
+    measureBeforeMount: true,
+    initialWidth: 960
+  });
+
+  // Re-measure grid when tab changes
   useEffect(() => {
-    setApiBaseUrl(apiUrl);
-  }, [apiUrl]);
+    if (activeTab === 'dashboard') {
+      setIsDashboardReady(false);
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const rimWorldData = await fetchRimWorldData();
-      
-      if (!rimWorldData.gameState || (rimWorldData.gameState as any).program_state !== 'Playing' || !rimWorldData.colonists || rimWorldData.colonists.length === 0) {
-        onGameStateChange();
+      const timer = setTimeout(() => {
+        measureWidth();
+        setIsDashboardReady(true);
+      }, 100); // 100ms delay is usually enough
+
+      return () => clearTimeout(timer);
+    } else {
+      setIsDashboardReady(false);
+    }
+  }, [activeTab, measureWidth, loading]);
+
+  useEffect(() => {
+    if (presetBgImage) {
+      setTargetBgImage(presetBgImage);
+      localStorage.setItem('dashboard_bg', presetBgImage);
+
+      const newBlur = presetBgBlur || 0;
+      setBackgroundBlur(newBlur);
+      localStorage.setItem('dashboard_bg_blur', newBlur.toString());
+
+      addToast({ type: 'info', title: 'Background loaded from preset', duration: 2000 });
+    } else {
+      setTargetBgImage(defaultBgImage);
+      setBackgroundBlur(0);
+    }
+  }, [presetBgImage, presetBgBlur, addToast]);
+
+  // -- Handlers --
+
+  const handleResizeStop = () => {
+    setTimeout(() => {
+      // Force ChartJS resize
+      window.dispatchEvent(new Event('resize'));
+    }, 50);
+  };
+
+  const onDragStop = (layout: any, oldItem: any, newItem: any, placeholder: any, e: MouseEvent) => {
+    if (trashRef.current) {
+      const trashRect = trashRef.current.getBoundingClientRect();
+      const isOverTrash = e.clientX > trashRect.left && e.clientX < trashRect.right &&
+        e.clientY > trashRect.top && e.clientY < trashRect.bottom;
+      if (isOverTrash) {
+        // 1. Block layout saves
+        ignoreLayoutChangeRef.current = true;
+
+        // 2. Delete the item
+        onRemoveItem(newItem.i);
+        trashRef.current.classList.remove('over');
+
+        // 3. Unblock layout saves after a short delay
+        // This covers all the extra events ReactGridLayout fires immediately after dropping
+        setTimeout(() => {
+          ignoreLayoutChangeRef.current = false;
+        }, 200);
+
         return;
       }
-
-      console.log(rimWorldData)
-      setData(rimWorldData);
-      setLastUpdated(new Date());
-      setError(null);
-    } catch (error) {
-      console.error('Error fetching RimWorld data:', error);
-      setError('Failed to load data from RimWorld API');
-    } finally {
-      setLoading(false);
     }
-  }, [onGameStateChange]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    if (!autoRefresh) return;
-
-    const intervalId = setInterval(() => {
-      loadData();
-    }, 5000);
-
-    return () => clearInterval(intervalId);
-  }, [autoRefresh, loadData]);
-
-  const handleManualRefresh = () => {
-    loadData();
+    handleLayoutChange(layout);
   };
 
-  const toggleAutoRefresh = () => {
-    setAutoRefresh(!autoRefresh);
+  const onDrag = (layout: any, oldItem: any, newItem: any, placeholder: any, e: MouseEvent) => {
+    if (trashRef.current) {
+      const trashRect = trashRef.current.getBoundingClientRect();
+      const isOverTrash = e.clientX > trashRect.left && e.clientX < trashRect.right &&
+        e.clientY > trashRect.top && e.clientY < trashRect.bottom;
+      if (isOverTrash) trashRef.current.classList.add('over');
+      else trashRef.current.classList.remove('over');
+    }
   };
 
-  // Safe data accessors
-  const colonists = data?.colonists || [];
-  const resources = data?.resources || { categories: [] };
-  const creatures = data?.creatures || {};
-  const power = data?.power || {};
-  const gameState = data?.gameState || {};
-  const map_datetime = data?.map_datetime || {};
-  const weather = data?.weather || {};
-  const researchProgress = data?.researchProgress;
-  const researchFinished = data?.researchFinished || { finished_projects: [] };
-  const researchSummary = data?.researchSummary || {
-    finished_projects_count: 0,
-    total_projects_count: 0,
-    available_projects_count: 0,
-    by_tech_level: {},
-    by_tab: {}
-  };
-  const modsInfo = data?.modsInfo || [];
-
-  const [activeTab, setActiveTab] = useState<DashboardTab>('dashboard');
-  const colonistChartSize = getChartSize(colonists.length);
-
-  // Update the sorted colonists
-  const sortedColonists = getSortedColonists(colonists, sortBy);
-
-  if (loading && !data && !error) {
-    return <LoadingScreen />;
-  }
-
-  if (error) {
-    return <ConnectionErrorScreen
-      error={error}
-      apiUrl={apiUrl}
-      onRetry={loadData}
-      onChangeUrl={onResetConfig}
-    />;
-  }
-
-  // And make sure medicalTabColonistFilter is being set correctly:
   const handleOpenMedicalTabWithColonist = (colonistName: string) => {
-    console.log('Setting medical filter for:', colonistName); // Debug log
     setMedicalTabColonistFilter([colonistName]);
     setActiveTab('medical');
   };
 
-  // Render different content based on active tab
+  // -- Render Logic --
+
+  if (loading && !data && !error) return <LoadingScreen />;
+  if (error) return <ConnectionErrorScreen error={error} apiUrl={apiUrl} onRetry={refresh} onChangeUrl={onResetConfig} />;
+
+  // Destructure data for cleaner access
+  const colonists = data?.colonists || [];
+  const resources = data?.resources || { categories: [] };
+  const power = data?.power || {};
+  const creatures = data?.creatures || {};
+  const gameState = data?.gameState || {};
+  const weather = data?.weather || {};
+  const map_datetime = data?.map_datetime || {};
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardTab
-          colonists={colonists}
-          resources={resources}
-          power={power}
-          creatures={creatures}
-          researchProgress={researchProgress}
-          researchFinished={researchFinished}
-          researchSummary={researchSummary}
-          loading={loading}
-        />;
-
+        return (
+          <div className="tab-content dashboard-tab">
+            <div className="dashboard-grid-container" ref={containerRef}>
+              {mounted && isDashboardReady && (
+                <ReactGridLayout
+                  key="dashboard-grid"
+                  className="layout"
+                  layout={layout}
+                  width={width}
+                  onLayoutChange={(newLayout) => {
+                    // Check if we are deleting
+                    console.log('onLayoutChange, ignoreLayoutChangeRef=', ignoreLayoutChangeRef.current)
+                    if (ignoreLayoutChangeRef.current) {
+                      return;
+                    }
+                    handleLayoutChange(newLayout);
+                  }}
+                  onDragStop={onDragStop as any}
+                  onDrag={onDrag as any}
+                  dragConfig={{
+                    enabled: true,
+                    cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle)'
+                  }}
+                >
+                  {layout.map(item => (
+                    <div key={item.i} className="grid-item">
+                      <div className="grid-item-content">
+                        <DashboardCardRegistry
+                          item={item}
+                          data={data!}
+                          cardSettings={cardSettings}
+                          onSettingsChange={handleCardSettingsChange}
+                          onOpenSettings={(id) => setEditingCardId(id)}
+                          colonists={colonists}
+                          resources={resources}
+                          power={power}
+                          creatures={creatures}
+                          getSortedColonists={getSortedColonists}
+                          autoRefresh={autoRefresh}
+                        />
+                      </div>
+                      <div className="react-resizable-handle" />
+                    </div>
+                  ))}
+                </ReactGridLayout>
+              )}
+            </div>
+          </div>
+        );
       case 'medical':
-        return <MedicalTab
-          colonistsDetailed={colonistsDetailed}
-          loading={loading}
-          initialColonistFilter={medicalTabColonistFilter}
-        />;
-
+        return <div className="medical-tab"><MedicalAlertsCard colonistsDetailed={data?.colonistsDetailed || []} loading={loading} initialColonistFilter={medicalTabColonistFilter} /></div>;
       case 'research':
-        return <ResearchTab
-          researchProgress={researchProgress}
-          researchFinished={researchFinished}
-          researchSummary={researchSummary}
-          loading={loading}
-        />;
-
+        return <ResearchCards researchProgress={data?.researchProgress} researchFinished={data?.researchFinished} researchSummary={data?.researchSummary} loading={loading} />;
       case 'colonists':
-        return <ColonistsTab
-          colonistsDetailed={colonistsDetailed}
-          loading={loading}
-          onViewHealth={handleOpenMedicalTabWithColonist}
-        />;
+        return <ColonistsTab colonistsDetailed={data?.colonistsDetailed || []} loading={loading} onViewHealth={handleOpenMedicalTabWithColonist} />;
       case 'resources':
-        return <ResourcesTab loading={loading} />;
-
+        return <div className="resources-tab"><ResourcesDashboard /></div>;
       case 'tools':
-        return <DevTab modsInfo={modsInfo} loading={loading} />;
-
-      default:
-        return <DashboardTab
-          colonists={colonists}
-          resources={resources}
-          power={power}
-          creatures={creatures}
-          researchProgress={researchProgress}
-          researchFinished={researchFinished}
-          researchSummary={researchSummary}
-          loading={loading}
-        />;
+        return <DevTab modsInfo={data?.modsInfo || []} loading={loading} />;
+      default: return null;
     }
   };
 
   return (
     <div className="rimworld-dashboard">
-      <header className="dashboard-header">
-        <div className="header-left">
-          <h1>RimWorld Colony Dashboard</h1>
-          <div className="game-info">
-            <span>Date: {map_datetime.datetime || 'Unknown'}</span>
-            <span>Weather: {weather.weather || 'Unknown'}</span>
-            <span>Temp: {Math.round(weather.temperature) || 0}°C</span>
-            <span>Storyteller: {gameState.storyteller || 'Unknown'}</span>
-            {lastUpdated && (
-              <div className="last-updated">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </div>
-            )}
-          </div>
+      <div
+        className="dashboard-background"
+        style={{
+          backgroundImage: `url(${visibleBgImage})`,
+          filter: `blur(${backgroundBlur}px)`
+        }}
+      />
+
+      {/* --- UNIFIED NAVBAR --- */}
+      <nav className="dashboard-navbar">
+
+        {/* Left: Brand */}
+        <div className="nav-brand">
+          <h1>RimWorld Dashboard</h1>
         </div>
 
-        <div className="header-controls">
+        {/* Center: Tabs */}
+        <div className="nav-tabs">
+          {(['dashboard', 'medical', 'research', 'colonists', 'resources', 'tools'] as DashboardTab[]).map(tab => (
+            <button
+              key={tab}
+              className={`nav-tab-btn ${activeTab === tab ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab.charAt(0).toUpperCase() + tab.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Right: Controls */}
+        <div className="nav-controls">
           <button
-            onClick={toggleAutoRefresh}
-            className={`auto-refresh-btn ${autoRefresh ? 'active' : ''}`}
+            onClick={() => setAutoRefresh(!autoRefresh)}
+            className={`nav-ctrl-btn auto ${autoRefresh ? 'active' : ''}`}
+            title="Toggle Auto-Refresh"
           >
-            Auto Refresh: {autoRefresh ? 'ON' : 'OFF'}
+            {autoRefresh ? '⚡ On' : '⏸️ Off'}
           </button>
-          <button onClick={handleManualRefresh} className="refresh-btn">
-            Refresh Now
+
+          <button onClick={refresh} className="nav-ctrl-btn primary" title="Force Refresh">
+            🔄 Refresh
           </button>
-          <button onClick={onResetConfig} className="refresh-btn">
-            Change API URL
+
+          <button onClick={onResetConfig} className="nav-ctrl-btn" title="Change API Configuration">
+            ⚙️ API
           </button>
         </div>
-      </header>
 
-      {/* Tabs Navigation */}
-      <div className="tabs-navigation">
-        <button
-          className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dashboard')}
-        >
-          📊 Dashboard
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'medical' ? 'active' : ''}`}
-          onClick={() => setActiveTab('medical')}
-        >
-          🩺 Medical
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'research' ? 'active' : ''}`}
-          onClick={() => setActiveTab('research')}
-        >
-          🔬 Research
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'colonists' ? 'active' : ''}`}
-          onClick={() => setActiveTab('colonists')}
-        >
-          👥 Colonists
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'resources' ? 'active' : ''}`}
-          onClick={() => setActiveTab('resources')}
-        >
-          📦 Resources
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'tools' ? 'active' : ''}`}
-          onClick={() => setActiveTab('tools')}
-        >
-          ⚙️ Tools
-        </button>
-      </div>
+      </nav>
 
-      {/* Tab Content */}
+      {/* --- DASHBOARD ACTIONS (Add Card / Presets) --- */}
+      {activeTab === 'dashboard' && (
+        <div className="dashboard-actions-bar">
+          <div className="dashboard-controls-left">
+            {/* ADD CARD BUTTON */}
+            <div className="add-card-container">
+              {/* 1. UPDATED ADD CARD BUTTON */}
+              <div className="add-card-container">
+                <button
+                  className="add-card-btn"
+                  onClick={() => setAddCardModalOpen(true)} // Open the new modal
+                >
+                  Add Widget
+                </button>
+              </div>
+            </div>
+
+            {/* PRESET SELECT BUTTON */}
+            <div className="presets-container">
+              <button
+                className="presets-btn"
+                onClick={() => setPresetsModalOpen(true)}
+              >
+                {selectedPreset ? `Preset: ${selectedPreset}` : 'Presets / Save'}
+              </button>
+            </div>
+
+            {/* PRESET SETTINGS BUTTON */}
+            <div className="settings-container">
+              <button
+                className="settings-btn-trigger"
+                onClick={() => setSettingsModalOpen(true)}
+              >
+                Preset Settings
+              </button>
+            </div>
+          </div>
+          <div className="trash-zone" ref={trashRef}><span>🗑️ Drag here to delete</span></div>
+        </div>
+      )}
+
+      {/* --- CONTENT --- */}
       <div className="tab-content">
         {renderTabContent()}
       </div>
 
-      {autoRefresh && (
-        <div className="auto-refresh-indicator">
-          <div className="refresh-pulse"></div>
-          Auto-refreshing every 5 seconds...
-        </div>
-      )}
+      {autoRefresh && <div className="auto-refresh-indicator"><div className="refresh-pulse"></div>Auto-refreshing...</div>}
 
       <div className='footer-spacer'></div>
       <Footer />
-    </div>
-  );
-};
 
-// Tab Components
-interface DashboardTabProps {
-  colonists: Colonist[];
-  resources: any;
-  power: any;
-  creatures: any;
-  researchProgress: any;
-  researchFinished: any;
-  researchSummary: any;
-  loading: boolean;
-}
-
-const DashboardTab: React.FC<DashboardTabProps> = ({
-  colonists,
-  resources,
-  power,
-  creatures,
-  researchProgress,
-  researchFinished,
-  researchSummary,
-  loading,
-}) => {
-  // Add the missing state and functions here
-  const [isMobile, setIsMobile] = useState(false);
-  const [sortBy, setSortBy] = useState<'name' | 'mood'>('name');
-
-  // Check screen size for responsive behavior
-  useEffect(() => {
-    const checkScreenSize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
-    checkScreenSize();
-    window.addEventListener('resize', checkScreenSize);
-
-    return () => window.removeEventListener('resize', checkScreenSize);
-  }, []);
-
-  // Helper function to calculate chart size for PC
-  const getChartSize = (colonistsCount: number): number => {
-    if (colonistsCount <= 5) return 1;    // Normal size
-    if (colonistsCount <= 10) return 2;   // 2x width
-    if (colonistsCount <= 15) return 3;   // 3x width
-    return 4;                             // 4x width for 16+ colonists
-  };
-
-  // Helper function to split colonists into chunks for mobile
-  const splitColonistsIntoChunks = (colonists: Colonist[], chunkSize: number = 8): Colonist[][] => {
-    const chunks = [];
-    for (let i = 0; i < colonists.length; i += chunkSize) {
-      chunks.push(colonists.slice(i, i + chunkSize));
-    }
-    return chunks;
-  };
-
-  // Add sorting function
-  const getSortedColonists = useCallback((colonists: Colonist[], sortBy: 'name' | 'mood') => {
-    const sorted = [...colonists];
-    switch (sortBy) {
-      case 'mood':
-        return sorted.sort((a, b) => (b.mood || 0) - (a.mood || 0));
-      case 'name':
-      default:
-        return sorted.sort((a, b) => a.name.localeCompare(b.name));
-    }
-  }, []);
-
-  // Calculate chart size for PC
-  const colonistChartSize = getChartSize(colonists.length);
-
-  // Split colonists for mobile display
-  const colonistChunks = splitColonistsIntoChunks(colonists);
-
-  // Update sorted colonists
-  const sortedColonists = getSortedColonists(colonists, sortBy);
-
-  // Mobile colonist charts render function
-  const renderColonistCharts = (colonists: Colonist[]) => {
-    if (colonists.length <= 10) {
-      return (
-        <div className={`chart-card colonist-stats-card size-${getChartSize(colonists.length)}`}>
-          <div className="chart-header">
-            <h3>Mood</h3>
-            <div className="chart-corner-container">
-              <div className="colonist-count-badge">
-                {colonists.length} Colonists
-              </div>
-              <div className="sort-controls">
-                <span className="sort-label">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-                  className="sort-select"
-                >
-                  <option className="filter-option" value="name">Name</option>
-                  <option className="filter-option" value="mood">Mood</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-            {colonists.length > 0 ? (
-              <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} />
-            ) : (
-              <div className="no-data">No colonist data available</div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // Split colonists into chunks for mobile
-    const chunks = splitColonistsIntoChunks(colonists);
-
-    return chunks.map((chunk, index) => (
-      <div key={index} className="chart-card colonist-stats-card mobile-split">
-        <div className="chart-header">
-          <h3>
-            Colonists {index * 8 + 1}-{index * 8 + chunk.length}
-            <span className="colonist-chunk-badge">
-              {chunk.length} Colonists
-            </span>
-          </h3>
-          <div className="sort-controls">
-            <span className="sort-label">Sort by:</span>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-              className="sort-select"
-            >
-              <option className="filter-option" value="name">Name</option>
-              <option className="filter-option" value="mood">Mood</option>
-            </select>
-          </div>
-        </div>
-        <div className="chart-container">
-          <ColonistStatsChart colonists={getSortedColonists(chunk, sortBy)} />
-        </div>
-      </div>
-    ));
-  };
-
-  return (
-    <div className="dashboard-grid">
-      {/* Colonist Stats */}
-      {isMobile ? (
-        renderColonistCharts(colonists)
-      ) : (
-        <div
-          className={`chart-card colonist-stats-card size-${colonistChartSize}`}
-          data-colonist-count={colonists.length}
-        >
-          <div className="chart-header">
-            <h3>Mood</h3>
-            <div className="chart-corner-container">
-              <div className="colonist-count-badge">
-                {colonists.length} Colonists
-              </div>
-              <div className="sort-controls">
-                <span className="sort-label">Sort by:</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as 'name' | 'mood')}
-                  className="sort-select"
-                >
-                  <option className="filter-option" value="name">Name</option>
-                  <option className="filter-option" value="mood">Mood</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="chart-container">
-            {colonists.length > 0 ? (
-              <ColonistStatsChart colonists={sortedColonists} />
-            ) : (
-              <div className="no-data">No colonist data available</div>
-            )}
-          </div>
-        </div>
+      {/* --- MODALS (Placed at Root Level to fix Z-Index issues) --- */}
+      {editingCardId && (
+        <ColonySummarySettingsModal
+          isOpen={!!editingCardId}
+          onClose={() => setEditingCardId(null)}
+          settings={cardSettings[editingCardId]}
+          onSettingsChange={(newS) => handleCardSettingsChange(editingCardId, newS)}
+        />
       )}
 
-      {/* Resource Distribution */}
-      {resources.categories && resources.categories.length > 0 ? (
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Resource Distribution</h3>
-            <div className="resource-total">
-              Total: {resources.total_items || 0} items
-            </div>
-          </div>
-          <div className="chart-container">
-            {resources.categories && resources.categories.length > 0 ? (
-              <ResourcesChart resources={resources} />
-            ) : (
-              <div className="no-data">No resource data available</div>
-            )}
-          </div>
-        </div>
-      ) : (null)}
-
-      {/* Power Management */}
-      <div className="chart-card">
-        <div className="chart-header">
-          <div className="chart-header-top">
-            <h3>Power Management</h3>
-            <div className="power-header-controls">
-              <div className="power-status">
-                Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
-                {(power.total_consumption || 0) > (power.current_power || 0) && (
-                  <span className="power-warning-icon" title="Power consumption exceeds production!">
-                    ⚠️
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="chart-container">
-          <PowerChart power={power} />
-        </div>
-      </div>
-
-      {/* Population Overview */}
-      <div className="chart-card">
-        <div className="chart-header">
-          <h3>Population Overview</h3>
-        </div>
-        <div className="chart-container">
-          <PopulationChart creatures={creatures} />
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="stats-card">
-        <h3>Colony Summary</h3>
-        <div className="summary-stats-grid">
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{colonists.length}</div>
-            <div className="summary-stat-label">Colonists</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{creatures.animals_count || 0}</div>
-            <div className="summary-stat-label">Animals</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">{resources.total_items || 0}</div>
-            <div className="summary-stat-label">Total Items</div>
-          </div>
-          <div className="summary-stat-item">
-            <div className="summary-stat-value">${Math.round(resources.total_market_value || 0)}</div>
-            <div className="summary-stat-label">Wealth</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface MedicalTabProps {
-  colonistsDetailed: any[];
-  loading: boolean;
-  initialColonistFilter?: string[];
-}
-
-const MedicalTab: React.FC<MedicalTabProps> = ({ colonistsDetailed, loading, initialColonistFilter }) => {
-  return (
-    <div className="medical-tab">
-      <MedicalAlertsCard
-        colonistsDetailed={colonistsDetailed}
-        loading={loading}
-        initialColonistFilter={initialColonistFilter}
+      {/* Presets Modal - Now correctly placed at root level */}
+      <PresetsModal
+        isOpen={isPresetsModalOpen}
+        onClose={() => setPresetsModalOpen(false)}
+        presets={presets}
+        selectedPreset={selectedPreset}
+        onSave={(name) => {
+          const success = savePreset(name, targetBgImage, backgroundBlur);
+          if (success) addToast({ type: 'success', title: 'Preset saved!' });
+        }}
+        onRename={(oldName, newName) => {
+          const success = renamePreset(oldName, newName);
+          if (success) addToast({ type: 'success', title: 'Preset renamed' });
+          return success;
+        }}
+        onSelect={(name) => setSelectedPreset(name)}
+        onDelete={(name) => {
+          deletePreset(name);
+          addToast({ type: 'success', title: 'Preset deleted' });
+        }}
+        onExport={() => {
+          const json = exportPresets();
+          const blob = new Blob([json], { type: 'application/json' });
+          const href = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = href;
+          link.download = `rimworld_dashboard_presets_${new Date().toISOString().slice(0, 10)}.json`;
+          link.click();
+          addToast({ type: 'success', title: 'Presets exported to file' });
+        }}
+        onImport={(file) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const text = e.target?.result as string;
+            const success = importPresets(text);
+            if (success) addToast({ type: 'success', title: 'Presets imported successfully' });
+            else addToast({ type: 'error', title: 'Invalid preset file' });
+          };
+          reader.readAsText(file);
+        }}
       />
-      {/* You can add more medical-specific components here */}
-    </div>
-  );
-};
 
-interface ResearchTabProps {
-  researchProgress: any;
-  researchFinished: any;
-  researchSummary: any;
-  loading: boolean;
-}
+      <DashboardSettingsModal
+        isOpen={isSettingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        currentBgUrl={targetBgImage}
+        defaultBgUrl={defaultBgImage}
+        currentBlur={backgroundBlur}
+        onSave={handleSaveSettings}
+      />
 
-const ResearchTab: React.FC<ResearchTabProps> = ({
-  researchProgress,
-  researchFinished,
-  researchSummary,
-  loading
-}) => {
-  return (
-    <ResearchCards
-      researchProgress={researchProgress}
-      researchFinished={researchFinished}
-      researchSummary={researchSummary}
-      loading={loading}
-    />
-  );
-};
-
-interface DefenseTabProps {
-  loading: boolean;
-}
-
-const DefenseTab: React.FC<DefenseTabProps> = ({ loading }) => {
-  // Mock data - replace with actual API data when available
-  const mockTurrets = [
-    { id: 1, name: 'Auto-Cannon Turret', status: 'Operational', health: 100, ammo: 85, target: '12' },
-    { id: 2, name: 'Mini-Turret', status: 'Operational', health: 100, ammo: 92, target: '5' },
-    { id: 3, name: 'Uranium Slug Turret', status: 'Damaged', health: 65, ammo: 45, target: '17' },
-    { id: 4, name: 'Charge Blaster', status: 'Operational', health: 100, ammo: 78, target: '21' },
-  ];
-
-  const mockThreatAssessment = {
-    defenseScore: 725,
-    threatLevel: 'Medium',
-    recommendedImprovements: ['Repair damaged turrets', 'Add more mini-turrets', 'Stockpile more ammunition'],
-    weakPoints: ['North wall section', 'Eastern flank']
-  };
-
-  const mockCombatHistory = [
-    { id: 1, date: '2 days ago', event: 'Raid - Tribal', damageTaken: 120, damageDealt: 450, outcome: 'Victory' },
-    { id: 2, date: '5 days ago', event: 'Mech Cluster', damageTaken: 340, damageDealt: 680, outcome: 'Victory' },
-    { id: 3, date: '8 days ago', event: 'Infestation', damageTaken: 280, damageDealt: 320, outcome: 'Victory' },
-    { id: 4, date: '12 days ago', event: 'Siege - Pirates', damageTaken: 560, damageDealt: 890, outcome: 'Victory' },
-  ];
-
-  return (
-    <div className="defense-tab">
-
-      {/* API Placeholder Notice */}
-      <div className="api-notice">
-        <div className="notice-icon">🚧</div>
-        <div className="notice-content">
-          <h4>Defense API Coming Soon</h4>
-          <p>This section displays mock data. Real-time defense monitoring will be available when the RIMAPI defense endpoints are implemented.</p>
-        </div>
-      </div>
-
-      {/* Defense Overview Header */}
-      <div className="defense-overview">
-        <div className="defense-header">
-          <h2>🛡️ Colony Defense Systems</h2>
-          <div className="defense-status">
-            <span className="status-indicator operational">Operational</span>
-            <span className="last-drill">Last combat drill: 3 days ago</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="defense-grid">
-        {/* Active Turrets Section */}
-        <div className="defense-section turrets-section">
-          <div className="section-header">
-            <h3>🎯 Active Defense Turrets</h3>
-            <span className="section-count">{mockTurrets.length} Turrets</span>
-          </div>
-          <div className="turrets-grid">
-            {mockTurrets.map(turret => (
-              <div key={turret.id} className={`turret-card ${turret.status.toLowerCase()}`}>
-                <div className="turret-header">
-                  <h4>{turret.name}</h4>
-                  <span className={`status-badge ${turret.status.toLowerCase()}`}>
-                    {turret.status}
-                  </span>
-                </div>
-                <div className="turret-stats">
-                  <div className="stat-row">
-                    <span className="stat-label">Health:</span>
-                    <div className="health-bar">
-                      <div
-                        className="health-fill"
-                        style={{ width: `${turret.health}%` }}
-                      ></div>
-                    </div>
-                    <span className="stat-value">{turret.health}%</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Ammo:</span>
-                    <div className="ammo-bar">
-                      <div
-                        className="ammo-fill"
-                        style={{ width: `${turret.ammo}%` }}
-                      ></div>
-                    </div>
-                    <span className="stat-value">{turret.ammo}%</span>
-                  </div>
-                  <div className="stat-row">
-                    <span className="stat-label">Damage:</span>
-                    <span className="stat-value target-status">{turret.target}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Threat Assessment Section */}
-        <div className="defense-section threat-section">
-          <div className="section-header">
-            <h3>📊 Threat Assessment</h3>
-            <span className={`threat-level ${mockThreatAssessment.threatLevel.toLowerCase()}`}>
-              {mockThreatAssessment.threatLevel} Threat
-            </span>
-          </div>
-          <div className="threat-content">
-            <div className="defense-score">
-              <div className="score-circle">
-                <span className="score-value">{mockThreatAssessment.defenseScore}</span>
-                <span className="score-label">Defense Score</span>
-              </div>
-            </div>
-            <div className="assessment-details">
-              <div className="weak-points">
-                <h4>Weak Points:</h4>
-                <ul>
-                  {mockThreatAssessment.weakPoints.map((point, index) => (
-                    <li key={index}>📍 {point}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="recommendations">
-                <h4>Recommended Improvements:</h4>
-                <ul>
-                  {mockThreatAssessment.recommendedImprovements.map((rec, index) => (
-                    <li key={index}>✅ {rec}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Combat History Section */}
-        <div className="defense-section history-section">
-          <div className="section-header">
-            <h3>📈 Combat History</h3>
-            <span className="history-count">Last {mockCombatHistory.length} Engagements</span>
-          </div>
-          <div className="combat-history">
-            <div className="history-stats">
-              <div className="history-stat">
-                <span className="stat-number">{mockCombatHistory.length}</span>
-                <span className="stat-label">Total Engagements</span>
-              </div>
-              <div className="history-stat">
-                <span className="stat-number">{mockCombatHistory.filter(e => e.outcome === 'Victory').length}</span>
-                <span className="stat-label">Victories</span>
-              </div>
-              <div className="history-stat">
-                <span className="stat-number">
-                  {Math.round(mockCombatHistory.reduce((acc, curr) => acc + curr.damageDealt, 0) / mockCombatHistory.length)}
-                </span>
-                <span className="stat-label">Avg Damage Dealt</span>
-              </div>
-            </div>
-            <div className="engagements-list">
-              {mockCombatHistory.map(engagement => (
-                <div key={engagement.id} className="engagement-card">
-                  <div className="engagement-header">
-                    <span className="engagement-date">{engagement.date}</span>
-                    <span className={`outcome-badge ${engagement.outcome.toLowerCase()}`}>
-                      {engagement.outcome}
-                    </span>
-                  </div>
-                  <div className="engagement-event">{engagement.event}</div>
-                  <div className="engagement-stats">
-                    <div className="damage-taken">
-                      <span className="damage-label">Damage Taken:</span>
-                      <span className="damage-value">{engagement.damageTaken}</span>
-                    </div>
-                    <div className="damage-dealt">
-                      <span className="damage-label">Damage Dealt:</span>
-                      <span className="damage-value">{engagement.damageDealt}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface ResourcesTabProps {
-  loading: boolean;
-}
-
-const ResourcesTab: React.FC<ResourcesTabProps> = ({ loading }) => {
-  return (
-    <div className="resources-tab">
-      <ResourcesDashboard />
+      <AddCardModal
+        isOpen={isAddCardModalOpen}
+        onClose={() => setAddCardModalOpen(false)}
+        onAdd={onAddItem}
+        availableCards={CARD_DEFINITIONS}
+      />
     </div>
   );
 };

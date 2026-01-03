@@ -579,20 +579,7 @@ const InventoryTab: React.FC<InventoryTabProps> = ({
 
                             {/* Inventory Grid */}
                             <div className="inventory-container">
-                                {loading ? (
-                                    <InventorySkeleton />
-                                ) : error ? (
-                                    <div className="error-state">
-                                        <div className="error-icon">⚠️</div>
-                                        <p>{error}</p>
-                                        <button
-                                            onClick={() => window.location.reload()}
-                                            className="retry-button"
-                                        >
-                                            Retry
-                                        </button>
-                                    </div>
-                                ) : filteredInventory.length > 0 ? (
+                                {filteredInventory.length > 0 ? (
                                     <div className="inventory-grid">
                                         {filteredInventory.map((item) => (
                                             <InventoryItemCard

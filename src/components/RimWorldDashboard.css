@@ -11,19 +11,18 @@
 }
 
 /* Background image with overlay */
-.rimworld-dashboard::before {
-  content: '';
+.dashboard-background {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/public/assets/bg.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
   z-index: -2;
+  transition: background-image 0.5s ease-in-out; /* Smooth transition when changing */
 }
 
 /* Dark overlay for better readability */
@@ -34,25 +33,28 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6); /* Adjust opacity as needed */
+  background: rgba(0, 0, 0, 0.6);
   z-index: -1;
+  pointer-events: none; /* Ensure clicks pass through */
 }
 
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 25px;
-  width: 100%;
-  margin: 0 auto;
-  margin-bottom: 30px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 15px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  flex-wrap: wrap;
-  gap: 20px;
+/* Add style for the new Settings button */
+.settings-btn-trigger {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(77, 171, 247, 0.2);
+    color: #4dabf7;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(77, 171, 247, 0.4);
+}
+
+.settings-btn-trigger:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 .change-url-btn {
@@ -89,7 +91,7 @@
 }
 
 .header-left h1 {
-  margin: 0 0 15px 0;
+  margin: 0 0 0 0;
   color: white;
   font-size: 2em;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -118,46 +120,6 @@
   font-style: italic;
 }
 
-.header-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.refresh-btn, .auto-refresh-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.refresh-btn {
-  background: linear-gradient(45deg, #007bff, #0056b3);
-  color: white;
-}
-
-.refresh-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-}
-
-.auto-refresh-btn {
-  background: rgba(108, 117, 125, 0.8);
-  color: white;
-}
-
-.auto-refresh-btn.active {
-  background: linear-gradient(45deg, #28a745, #1e7e34);
-}
-
-.auto-refresh-btn:hover {
-  transform: translateY(-2px);
-  opacity: 0.9;
-}
-
 .dashboard-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -173,6 +135,8 @@
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .chart-card:hover, .stats-card:hover {
@@ -201,11 +165,12 @@
 }
 
 .chart-container {
-  height: 300px;
+  flex-grow: 1;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
+  min-height: 0;
 }
 
 .chart-loading {
@@ -650,50 +615,6 @@
   background-color: #5a6268;
 }
 
-/* Tabs Navigation */
-.tabs-navigation {
-  display: flex;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 8px;
-  width: 100%;
-  margin: 0 auto;
-  margin-bottom: 25px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  gap: 8px;
-}
-
-.tab-button {
-  flex: 1;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: #b0b0b0;
-  font-size: 1em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.tab-button:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  transform: translateY(-2px);
-}
-
-.tab-button.active {
-  background: rgba(77, 171, 247, 0.2);
-  color: #4dabf7;
-  border: 1px solid rgba(77, 171, 247, 0.4);
-  box-shadow: 0 4px 12px rgba(77, 171, 247, 0.3);
-}
-
 .footer-spacer {
   flex: 1;
   display: flex;
@@ -784,11 +705,6 @@
   padding: 6px 0;
 }
 
-.summary-stat-label {
-  color: #b0b0b0;
-  font-size: 0.9em;
-}
-
 .summary-stat-value {
   color: white;
   font-weight: 600;
@@ -871,9 +787,626 @@
 .dashboard-header,
 .tabs-navigation,
 .tab-content {
-  width: calc(100% - 50px); /* Same calculation as header */
-  max-width: 1800px; /* Optional: add max-width if header has one */
+  width: 100%;
+  max-width: 1800px;
   margin-left: auto;
   margin-right: auto;
   box-sizing: border-box;
+}
+
+/* Dashboard Actions Bar */
+.dashboard-actions-bar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto 25px auto;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dashboard-controls-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.add-card-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(77, 171, 247, 0.4);
+}
+
+.add-card-btn:hover {
+  background: rgba(77, 171, 247, 0.4);
+  color: white;
+}
+
+.trash-zone {
+  padding: 10px 20px;
+  border: 2px dashed rgba(255, 107, 107, 0.5);
+  border-radius: 8px;
+  color: rgba(255, 107, 107, 0.8);
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.trash-zone.over {
+  background: rgba(255, 107, 107, 0.2);
+  border-style: solid;
+  color: white;
+}
+
+.add-card-container {
+  position: relative;
+}
+
+.add-card-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: rgba(25, 25, 25, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+}
+
+.add-card-menu button {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+
+.add-card-menu button:hover {
+  background: rgba(77, 171, 247, 0.4);
+}
+
+.presets-container {
+  position: relative;
+}
+
+.presets-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(77, 171, 247, 0.2);
+  color: #4dabf7;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(77, 171, 247, 0.4);
+}
+
+.presets-btn:hover {
+  background: rgba(77, 171, 247, 0.4);
+  color: white;
+}
+
+/* React Grid Layout Container */
+.react-grid-layout-container {
+  position: relative;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+.react-grid-layout {
+  position: relative;
+  transition: height 200ms ease;
+  width: 100% !important;
+}
+
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top;
+  box-sizing: border-box;
+  padding: 10px;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform;
+}
+
+.react-grid-item.resizing {
+  z-index: 1;
+  will-change: width, height;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 3;
+  will-change: transform;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: rgba(77, 171, 247, 0.3);
+  border: 2px dashed rgba(77, 171, 247, 0.6);
+  border-radius: 12px;
+  transition-duration: 100ms;
+  z-index: 2;
+  user-select: none;
+}
+
+.react-resizable-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  background: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2IDYiIHN0eWxlPSJiYWNrZ3JvdW5kLWNvbG9yOiNmZmZmZmYwMCIgeD0iMHB4IiB5PSIwcHgiIHdpZHRoPSI2cHgiIGhlaWdodD0iNnB4Ij48ZyBvcGFjaXR5PSIwLjMwMiI+PHBhdGggZD0iTSA2IDYgTCAwIDYgTCAwIDQuMiBMIDQgNC4yIEwgNC4yIDQuMiBMIDQuMiAwIEwgNiAwIEwgNiA2IEwgNiA2IFoiIGZpbGw9IiMwMDAwMDAiLz48L2c+PC9zdmc+');
+  background-position: bottom right;
+  padding: 0 3px 3px 0;
+  background-repeat: no-repeat;
+  background-origin: content-box;
+  box-sizing: border-box;
+  cursor: se-resize;
+}
+
+/* Dashboard Grid Items */
+.grid-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.grid-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove old dashboard-grid styles */
+.dashboard-grid {
+  /* Remove these lines since we're using React Grid Layout */
+  display: block !important;
+  grid-template-columns: none !important;
+  gap: 0 !important;
+}
+
+/* Update tab content to use the new container */
+.tab-content.dashboard-tab {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+/* Make sure the trash zone is positioned correctly */
+.trash-zone {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Ensure mobile responsiveness */
+@media (max-width: 768px) {
+  .react-grid-layout-container {
+    padding: 0 10px;
+  }
+  
+  .tab-content.dashboard-tab {
+    padding: 0 10px;
+  }
+  
+  .dashboard-actions-bar {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .dashboard-controls-left {
+    justify-content: center;
+  }
+  
+  .trash-zone {
+    text-align: center;
+  }
+}
+
+/* For the React Grid Layout columns */
+.react-grid-layout {
+  margin: 0 -10px; /* Compensate for item padding */
+}
+
+/* Adjust grid item for better mobile */
+@media (max-width: 768px) {
+  .react-grid-item {
+    padding: 5px;
+  }
+}
+
+/* Add to RimWorldDashboard.css */
+.dashboard-tab-content {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* Make sure ReactGridLayout takes full width */
+.dashboard-tab-content .react-grid-layout {
+  width: 100% !important;
+  max-width: 1800px;
+}
+
+/* Update the .react-grid-layout-container if it exists */
+.react-grid-layout-container {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+/* If you have .tab-content class, make it consistent */
+.tab-content.dashboard-tab {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+.dashboard-grid-container {
+  width: 100%;
+  max-width: 1800px;
+  margin: 0 auto;
+  padding: 0 0;
+  box-sizing: border-box;
+}
+
+.dashboard-grid-container .react-grid-layout {
+  width: 100% !important;
+}
+
+/* Remove background from inner content */
+.chart-card-content,
+.stats-card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Remove background and other styles from chart-card, stats-card classes since they're now on grid-item */
+.chart-card,
+.stats-card {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  border: none;
+  height: 100%;
+}
+
+/* Add the card styles to grid-item instead */
+.grid-item {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.grid-item:hover {
+  transform: translateY(-5px);
+}
+
+.grid-item .chart-container {
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+/* Add this CSS */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.chart-container > div {
+  width: 100% !important;
+  height: 100% !important;
+  position: relative !important;
+}
+
+.chart-container canvas {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  display: block !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+}
+
+/* Important: Make sure parent containers don't restrict height */
+.grid-item {
+  height: 100%;
+}
+
+.grid-item-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0; /* Crucial for flex shrinking */
+}
+
+.empty-icon {
+    opacity: 0.4 !important;
+}
+
+/* --- HEADER CONTROLS --- */
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Shared Base Style for all Header Buttons */
+.refresh-btn, .auto-refresh-btn {
+  padding: 10px 20px;
+  height: 40px; /* Enforce consistent height */
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  /* Glass Base */
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  /* Flex for centering text/icons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hover Effect for all */
+.refresh-btn:hover, .auto-refresh-btn:hover {
+  transform: translateY(-2px);
+  color: white;
+}
+
+/* --- BLUE BUTTONS (Refresh / Change API) --- */
+.refresh-btn {
+  background: rgba(77, 171, 247, 0.15); /* Soft Blue Glass */
+  color: #4dabf7;
+  border-color: rgba(77, 171, 247, 0.3);
+}
+
+.refresh-btn:hover {
+  background: rgba(77, 171, 247, 0.3);
+  box-shadow: 0 0 15px rgba(77, 171, 247, 0.2); /* Blue Glow */
+  border-color: #4dabf7;
+}
+
+/* --- AUTO REFRESH (OFF STATE) --- */
+.auto-refresh-btn {
+  background: rgba(255, 255, 255, 0.05); /* Dark/Neutral Glass */
+  color: #aaa;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.auto-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* --- AUTO REFRESH (ON STATE) --- */
+.auto-refresh-btn.active {
+  background: rgba(40, 167, 69, 0.15); /* Soft Green Glass */
+  color: #69db7c;
+  border-color: rgba(40, 167, 69, 0.3);
+}
+
+.auto-refresh-btn.active:hover {
+  background: rgba(40, 167, 69, 0.3);
+  box-shadow: 0 0 15px rgba(40, 167, 69, 0.2); /* Green Glow */
+  border-color: #69db7c;
+}
+
+
+
+/* --- CENTERED FLOATING NAVBAR --- */
+.dashboard-navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Constraint & Centering */
+    width: 98%;           /* Leave a tiny gap on small screens */
+    max-width: 1800px;    /* MATCHES YOUR GRID MAX-WIDTH */
+    margin: 10px auto 20px auto; /* Centered with spacing */
+    
+    padding: 12px 25px;
+    box-sizing: border-box;
+
+    /* Floating Glass Style */
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px; /* Rounded corners again */
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* LEFT: Title */
+.nav-brand h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    white-space: nowrap;
+}
+
+/* CENTER: Tabs */
+.nav-tabs {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex: 1; /* Allow it to take space between title and buttons */
+    
+    /* Background for the tab pill container */
+    background: rgba(0, 0, 0, 0.2);
+    padding: 5px;
+    border-radius: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Tab Buttons */
+.nav-tab-btn {
+    padding: 8px 20px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: #bbb;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.nav-tab-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab-btn.active {
+    background: rgba(77, 171, 247, 0.3); /* Blue tint */
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* RIGHT: Controls */
+.nav-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nav-ctrl-btn {
+    padding: 8px 16px;
+    height: 38px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 600;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nav-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.nav-ctrl-btn.primary {
+    background: rgba(77, 171, 247, 0.2);
+    border-color: rgba(77, 171, 247, 0.3);
+    color: #74c0fc;
+}
+
+.nav-ctrl-btn.primary:hover {
+    background: rgba(77, 171, 247, 0.3);
+    color: white;
+}
+
+.nav-ctrl-btn.auto.active {
+    background: rgba(64, 192, 87, 0.2);
+    border-color: rgba(64, 192, 87, 0.3);
+    color: #69db7c;
+}
+
+/* Responsive: Stack on Mobile */
+@media (max-width: 1000px) {
+    .dashboard-navbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 15px;
+        padding: 15px;
+        border-radius: 0; /* Optional: Reset radius on full mobile width */
+        width: 100%;
+        margin-top: 0;
+    }
+    
+    .nav-brand { text-align: center; }
+    
+    .nav-tabs {
+        overflow-x: auto;
+        justify-content: flex-start;
+    }
+    
+    .nav-controls {
+        justify-content: center;
+    }
 }

@@ -9,9 +9,9 @@ interface ModsTabProps {
   loading?: boolean;
 }
 
-const ModsTab: React.FC<ModsTabProps> = ({ 
-  modsInfo = [], 
-  loading = false 
+const ModsTab: React.FC<ModsTabProps> = ({
+  modsInfo = [],
+  loading = false
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'load_order' | 'name'>('load_order');
@@ -41,7 +41,7 @@ const ModsTab: React.FC<ModsTabProps> = ({
     const rimApiExtensions = [
       'redeyedev.rimapi',
     ];
-    
+
     return rimApiExtensions.includes(packageId);
   };
 
@@ -50,15 +50,15 @@ const ModsTab: React.FC<ModsTabProps> = ({
     const extensionEndpoints: { [key: string]: string } = {
       'redeyedev.rimapi': 'https://steamcommunity.com/sharedfiles/filedetails/?id=3593423732',
     };
-    
+
     return extensionEndpoints[packageId] || `/api/v1/${packageId.split('.').pop()}/info`;
   };
 
   const getModType = (mod: ModInfo): 'core' | 'dlc' | 'mod' | 'library' | 'rimapi' => {
     const rimApi = ['redeyedev.rimapi'];
-    const coreMods = ['ludeon.rimworld', 'brrainz.harmony', 'unlimitedhugs.hugslib'];
-    const dlcMods = ['ludeon.rimworld.royalty', 'ludeon.rimworld.ideology', 'ludeon.rimworld.biotech', 'ludeon.rimworld.anomaly'];
-    const libraryMods = ['zetrith.prepatcher', 'bs.fishery', 'imranfish.xmlextensions'];
+    const coreMods = ['ludeon.rimworld'];
+    const dlcMods = ['ludeon.rimworld.royalty', 'ludeon.rimworld.ideology', 'ludeon.rimworld.biotech', 'ludeon.rimworld.anomaly', 'ludeon.rimworld.odyssey'];
+    const libraryMods = ['brrainz.harmony', 'unlimitedhugs.hugslib', 'zetrith.prepatcher', 'bs.fishery', 'imranfish.xmlextensions'];
 
     if (rimApi.includes(mod.package_id)) return 'rimapi';
     if (coreMods.includes(mod.package_id)) return 'core';
@@ -119,7 +119,7 @@ const ModsTab: React.FC<ModsTabProps> = ({
             {filteredAndSortedMods.map((mod) => {
               const modType = getModType(mod);
               const isRimApiExtension = hasRimApiExtension(mod.package_id);
-              
+
               return (
                 <div key={mod.package_id} className={`mod-card ${modType}`}>
                   <div className="mod-header">
@@ -134,12 +134,12 @@ const ModsTab: React.FC<ModsTabProps> = ({
                       #{mod.load_order}
                     </div>
                   </div>
-                  
+
                   <div className="mod-details">
                     <div className="mod-type-badge">
                       {modType.toUpperCase()}
                     </div>
-                    
+
                     {isRimApiExtension && (
                       <a
                         href={getRimApiExtensionUrl(mod.package_id)}

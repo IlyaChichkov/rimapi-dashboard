@@ -1,0 +1,385 @@
+/* src/components/PresetsModal.css */
+
+.presets-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 20px; /* Prevents modal from touching edges on small screens */
+    animation: presetsFadeIn 0.2s ease-out;
+}
+
+.presets-modal-content {
+    background: #1e1e1e; /* Matches your example dark theme */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 500px; /* Slightly wider than summary modal for the list */
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: presetsSlideIn 0.3s ease-out;
+    color: #fff;
+    max-height: 85vh; /* Ensure it doesn't grow taller than screen */
+}
+
+@keyframes presetsSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes presetsFadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* --- HEADER --- */
+.presets-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.presets-modal-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.presets-close-btn {
+    background: none;
+    border: none;
+    color: #b0b0b0;
+    font-size: 2rem;
+    cursor: pointer;
+    padding: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.presets-close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* --- BODY & SCROLLING --- */
+.presets-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* --- SECTIONS --- */
+.presets-save-section {
+    padding-bottom: 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.presets-save-section h3, 
+.presets-list-section h3 {
+    margin: 0 0 16px 0;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 1px;
+    font-weight: 600;
+}
+
+/* --- INPUTS --- */
+.presets-input-group {
+    display: flex;
+    gap: 12px;
+}
+
+.presets-name-input {
+    flex: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 16px;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.presets-name-input:focus {
+    outline: none;
+    border-color: #4dabf7;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* --- BUTTONS --- */
+.presets-save-btn {
+    background: #4dabf7; /* Solid color for better visibility */
+    color: white;
+    border: none;
+    padding: 0 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.presets-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.presets-save-btn:not(:disabled):hover {
+    background: #3b8dbf;
+    transform: translateY(-1px);
+}
+
+.presets-update-btn {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(40, 167, 69, 0.15);
+    color: #4cd168; /* Brighter green */
+    border: 1px solid rgba(40, 167, 69, 0.4);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.presets-update-btn:hover {
+    background: rgba(40, 167, 69, 0.3);
+    color: white;
+}
+
+/* --- LIST --- */
+.presets-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.preset-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.preset-list-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.preset-list-item.active {
+    background: rgba(77, 171, 247, 0.15);
+    border-color: rgba(77, 171, 247, 0.5);
+}
+
+.preset-select-action {
+    background: none;
+    border: none;
+    color: #e0e0e0;
+    text-align: left;
+    flex: 1;
+    cursor: pointer;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.preset-list-item.active .preset-select-action {
+    color: #4dabf7;
+    font-weight: 600;
+}
+
+.preset-delete-action {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+}
+
+.preset-delete-action:hover {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.15);
+}
+
+.presets-empty-state {
+    text-align: center;
+    color: #888;
+    font-style: italic;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+}
+
+/* Add these new styles to your existing CSS file */
+
+.preset-error-banner {
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    text-align: center;
+    animation: presetsFadeIn 0.2s;
+}
+
+.preset-item-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.preset-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.preset-icon-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.preset-icon-btn.rename { color: #4dabf7; }
+.preset-icon-btn.delete { color: #666; }
+.preset-icon-btn.delete:hover { color: #ff6b6b; background: rgba(255, 107, 107, 0.15); }
+
+/* Edit Mode Styles */
+.preset-edit-mode {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+}
+
+.preset-edit-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #4dabf7;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.preset-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.preset-edit-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-confirm-btn, .edit-cancel-btn {
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.edit-confirm-btn {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+.edit-confirm-btn:hover { background: rgba(40, 167, 69, 0.4); color: white; }
+
+.edit-cancel-btn {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+.edit-cancel-btn:hover { background: rgba(255, 107, 107, 0.4); color: white; }
+
+.preset-dot {
+    color: #4dabf7;
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
+/* src/components/PresetsModal.css */
+
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.1em;
+}
+
+.header-icon-btn:hover {
+    background: rgba(77, 171, 247, 0.2);
+    border-color: #4dabf7;
+    color: white;
+    transform: translateY(-1px);
+}
+
+.header-separator {
+    width: 1px;
+    height: 24px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 5px;
+}

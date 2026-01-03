@@ -1,4 +1,9 @@
-<img src="../media/preview/dashboard.png" width="800">
+<div align="center">
+<img src="../media/preview/dashboard.png" alt="RimWorld Dashboard Preview" width="800">
+
+<br />
+
+</div>
 
 ![RimWorld Dashboard](https://img.shields.io/badge/RimWorld-1.5%20Compatible-blue)
 ![React](https://img.shields.io/badge/React-18.0+-61dafb)
@@ -6,46 +11,58 @@
 
 # RimWorld Colony Dashboard
 
-A real-time web dashboard for monitoring your RimWorld colony, built with React, TypeScript, and Chart.js. This dashboard connects directly to your RimWorld game via the RIMAPI mod to display live colony statistics and analytics.
+A highly customizable, real-time web dashboard for monitoring your RimWorld colony. Built with React and TypeScript, this application connects directly to your running game via the RIMAPI mod, transforming raw game data into a modern, interactive command center.
 
-## Features
+## Key Features
 
-- 📊 **Real-time Colony Monitoring**: Live data from your RimWorld game
-- ⚡ **Auto-refresh**: Updates every 5 seconds (configurable)
-- 🎨 **Beautiful Visualizations**: Interactive charts for colony metrics
-- 💰 **Resource Management**: Monitor inventory and wealth
-- ⚡ **Power Grid Status**: Real-time power generation and consumption
-- 👥 **Population Overview**: Colonists, prisoners, animals
-- 📱 **Responsive Design**: Works on desktop, tablet, and mobile
+### Customizable Interface
+
+* **Drag & Drop Grid:** Fully flexible layout engine. Resize, move, and arrange widgets exactly how you want them.
+* **Widget Library:** Add charts for Mood, Health, Wealth, Power, Weather, Faction Relations, and Message Logs.
+* **Save & Load Presets:** Save your favorite layouts, switch between them instantly, or export/import them to share with others.
+* **Theming:** Glassmorphism UI with customizable background images and blur intensity.
+
+### Deep Analytics
+
+* **Colonist Insights:** Detailed breakdown of colonist needs, mood trends, and health conditions.
+* **Medical Center:** Triage view showing bleeding rates, immunity progress, and urgent health alerts.
+* **Economy & Resources:** Real-time inventory tracking and wealth distribution charts.
+* **Research Tree:** Monitor current research progress and queue status.
+* **Power Grid:** Visualize power generation vs. consumption and battery storage levels.
+
+### Technical
+
+* **Auto-Refresh:** Configurable polling interval (default 5s) for near real-time updates.
+* **Responsive:** optimized for desktop multi-monitor setups but functional on tablets.
+* **Zero-Config option:** Works out of the box with the default RIMAPI settings.
 
 ## Prerequisites
 
-- RimWorld v1.5+
-- [RIMAPI Mod](https://github.com/IlyaChichkov/RIMAPI) installed and enabled
-- Node.js 16+ and npm
+1. **RimWorld** (v1.5+ recommended)
+2. **[RIMAPI Mod](https://github.com/IlyaChichkov/RIMAPI)** installed and active.
 
-## Getting started
+## Getting Started
 
-### 1. Install RIMAPI Mod
+### 1. Install the Mod
 
-First, ensure you have the RIMAPI mod installed in your RimWorld game:
+To expose your game data, you must install the API mod:
 
-1. Download the latest RIMAPI mod from the [**Releases**](https://github.com/IlyaChichkov/RIMAPI/releases) page or [**Steam workshop page**](https://steamcommunity.com/sharedfiles/filedetails/?id=3593423732)
-2. Extract to your RimWorld Mods folder (if loaded from Github)
-3. Enable the mod in RimWorld's Mod configuration
-4. Start your RimWorld game
+1. Download the latest release from the **[RIMAPI GitHub Releases](https://github.com/IlyaChichkov/RIMAPI/releases)** or subscribe via **[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3593423732)**.
+2. Enable the mod in your RimWorld mod list.
+3. Load your save file. The API server starts automatically on port `8765`.
 
-### 2. Run the Dashboard
+### 2. Connect the Dashboard
 
-#### 2.1. Using the Web Version
+#### Option A: Web Version (Recommended)
 
-Visit: [RimWorld-Dashboard](https://ilyachichkov.github.io/rimapi-dashboard/)
+No installation required.
 
-Enter your RIMAPI server URL (default http://localhost:8765/api/v1)
+1. Open the **[RimWorld Dashboard](https://ilyachichkov.github.io/rimapi-dashboard/)**.
+2. Click **Connect** (Default URL: `http://localhost:8765/api/v1`).
 
-Click "Connect"
+#### Option B: Run Locally
 
-#### 2.2. Locally
+If you prefer hosting it yourself or want to contribute:
 
 ```bash
 # Clone the repository
@@ -55,23 +72,25 @@ cd rimworld-dashboard
 # Install dependencies
 npm install
 
-# Start the development server
+# Start the application
 npm start
+
 ```
 
-The dashboard will open at `http://localhost:3000`
+The dashboard will open at `http://localhost:3000`.
+
+## Community & Support
+
+* **Issues:** If you find a bug, please [open an issue](https://www.google.com/search?q=https://github.com/your-username/rimworld-dashboard/issues).
+* **Discord:** Join our community for help and discussion: **[Join Discord](https://discord.gg/Css9b9BgnM)**
+* **API Docs:** Read the [RIMAPI Documentation](https://github.com/IlyaChichkov/RIMAPI/blob/main/Docs/API.md) for technical details.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-If you encounter any issues:
-
-1. Check the [RIMAPI documentation](https://github.com/IlyaChichkov/RIMAPI/blob/main/Docs/API.md)
-2. Open an issue on GitHub
+This project is open-source and licensed under the [MIT License](https://www.google.com/search?q=LICENSE).
 
 ---
 
-**Note**: This is a fan-made project and is not officially affiliated with Ludeon Studios. RimWorld is a trademark of Ludeon Studios.
+*Disclaimer: This is a fan-made project and is not affiliated with Ludeon Studios. RimWorld is a trademark of Ludeon Studios.*
+
+---
