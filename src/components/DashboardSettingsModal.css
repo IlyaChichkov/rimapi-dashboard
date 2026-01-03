@@ -164,3 +164,157 @@
     background: rgba(255, 255, 255, 0.2);
     color: white;
 }
+
+/* src/components/DashboardSettingsModal.css */
+
+/* ... (Keep existing overlay/modal/header styles) ... */
+
+.settings-modal-body {
+    padding: 24px;
+    overflow-y: auto; /* Allow scrolling if gallery gets big */
+    max-height: 70vh;
+}
+
+/* ... (Keep existing section styles) ... */
+
+.settings-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.1);
+    margin: 20px 0;
+}
+
+/* NEW: Gallery Grid */
+.settings-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.gallery-item {
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    padding: 0;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 16/9;
+    transition: all 0.2s ease;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+
+.gallery-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.gallery-item:hover img {
+    transform: scale(1.1);
+}
+
+/* Active State (Selected) */
+.gallery-item.active {
+    border-color: #4dabf7;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.3);
+}
+
+.gallery-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 0.7em;
+    padding: 4px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.gallery-item:hover .gallery-label {
+    opacity: 1;
+}
+
+.settings-hint.credits {
+    font-size: 0.8em;
+    font-style: italic;
+    opacity: 0.7;
+}
+
+.settings-hint.credits a {
+    color: #4dabf7;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.settings-hint.credits a:hover {
+    text-decoration: underline;
+    opacity: 1;
+}
+
+/* Add these to the end of the file */
+
+.settings-label {
+    display: block;
+    font-size: 0.9em;
+    color: #b0b0b0;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.settings-slider-group {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slider-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.slider-value {
+    background: #4dabf7;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+.settings-slider {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #4dabf7;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.settings-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}

@@ -11,6 +11,7 @@ export interface DashboardPreset {
   layout: Layout;
   cardSettings: CardSettings;
   backgroundImage?: string;
+  backgroundBlur?: number;
 }
 
 export interface DashboardLayoutState {

@@ -19,9 +19,9 @@ export const useDashboardLayout = () => {
   const [layout, setLayout] = useState<Layout>(INITIAL_LAYOUT);
   const [cardSettings, setCardSettings] = useState<CardSettings>({});
   
-  // NEW: State to hold the background image of the currently loaded preset
   const [presetBgImage, setPresetBgImage] = useState<string | null>(null);
-  
+  const [presetBgBlur, setPresetBgBlur] = useState<number>(0);
+
   const [presets, setPresets] = useState<DashboardPreset[]>(() => {
     const saved = localStorage.getItem('dashboard_presets');
     return saved ? JSON.parse(saved) : [];
@@ -50,6 +50,7 @@ export const useDashboardLayout = () => {
         setLayout(preset.layout);
         setCardSettings(preset.cardSettings || {});
         setPresetBgImage(preset.backgroundImage || null);
+        setPresetBgBlur(preset.backgroundBlur || 0);
       }
     }
   }, [selectedPreset, presets]);
@@ -118,20 +119,24 @@ export const useDashboardLayout = () => {
   };
 
   // UPDATED: Now accepts currentBackgroundImage
-  const savePreset = (name: string, currentBackgroundImage?: string) => {
+  const savePreset = (name: string, currentBackgroundImage?: string, currentBackgroundBlur?: number) => {
     if (!name) return false;
     
     const newPreset: DashboardPreset = { 
       name, 
       layout, 
       cardSettings,
-      backgroundImage: currentBackgroundImage
+      backgroundImage: currentBackgroundImage,
+      backgroundBlur: currentBackgroundBlur,
     };
     
     const updated = [...presets.filter(p => p.name !== name), newPreset];
     
     setPresets(updated);
     localStorage.setItem('dashboard_presets', JSON.stringify(updated));
+    setSelectedPreset(name);
+    localStorage.setItem('last_selected_preset', name);
+
     setSelectedPreset(name);
     localStorage.setItem('last_selected_preset', name);
     return true;
@@ -149,7 +154,8 @@ export const useDashboardLayout = () => {
     cardSettings,
     presets,
     selectedPreset,
-    presetBgImage, // Export this so the main component can listen to it
+    presetBgImage,
+    presetBgBlur,
     handleLayoutChange,
     handleCardSettingsChange,
     onAddItem,
