@@ -37,7 +37,7 @@ const chartOptions = {
       labels: {
         color: '#eff8fdff',
         font: {
-          weight: 'bold' as const, // Use 'as const' for string literals
+          weight: 'bold' as const,
         },
       },
     },
@@ -47,12 +47,29 @@ const chartOptions = {
       ticks: {
         color: '#eff8fdff',
         font: {
-          weight: 'bold' as const, // Use 'as const' for string literals
+          weight: 'bold' as const,
         },
       },
     },
   },
+  // Add these properties
+  onResize: (chart: any, size: any) => {
+    // Force chart to redraw on resize
+    chart.resize();
+  },
+  animation: {
+    duration: 0, // Disable animations for smoother resizing
+  },
+  // Add transition for smoother resizing
+  transitions: {
+    active: {
+      animation: {
+        duration: 0
+      }
+    }
+  }
 };
+
 
 
 // Chart 1: Colonist Mood and Health

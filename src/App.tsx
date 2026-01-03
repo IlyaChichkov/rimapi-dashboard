@@ -18,6 +18,7 @@ function App() {
   const [isConfigured, setIsConfigured] = useState(false);
   const [gameStatus, setGameStatus] = useState<GameStatus>('checking');
 
+  // Load configuration on startup
   useEffect(() => {
     const savedUrl = localStorage.getItem('rimworldApiUrl');
     if (savedUrl) {
@@ -26,13 +27,18 @@ function App() {
       sseService.setApiUrl(savedUrl);
       setIsConfigured(true);
     } else {
+
+      // TODO: change to selected URL
       setApiUrl('http://localhost:8765/api/v1');
-      // If not configured, we will show ApiConfig right away
     }
   }, []);
 
+  // Check state via REST API
   const checkGameState = useCallback(async () => {
-    setGameStatus('checking');
+    // Only show "checking" if we are in a disconnected/error state
+    // This prevents the screen from flashing "Checking..." if we are already in the menu or playing
+    setGameStatus(prev => (prev === 'api_error' || prev === 'checking') ? 'checking' : prev);
+
     try {
       const state = await rimworldApi.fetchGameState();
       if (state) {
@@ -50,31 +56,55 @@ function App() {
     }
   }, []);
 
+  // --- SSE EVENT HANDLING ---
   useEffect(() => {
-    if (isConfigured) {
-      checkGameState();
-      sseService.connect();
-    }
+    if (!isConfigured) return;
+
+    // 1. Handler for Named Events (standard SSE)
+    const handleNamedGameLoaded = (e: any) => {
+      console.log("App: Received Named 'game_loaded' Event", e);
+      setGameStatus('playing');
+    };
+
+    const handleNamedExit = (e: any) => {
+      console.log("App: Received Named 'exit_to_menu' Event", e);
+      setGameStatus('menu');
+    };
+
+    // Listen to specific events
+    sseService.addEventListener('game_state', handleNamedGameLoaded);
+
+    // Initial connections
+    checkGameState();
+    sseService.connect();
+
+    return () => {
+      sseService.removeEventListener('game_state', handleNamedGameLoaded);
+    };
   }, [isConfigured, checkGameState]);
 
   const handleApiUrlChange = (url: string) => {
-    localStorage.setItem('rimworldApiUrl', url);
-    setApiUrl(url);
-    setApiBaseUrl(url);
-    sseService.setApiUrl(url);
+    const cleanUrl = url.replace(/\/$/, '');
+    localStorage.setItem('rimworldApiUrl', cleanUrl);
+    setApiUrl(cleanUrl);
+    setApiBaseUrl(cleanUrl);
+    sseService.setApiUrl(cleanUrl);
+    sseService.disconnect(); // Disconnect old
     setIsConfigured(true);
-    setGameStatus('checking'); // Re-check game state after URL change
+    setGameStatus('checking');
   };
 
   const handleResetConfig = () => {
     localStorage.removeItem('rimworldApiUrl');
+    sseService.disconnect();
     setIsConfigured(false);
   };
 
   const handleStartGame = async () => {
     try {
       await rimworldApi.startGame();
-      setTimeout(checkGameState, 5000); // Give game time to start, then re-check
+      // We rely on SSE now, but keep a fallback check
+      setTimeout(checkGameState, 8000);
     } catch (error) {
       console.error("Failed to start game:", error);
     }
@@ -84,13 +114,7 @@ function App() {
     if (!saveName) return;
     try {
       await rimworldApi.loadGame(saveName);
-      const interval = setInterval(async () => {
-        const state = await rimworldApi.fetchGameState();
-        if (state && state.program_state === 'Playing' && state.colonist_count > 0) {
-          setGameStatus('playing');
-          clearInterval(interval);
-        }
-      }, 5000);
+      // Wait for SSE to trigger the switch
     } catch (error) {
       console.error("Failed to trigger load game:", error);
     }
@@ -103,7 +127,7 @@ function App() {
 
     switch (gameStatus) {
       case 'checking':
-        return <LoadingScreen message="Checking game state..." />;
+        return <LoadingScreen message="Connecting to RimWorld..." />;
       case 'api_error':
         return <ApiConfig onApiUrlChange={handleApiUrlChange} currentUrl={apiUrl} onResetConfig={handleResetConfig} />;
       case 'menu':

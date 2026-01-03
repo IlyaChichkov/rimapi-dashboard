@@ -1,7 +1,7 @@
 // src/components/RimWorldDashboard.tsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ReactGridLayout, { useContainerWidth } from 'react-grid-layout';
-import type { Layout } from 'react-grid-layout';
+import type { Layout, LayoutItem } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import { sseService } from '../services/sseService';
@@ -32,6 +32,7 @@ import MessageFeedCard from './MessageFeedCard';
 import SseStatusCard from './SseStatusCard';
 import ColonistCard from './ColonistCard';
 import FactionRelationsCard from './FactionRelationsCard';
+import { ResponsiveChartWrapper } from './ResponsiveChartWrapper';
 
 // Tab types
 type DashboardTab = 'dashboard' | 'medical' | 'research' | 'colonists' | 'resources' | 'tools';
@@ -462,6 +463,19 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     }
   };
 
+  const handleResizeStop = useCallback((layout: Layout[], oldItem: LayoutItem, newItem: LayoutItem) => {
+    // Force all charts to resize after drag/resize
+    setTimeout(() => {
+      const charts = document.querySelectorAll('.chartjs-render-monitor');
+      charts.forEach((chart: any) => {
+        if (chart.__chartjs) {
+          chart.__chartjs.resize();
+          chart.__chartjs.update('none');
+        }
+      });
+    }, 50);
+  }, []);
+
   const availableCards = ['colonists', 'resources', 'power', 'population', 'colonySummary', 'colonist', 'sseStatus', 'messageFeed', 'factionRelations', 'caravanList'];
 
   if (loading && !data && !error) {
@@ -484,12 +498,22 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   const renderCard = (item: Layout[number]) => {
     const cardId = item.i.split('_')[0];
+
+    // 1. Define styles to force the flex container to shrink correctly
+    const cardContentStyle: React.CSSProperties = {
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      overflow: 'hidden' // Prevents spillover during resize
+    };
+
     switch (cardId) {
       case 'caravanList':
         return <CaravanListCard />;
+
       case 'colonists':
         return (
-          <div className="chart-card-content">
+          <div className="chart-card-content" style={cardContentStyle}>
             <div className="chart-header">
               <h3>Mood</h3>
               <div className="chart-corner-container">
@@ -503,14 +527,16 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                 </div>
               </div>
             </div>
-            <div className="chart-container">
+            {/* Applied chartContainerStyle here */}
+            <ResponsiveChartWrapper>
               {colonists.length > 0 ? <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} /> : <div className="no-data">No colonist data available</div>}
-            </div>
+            </ResponsiveChartWrapper>
           </div>
         );
+
       case 'resources':
         return (
-          <div className="chart-card-content">
+          <div className="chart-card-content" style={cardContentStyle}>
             <div className="chart-header">
               <h3>Resource Distribution</h3>
               <div className="resource-total">Total: {resources.total_items || 0} items</div>
@@ -614,6 +640,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   onLayoutChange={onLayoutChange}
                   onDragStop={onDragStop as any}
                   onDrag={onDrag as any}
+                  onResizeStop={handleResizeStop as any} // Add this
                   dragConfig={{
                     enabled: true,
                     cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle)'
