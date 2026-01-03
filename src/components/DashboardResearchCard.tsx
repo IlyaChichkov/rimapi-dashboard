@@ -1,8 +1,6 @@
 // src/components/DashboardResearchCard.tsx
 import React, { useState, useEffect } from 'react';
-// Ensure this imports from types.ts as per previous fixes
 import { ResearchProgress } from '../types';
-// Ensure this imports from the service as per previous fixes
 import { rimworldApi } from '../services/rimworldApi';
 import './DashboardResearchCard.css';
 
@@ -18,11 +16,32 @@ const DashboardResearchCard: React.FC = () => {
 
     const fetchResearch = async () => {
         try {
+            // Only set loading on first load to prevent flickering
             if (!research) setLoading(true);
+
             const data = await rimworldApi.fetchResearchProgress();
-            setResearch(data);
+
+            // --- FIX: Handle empty/null data as "Idle" state ---
+            if (!data || !data.name) {
+                setResearch({
+                    name: 'None',
+                    label: 'None',
+                    description: 'No research project selected.',
+                    progress_percent: 0,
+                    is_finished: false,
+                    tech_level: 'N/A',
+                    research_points: 0,
+                    can_start_now: true,
+                    player_has_any_appropriate_research_bench: true
+                } as ResearchProgress);
+            } else {
+                setResearch(data);
+            }
+
             setError(null);
         } catch (err) {
+            console.error("Research fetch error:", err);
+            // If it fails, keep existing data if possible, or show error
             setError('Failed to load research');
         } finally {
             setLoading(false);
@@ -35,8 +54,9 @@ const DashboardResearchCard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (loading && !research) return <div className="dash-research-card loading">Loading...</div>;
-    if (error || !research) return <div className="dash-research-card error">{error || "No Data"}</div>;
+    // Allow rendering if we have research data (even if it's the "None" object we created)
+    if (error && !research) return <div className="dash-research-card error">{error}</div>;
+    if (!research) return <div className="dash-research-card error">Processing...</div>;
 
     const hasActiveResearch = research.name && research.name !== 'None' && !research.is_finished;
     const isFinished = research.is_finished;
@@ -53,7 +73,7 @@ const DashboardResearchCard: React.FC = () => {
 
     return (
         <div className={`dash-research-card ${getStatusColor()}`}>
-            {/* Standard Header - Hidden on small sizes via CSS */}
+            {/* Standard Header */}
             <div className="card-header standard-header">
                 <h3>Current Research</h3>
                 <span className={`status-badge ${getStatusColor()}`}>
@@ -64,7 +84,7 @@ const DashboardResearchCard: React.FC = () => {
             <div className="research-body">
                 {hasActiveResearch || isFinished ? (
                     <div className="active-project-container">
-                        {/* Compact Header - Only visible on small sizes via CSS */}
+                        {/* Compact Header */}
                         <div className="compact-header">
                             <span className="compact-title">Research</span>
                             <span className={`compact-badge ${getStatusColor()}`}>{statusText}</span>
