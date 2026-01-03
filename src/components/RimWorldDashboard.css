@@ -1269,3 +1269,7 @@
   flex-direction: column;
   min-height: 0; /* Crucial for flex shrinking */
 }
+
+.empty-icon {
+    opacity: 0.4 !important;
+}

@@ -143,15 +143,6 @@ const CaravanListCard: React.FC = () => {
         return () => clearInterval(interval);
     }, []);
 
-    if (loading && caravans.length === 0) {
-        return (
-            <div className="caravan-card">
-                <div className="card-header"><h3>Active Caravans</h3></div>
-                <div className="caravan-loading">Loading...</div>
-            </div>
-        );
-    }
-
     if (error) {
         return (
             <div className="caravan-card">
