@@ -167,6 +167,10 @@ export interface ColonistMedicalInfo {
 export interface ColonistDetailed {
   sleep: number;
   comfort: number;
+  beauty: number;
+  joy: number;
+  energy: number;
+  drugsDesire: number;
   surrounding_beauty: number;
   fresh_air: number;
   colonist: Colonist;

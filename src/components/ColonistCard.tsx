@@ -98,7 +98,7 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
 
     // Get needs values (assuming they're in decimal 0-1 format)
     const hunger = needsInfo?.colonist.hunger ? Math.round(needsInfo.colonist.hunger * 100) : 0;
-    const comfort = needsInfo?.comfort ? Math.round(needsInfo.comfort * 100) : 0;
+    const joy = needsInfo?.joy ? Math.round(needsInfo.joy * 100) : 0;
     const sleep = needsInfo?.sleep ? Math.round(needsInfo.sleep * 100) : 0;
 
     // Helper function to get color based on need value
@@ -113,21 +113,21 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
         if (value >= 70) {
             switch (type) {
                 case 'hunger': return '🍗';
-                case 'comfort': return '🛋️';
+                case 'joy': return '🛋️';
                 case 'sleep': return '😴';
                 default: return '✅';
             }
         } else if (value >= 40) {
             switch (type) {
                 case 'hunger': return '🍽️';
-                case 'comfort': return '🪑';
+                case 'joy': return '🪑';
                 case 'sleep': return '😴';
                 default: return '⚠️';
             }
         } else {
             switch (type) {
                 case 'hunger': return '🥩';
-                case 'comfort': return '💺';
+                case 'joy': return '💺';
                 case 'sleep': return '😵';
                 default: return '❌';
             }
@@ -203,10 +203,10 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                                     </span>
                                 </div>
                                 <div className="need-item">
-                                    <span className="need-icon">🛋️</span>
-                                    <span className="need-label">Comfort:</span>
-                                    <span className={`need-value ${getNeedColor(comfort)}`}>
-                                        {comfort}%
+                                    <span className="need-icon">🎳</span>
+                                    <span className="need-label">Recreation:</span>
+                                    <span className={`need-value ${getNeedColor(joy)}`}>
+                                        {joy}%
                                     </span>
                                 </div>
                                 <div className="need-item">
@@ -237,16 +237,16 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                                 </div>
                                 <div className="need-row">
                                     <div className="need-header">
-                                        <span className="need-icon-large">{getNeedEmoji(comfort, 'comfort')}</span>
+                                        <span className="need-icon-large">{getNeedEmoji(joy, 'joy')}</span>
                                         <span className="need-title">Comfort</span>
                                     </div>
                                     <div className="need-bar">
                                         <div
-                                            className={`need-bar-fill ${getNeedColor(comfort)}`}
-                                            style={{ width: `${comfort}%` }}
+                                            className={`need-bar-fill ${getNeedColor(joy)}`}
+                                            style={{ width: `${joy}%` }}
                                         ></div>
                                     </div>
-                                    <span className={`need-percentage ${getNeedColor(comfort)}`}>{comfort}%</span>
+                                    <span className={`need-percentage ${getNeedColor(joy)}`}>{joy}%</span>
                                 </div>
                                 <div className="need-row">
                                     <div className="need-header">
@@ -314,14 +314,14 @@ const ColonistCard: React.FC<ColonistCardProps> = ({
                                         <div className="need-card-content">
                                             <div className="need-card-bar">
                                                 <div
-                                                    className={`need-card-fill ${getNeedColor(comfort)}`}
-                                                    style={{ width: `${comfort}%` }}
+                                                    className={`need-card-fill ${getNeedColor(joy)}`}
+                                                    style={{ width: `${joy}%` }}
                                                 ></div>
                                             </div>
                                             <div className="need-card-stats">
-                                                <span className="need-card-value">{comfort}%</span>
+                                                <span className="need-card-value">{joy}%</span>
                                                 <span className="need-card-status">
-                                                    {comfort >= 70 ? 'Comfortable' : comfort >= 40 ? 'Neutral' : 'Uncomfortable'}
+                                                    {joy >= 70 ? 'Comfortable' : joy >= 40 ? 'Neutral' : 'Uncomfortable'}
                                                 </span>
                                             </div>
                                         </div>
