@@ -121,7 +121,8 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
 
       const response = await rimworldApi.fetchAllFactions();
       if (response) {
-        setFactions(response);
+        const filteredFactions = response.filter((faction: any) => faction.def_name !== 'PlayerColony');
+        setFactions(filteredFactions);
         setError(null);
       }
     } catch (err: any) {
