@@ -245,3 +245,104 @@
     background: rgba(255, 255, 255, 0.02);
     border-radius: 8px;
 }
+
+/* Add these new styles to your existing CSS file */
+
+.preset-error-banner {
+    background: rgba(255, 107, 107, 0.2);
+    border: 1px solid rgba(255, 107, 107, 0.4);
+    color: #ff6b6b;
+    padding: 10px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+    text-align: center;
+    animation: presetsFadeIn 0.2s;
+}
+
+.preset-item-controls {
+    display: flex;
+    gap: 4px;
+}
+
+.preset-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1.1rem;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+}
+
+.preset-icon-btn:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.preset-icon-btn.rename { color: #4dabf7; }
+.preset-icon-btn.delete { color: #666; }
+.preset-icon-btn.delete:hover { color: #ff6b6b; background: rgba(255, 107, 107, 0.15); }
+
+/* Edit Mode Styles */
+.preset-edit-mode {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+}
+
+.preset-edit-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #4dabf7;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+.preset-edit-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(77, 171, 247, 0.2);
+}
+
+.preset-edit-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.edit-confirm-btn, .edit-cancel-btn {
+    border: none;
+    border-radius: 4px;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.edit-confirm-btn {
+    background: rgba(40, 167, 69, 0.2);
+    color: #28a745;
+}
+.edit-confirm-btn:hover { background: rgba(40, 167, 69, 0.4); color: white; }
+
+.edit-cancel-btn {
+    background: rgba(255, 107, 107, 0.2);
+    color: #ff6b6b;
+}
+.edit-cancel-btn:hover { background: rgba(255, 107, 107, 0.4); color: white; }
+
+.preset-dot {
+    color: #4dabf7;
+    margin-right: 8px;
+    font-size: 1.2em;
+}

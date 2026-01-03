@@ -1,4 +1,3 @@
-// src/components/PresetsModal.tsx
 import React, { useState } from 'react';
 import './PresetsModal.css';
 import { DashboardPreset } from '../types/dashboardTypes';
@@ -11,19 +10,58 @@ interface PresetsModalProps {
     onSave: (name: string) => void;
     onSelect: (name: string) => void;
     onDelete: (name: string) => void;
+    onRename: (oldName: string, newName: string) => boolean; // Updated Prop
 }
 
 const PresetsModal: React.FC<PresetsModalProps> = ({
-    isOpen, onClose, presets, selectedPreset, onSave, onSelect, onDelete
+    isOpen, onClose, presets, selectedPreset, onSave, onSelect, onDelete, onRename
 }) => {
     const [newPresetName, setNewPresetName] = useState('');
 
+    // State for renaming
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
     if (!isOpen) return null;
 
+    // --- SAVE NEW HANDLER ---
     const handleSave = () => {
-        if (newPresetName.trim()) {
-            onSave(newPresetName);
-            setNewPresetName(''); // Reset input
+        if (!newPresetName.trim()) return;
+
+        if (presets.some(p => p.name.toLowerCase() === newPresetName.trim().toLowerCase())) {
+            setErrorMsg(`Preset "${newPresetName}" already exists.`);
+            return;
+        }
+
+        onSave(newPresetName);
+        setNewPresetName('');
+        setErrorMsg(null);
+    };
+
+    // --- RENAME HANDLERS ---
+    const startEditing = (name: string) => {
+        setEditingId(name);
+        setEditName(name);
+        setErrorMsg(null);
+    };
+
+    const cancelEditing = () => {
+        setEditingId(null);
+        setEditName('');
+        setErrorMsg(null);
+    };
+
+    const saveRename = (oldName: string) => {
+        if (!editName.trim()) return;
+
+        const success = onRename(oldName, editName.trim());
+
+        if (success) {
+            setEditingId(null);
+            setErrorMsg(null);
+        } else {
+            setErrorMsg("Name already exists or is invalid.");
         }
     };
 
@@ -37,13 +75,15 @@ const PresetsModal: React.FC<PresetsModalProps> = ({
         <div className="presets-modal-overlay" onClick={onClose}>
             <div className="presets-modal-content" onClick={(e) => e.stopPropagation()}>
 
-                {/* Header */}
                 <div className="presets-modal-header">
                     <h2>Dashboard Presets</h2>
                     <button onClick={onClose} className="presets-close-btn">&times;</button>
                 </div>
 
                 <div className="presets-modal-body">
+
+                    {/* Error Banner */}
+                    {errorMsg && <div className="preset-error-banner">{errorMsg}</div>}
 
                     {/* Save Section */}
                     <div className="presets-save-section">
@@ -54,7 +94,10 @@ const PresetsModal: React.FC<PresetsModalProps> = ({
                                 className="presets-name-input"
                                 placeholder="New preset name..."
                                 value={newPresetName}
-                                onChange={(e) => setNewPresetName(e.target.value)}
+                                onChange={(e) => {
+                                    setNewPresetName(e.target.value);
+                                    if (errorMsg) setErrorMsg(null);
+                                }}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSave()}
                             />
                             <button
@@ -66,10 +109,9 @@ const PresetsModal: React.FC<PresetsModalProps> = ({
                             </button>
                         </div>
 
-                        {/* Quick Update Button if a preset is active */}
                         {selectedPreset && (
                             <button className="presets-update-btn" onClick={handleUpdateCurrent}>
-                                ↻ Save "{selectedPreset}" current layout
+                                ↻ Update "{selectedPreset}" with current layout
                             </button>
                         )}
                     </div>
@@ -86,26 +128,61 @@ const PresetsModal: React.FC<PresetsModalProps> = ({
                                         key={preset.name}
                                         className={`preset-list-item ${selectedPreset === preset.name ? 'active' : ''}`}
                                     >
-                                        <button
-                                            className="preset-select-action"
-                                            onClick={() => onSelect(preset.name)}
-                                        >
-                                            {selectedPreset === preset.name && <span>●</span>}
-                                            {preset.name}
-                                        </button>
+                                        {/* RENDER MODE: EDITING vs VIEWING */}
+                                        {editingId === preset.name ? (
+                                            <div className="preset-edit-mode">
+                                                <input
+                                                    type="text"
+                                                    value={editName}
+                                                    onChange={(e) => setEditName(e.target.value)}
+                                                    className="preset-edit-input"
+                                                    autoFocus
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') saveRename(preset.name);
+                                                        if (e.key === 'Escape') cancelEditing();
+                                                    }}
+                                                />
+                                                <div className="preset-edit-actions">
+                                                    <button onClick={() => saveRename(preset.name)} className="edit-confirm-btn">✓</button>
+                                                    <button onClick={cancelEditing} className="edit-cancel-btn">✕</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <button
+                                                    className="preset-select-action"
+                                                    onClick={() => onSelect(preset.name)}
+                                                >
+                                                    {selectedPreset === preset.name && <span className="preset-dot">●</span>}
+                                                    {preset.name}
+                                                </button>
 
-                                        <button
-                                            className="preset-delete-action"
-                                            title="Delete preset"
-                                            onClick={(e) => {
-                                                e.stopPropagation(); // Prevent selection when deleting
-                                                if (window.confirm(`Delete preset "${preset.name}"?`)) {
-                                                    onDelete(preset.name);
-                                                }
-                                            }}
-                                        >
-                                            🗑️
-                                        </button>
+                                                <div className="preset-item-controls">
+                                                    <button
+                                                        className="preset-icon-btn rename"
+                                                        title="Rename"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            startEditing(preset.name);
+                                                        }}
+                                                    >
+                                                        ✎
+                                                    </button>
+                                                    <button
+                                                        className="preset-icon-btn delete"
+                                                        title="Delete"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (window.confirm(`Delete preset "${preset.name}"?`)) {
+                                                                onDelete(preset.name);
+                                                            }
+                                                        }}
+                                                    >
+                                                        🗑️
+                                                    </button>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 ))}
                             </div>

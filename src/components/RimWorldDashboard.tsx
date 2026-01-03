@@ -49,7 +49,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const {
     layout, cardSettings, presets, selectedPreset,
     handleLayoutChange, handleCardSettingsChange, onAddItem, onRemoveItem,
-    savePreset, deletePreset, setSelectedPreset, presetBgImage, presetBgBlur
+    savePreset, deletePreset, setSelectedPreset, presetBgImage, presetBgBlur, renamePreset
   } = useDashboardLayout();
 
   // 3. Local UI State
@@ -387,9 +387,12 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           const success = savePreset(name, targetBgImage, backgroundBlur);
           if (success) addToast({ type: 'success', title: 'Preset saved!' });
         }}
-        onSelect={(name) => {
-          setSelectedPreset(name);
+        onRename={(oldName, newName) => {
+          const success = renamePreset(oldName, newName);
+          if (success) addToast({ type: 'success', title: 'Preset renamed' });
+          return success;
         }}
+        onSelect={(name) => setSelectedPreset(name)}
         onDelete={(name) => {
           deletePreset(name);
           addToast({ type: 'success', title: 'Preset deleted' });
