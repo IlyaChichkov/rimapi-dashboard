@@ -1,13 +1,13 @@
 <div align="center">
 <img src="../media/preview/dashboard.png" alt="RimWorld Dashboard Preview" width="800">
 
-![RimWorld Dashboard](https://img.shields.io/badge/RimWorld-1.5%20Compatible-blue)
-![React](https://img.shields.io/badge/React-18.0+-61dafb)
-![TypeScript](https://img.shields.io/badge/TypeScript-4.0+-3178c6)
-
 <br />
 
 </div>
+
+![RimWorld Dashboard](https://img.shields.io/badge/RimWorld-1.5%20Compatible-blue)
+![React](https://img.shields.io/badge/React-18.0+-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.0+-3178c6)
 
 # RimWorld Colony Dashboard
 
