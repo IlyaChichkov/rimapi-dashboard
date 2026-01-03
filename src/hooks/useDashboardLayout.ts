@@ -19,9 +19,10 @@ export const useDashboardLayout = () => {
   const [layout, setLayout] = useState<Layout>(INITIAL_LAYOUT);
   const [cardSettings, setCardSettings] = useState<CardSettings>({});
   
+  // Background State for the *Loaded* preset
   const [presetBgImage, setPresetBgImage] = useState<string | null>(null);
   const [presetBgBlur, setPresetBgBlur] = useState<number>(0);
-
+  
   const [presets, setPresets] = useState<DashboardPreset[]>(() => {
     const saved = localStorage.getItem('dashboard_presets');
     return saved ? JSON.parse(saved) : [];
@@ -44,11 +45,15 @@ export const useDashboardLayout = () => {
   // Load preset when selection changes
   useEffect(() => {
     if (selectedPreset && presets.length > 0) {
+      localStorage.setItem('last_selected_preset', selectedPreset);
+
       const preset = presets.find(p => p.name === selectedPreset);
       if (preset) {
         presetChangeRef.current = true;
         setLayout(preset.layout);
         setCardSettings(preset.cardSettings || {});
+        
+        // Load Background & Blur (Force null/0 if missing to clear previous state)
         setPresetBgImage(preset.backgroundImage || null);
         setPresetBgBlur(preset.backgroundBlur || 0);
       }
@@ -61,6 +66,28 @@ export const useDashboardLayout = () => {
     setCardSettings(prev => ({ ...prev, [cardId]: newSettings }));
   };
 
+  // Helper to persist updates to localStorage
+  const updatePresetInStorage = (
+    name: string, 
+    newLayout: Layout, 
+    newSettings: CardSettings, 
+    bgImage?: string,
+    bgBlur?: number
+  ) => {
+     const updatedPresets = presets.map(p => 
+        p.name === name ? { 
+          ...p, 
+          layout: newLayout, 
+          cardSettings: newSettings,
+          // IMPORTANT: If bgImage is undefined, keep the existing p.backgroundImage
+          backgroundImage: bgImage !== undefined ? bgImage : p.backgroundImage,
+          backgroundBlur: bgBlur !== undefined ? bgBlur : p.backgroundBlur
+        } : p
+     );
+     setPresets(updatedPresets);
+     localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+  };
+
   const handleLayoutChange = (newLayout: Layout) => {
     if (presetChangeRef.current) {
       presetChangeRef.current = false;
@@ -70,26 +97,12 @@ export const useDashboardLayout = () => {
     const bounded = newLayout.map(item => ({ ...item, isBounded: true }));
     setLayout(bounded);
     
-    // Auto-save logic (only updates layout, preserves existing BG)
+    // Auto-save Layout Changes (Preserve existing BG)
     if (selectedPreset) {
        const currentPreset = presets.find(p => p.name === selectedPreset);
-       const currentBg = currentPreset?.backgroundImage; // Preserve existing BG
-       updatePresetInStorage(selectedPreset, bounded, cardSettings, currentBg);
+       // We pass undefined for BG so updatePresetInStorage keeps the old one
+       updatePresetInStorage(selectedPreset, bounded, cardSettings); 
     }
-  };
-
-  // UPDATED: Now accepts optional bgImage
-  const updatePresetInStorage = (name: string, newLayout: Layout, newSettings: CardSettings, bgImage?: string) => {
-     const updatedPresets = presets.map(p => 
-        p.name === name ? { 
-          ...p, 
-          layout: newLayout, 
-          cardSettings: newSettings,
-          backgroundImage: bgImage !== undefined ? bgImage : p.backgroundImage 
-        } : p
-     );
-     setPresets(updatedPresets);
-     localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
   };
 
   const onAddItem = (itemId: string) => {
@@ -103,8 +116,7 @@ export const useDashboardLayout = () => {
     setLayout(newLayout);
     
     if (selectedPreset) {
-      const currentPreset = presets.find(p => p.name === selectedPreset);
-      updatePresetInStorage(selectedPreset, newLayout, cardSettings, currentPreset?.backgroundImage);
+      updatePresetInStorage(selectedPreset, newLayout, cardSettings);
     }
   };
 
@@ -112,13 +124,12 @@ export const useDashboardLayout = () => {
     const newLayout = layout.filter(item => item.i !== itemId);
     setLayout(newLayout);
     if (selectedPreset) {
-       const currentPreset = presets.find(p => p.name === selectedPreset);
-       updatePresetInStorage(selectedPreset, newLayout, cardSettings, currentPreset?.backgroundImage);
+       updatePresetInStorage(selectedPreset, newLayout, cardSettings);
        addToast({ type: 'info', title: 'Item removed', duration: 1500 });
     }
   };
 
-  // UPDATED: Now accepts currentBackgroundImage
+  // Manual Save (Overwrites everything including BG)
   const savePreset = (name: string, currentBackgroundImage?: string, currentBackgroundBlur?: number) => {
     if (!name) return false;
     
@@ -126,17 +137,16 @@ export const useDashboardLayout = () => {
       name, 
       layout, 
       cardSettings,
+      // Save the passed background/blur
       backgroundImage: currentBackgroundImage,
-      backgroundBlur: currentBackgroundBlur,
+      backgroundBlur: currentBackgroundBlur 
     };
     
+    // Replace if exists, or append if new
     const updated = [...presets.filter(p => p.name !== name), newPreset];
     
     setPresets(updated);
     localStorage.setItem('dashboard_presets', JSON.stringify(updated));
-    setSelectedPreset(name);
-    localStorage.setItem('last_selected_preset', name);
-
     setSelectedPreset(name);
     localStorage.setItem('last_selected_preset', name);
     return true;
@@ -147,6 +157,31 @@ export const useDashboardLayout = () => {
     setPresets(updated);
     localStorage.setItem('dashboard_presets', JSON.stringify(updated));
     if (selectedPreset === name) setSelectedPreset("");
+  };
+
+  const renamePreset = (oldName: string, newName: string) => {
+    // Basic Validation
+    if (!newName.trim() || newName === oldName) return false;
+    
+    // Check if name already exists
+    if (presets.some(p => p.name.toLowerCase() === newName.toLowerCase())) {
+      return false; 
+    }
+
+    const updatedPresets = presets.map(p => 
+      p.name === oldName ? { ...p, name: newName } : p
+    );
+
+    setPresets(updatedPresets);
+    localStorage.setItem('dashboard_presets', JSON.stringify(updatedPresets));
+
+    // If the renamed preset was the active one, update selection state
+    if (selectedPreset === oldName) {
+      setSelectedPreset(newName);
+      localStorage.setItem('last_selected_preset', newName);
+    }
+    
+    return true;
   };
 
   return {
@@ -162,6 +197,7 @@ export const useDashboardLayout = () => {
     onRemoveItem,
     savePreset,
     deletePreset,
-    setSelectedPreset
+    setSelectedPreset,
+    renamePreset
   };
 };
