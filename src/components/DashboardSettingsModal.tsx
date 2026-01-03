@@ -17,6 +17,9 @@ const BG_PRESETS = [
     { name: 'Muffalo', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/Muffalo/Loader/BGLoader.jpg' },
     { name: 'Thrumbo 3', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/Thrumbo/Loader/BGLoader%403.jpg' },
     { name: 'Thrumbo 5', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/Thrumbo/Loader/BGLoader%405.jpg' },
+    { name: 'USFM', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/USFM/Loader/BGLoader.jpg' },
+    { name: 'Classic Cassandra', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/Classic%20Cassandra/Loader/BGLoader.jpg' },
+    { name: 'Centipede', url: 'https://raw.githubusercontent.com/aRandomKiwi/RimThemes/main/Themes/Centipede/Loader/BGLoader%401.jpg' },
 ];
 
 const DashboardSettingsModal: React.FC<DashboardSettingsModalProps> = ({
