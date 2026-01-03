@@ -28,6 +28,40 @@ ChartJS.register(
   Legend
 );
 
+const chartColors = {
+  // Primary theme colors
+  primary: {
+    blue: 'rgba(86, 156, 214, 0.8)',     // Soft blue - main theme
+    teal: 'rgba(75, 192, 192, 0.8)',      // Teal for positive metrics
+    green: 'rgba(102, 187, 106, 0.8)',    // Soft green for good status
+    yellow: 'rgba(255, 193, 7, 0.8)',     // Amber yellow for warnings
+    orange: 'rgba(255, 149, 0, 0.8)',     // Orange for medium alerts
+    red: 'rgba(239, 83, 80, 0.8)',        // Soft red for critical alerts
+    purple: 'rgba(171, 71, 188, 0.8)',    // Purple for neutral/misc
+  },
+
+  // Alternative shades for variety
+  alternative: {
+    blue: 'rgba(66, 165, 245, 0.8)',
+    green: 'rgba(56, 142, 60, 0.8)',
+    orange: 'rgba(245, 124, 0, 0.8)',
+    red: 'rgba(229, 57, 53, 0.8)',
+    purple: 'rgba(142, 36, 170, 0.8)',
+  },
+
+  // Border colors (slightly darker)
+  border: {
+    blue: 'rgba(86, 156, 214, 1)',
+    teal: 'rgba(75, 192, 192, 1)',
+    green: 'rgba(102, 187, 106, 1)',
+    yellow: 'rgba(255, 193, 7, 1)',
+    orange: 'rgba(255, 149, 0, 1)',
+    red: 'rgba(239, 83, 80, 1)',
+    purple: 'rgba(171, 71, 188, 1)',
+  }
+};
+
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -233,11 +267,15 @@ export const PowerChart: React.FC<PowerChartProps> = ({ power }) => {
           power?.currently_stored_power || 0
         ],
         backgroundColor: [
-          'rgba(17, 212, 43, 0.8)',  // Generated - Green
-          'rgba(255, 99, 132, 0.8)',  // Consumed - Red
-          'rgba(52, 40, 221, 0.8)',  // Stored - Yellow
+          chartColors.primary.green,
+          chartColors.primary.red,
+          chartColors.primary.blue,
         ],
-        borderWidth: 1,
+        borderColor: [
+          chartColors.border.green,
+          chartColors.border.red,
+          chartColors.border.blue,
+        ]
       },
     ],
   };
