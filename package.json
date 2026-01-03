@@ -4,6 +4,7 @@
   "homepage": "https://ilyachichkov.github.io/rimapi-dashboard/",
   "private": true,
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "@tanstack/react-table": "^8.21.3",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -24,13 +25,11 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
-  },
+  "start": "craco start",
+  "build": "craco build",
+  "test": "craco test",
+  "eject": "react-scripts eject"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -50,6 +49,7 @@
     ]
   },
   "devDependencies": {
+    "babel-plugin-module-resolver": "^5.0.2",
     "gh-pages": "^6.3.0"
   }
 }
