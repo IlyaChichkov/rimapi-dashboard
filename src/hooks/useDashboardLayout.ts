@@ -123,8 +123,16 @@ export const useDashboardLayout = () => {
   const onRemoveItem = (itemId: string) => {
     const newLayout = layout.filter(item => item.i !== itemId);
     setLayout(newLayout);
+
+    const newCardSettings = { ...cardSettings };
+    
+    if (newCardSettings[itemId]) {
+        delete newCardSettings[itemId];
+        setCardSettings(newCardSettings);
+    }
+
     if (selectedPreset) {
-       updatePresetInStorage(selectedPreset, newLayout, cardSettings);
+       updatePresetInStorage(selectedPreset, newLayout, newCardSettings);
        addToast({ type: 'info', title: 'Item removed', duration: 1500 });
     }
   };
