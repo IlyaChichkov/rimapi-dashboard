@@ -59,6 +59,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const [isPresetsModalOpen, setPresetsModalOpen] = useState(false); // Renamed for clarity
   const [editingCardId, setEditingCardId] = useState<string | null>(null);
   const [medicalTabColonistFilter, setMedicalTabColonistFilter] = useState<string[]>([]);
+  const [isDashboardReady, setIsDashboardReady] = useState(false);
 
   const { addToast } = useToast();
   const trashRef = useRef<HTMLDivElement>(null);
@@ -123,14 +124,23 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   // Re-measure grid when tab changes
   useEffect(() => {
     if (activeTab === 'dashboard') {
-      setTimeout(() => measureWidth(), 100);
+      setIsDashboardReady(false);
+
+      const timer = setTimeout(() => {
+        measureWidth();
+        setIsDashboardReady(true);
+      }, 100); // 100ms delay is usually enough
+
+      return () => clearTimeout(timer);
+    } else {
+      setIsDashboardReady(false);
     }
   }, [activeTab, measureWidth, loading]);
 
   const availableCards = [
     'colonists', 'resources', 'power', 'population', 'colonySummary',
     'colonist', 'sseStatus', 'messageFeed', 'factionRelations',
-    'caravanList', 'currentResearch'
+    'caravanList', 'currentResearch', 'gameInfo'
   ];
 
   useEffect(() => {
@@ -218,9 +228,9 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         return (
           <div className="tab-content dashboard-tab">
             <div className="dashboard-grid-container" ref={containerRef}>
-              {mounted && (
+              {mounted && isDashboardReady && (
                 <ReactGridLayout
-                  key={`grid-${width}`}
+                  key="dashboard-grid"
                   className="layout"
                   layout={layout}
                   width={width}
@@ -234,7 +244,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   }}
                   onDragStop={onDragStop as any}
                   onDrag={onDrag as any}
-                  onResizeStop={handleResizeStop as any}
                   dragConfig={{
                     enabled: true,
                     cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle)'
@@ -254,6 +263,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                           power={power}
                           creatures={creatures}
                           getSortedColonists={getSortedColonists}
+                          autoRefresh={autoRefresh}
                         />
                       </div>
                       <div className="react-resizable-handle" />
@@ -292,13 +302,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
       <header className="dashboard-header">
         <div className="header-left">
           <h1>RimWorld Colony Dashboard</h1>
-          <div className="game-info">
-            <span>Date: {map_datetime.datetime || 'Unknown'}</span>
-            <span>Weather: {weather.weather || 'Unknown'}</span>
-            <span>Temp: {Math.round(weather.temperature || 0)}°C</span>
-            <span>Storyteller: {gameState.storyteller || 'Unknown'}</span>
-            {lastUpdated && <div className="last-updated">Last updated: {lastUpdated.toLocaleTimeString()}</div>}
-          </div>
         </div>
         <div className="header-controls">
           <button onClick={() => setAutoRefresh(!autoRefresh)} className={`auto-refresh-btn ${autoRefresh ? 'active' : ''}`}>
@@ -405,9 +408,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
           const link = document.createElement('a');
           link.href = href;
           link.download = `rimworld_dashboard_presets_${new Date().toISOString().slice(0, 10)}.json`;
-          document.body.appendChild(link);
           link.click();
-          document.body.removeChild(link);
           addToast({ type: 'success', title: 'Presets exported to file' });
         }}
         onImport={(file) => {

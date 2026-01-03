@@ -108,7 +108,7 @@
 }
 
 .header-left h1 {
-  margin: 0 0 15px 0;
+  margin: 0 0 0 0;
   color: white;
   font-size: 2em;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
@@ -135,46 +135,6 @@
   font-size: 0.8em;
   color: #b0b0b0;
   font-style: italic;
-}
-
-.header-controls {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.refresh-btn, .auto-refresh-btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.refresh-btn {
-  background: linear-gradient(45deg, #007bff, #0056b3);
-  color: white;
-}
-
-.refresh-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-}
-
-.auto-refresh-btn {
-  background: rgba(108, 117, 125, 0.8);
-  color: white;
-}
-
-.auto-refresh-btn.active {
-  background: linear-gradient(45deg, #28a745, #1e7e34);
-}
-
-.auto-refresh-btn:hover {
-  transform: translateY(-2px);
-  opacity: 0.9;
 }
 
 .dashboard-grid {
@@ -1291,4 +1251,77 @@
 
 .empty-icon {
     opacity: 0.4 !important;
+}
+
+/* --- HEADER CONTROLS --- */
+.header-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Shared Base Style for all Header Buttons */
+.refresh-btn, .auto-refresh-btn {
+  padding: 10px 20px;
+  height: 40px; /* Enforce consistent height */
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  /* Glass Base */
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  /* Flex for centering text/icons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* Hover Effect for all */
+.refresh-btn:hover, .auto-refresh-btn:hover {
+  transform: translateY(-2px);
+  color: white;
+}
+
+/* --- BLUE BUTTONS (Refresh / Change API) --- */
+.refresh-btn {
+  background: rgba(77, 171, 247, 0.15); /* Soft Blue Glass */
+  color: #4dabf7;
+  border-color: rgba(77, 171, 247, 0.3);
+}
+
+.refresh-btn:hover {
+  background: rgba(77, 171, 247, 0.3);
+  box-shadow: 0 0 15px rgba(77, 171, 247, 0.2); /* Blue Glow */
+  border-color: #4dabf7;
+}
+
+/* --- AUTO REFRESH (OFF STATE) --- */
+.auto-refresh-btn {
+  background: rgba(255, 255, 255, 0.05); /* Dark/Neutral Glass */
+  color: #aaa;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.auto-refresh-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* --- AUTO REFRESH (ON STATE) --- */
+.auto-refresh-btn.active {
+  background: rgba(40, 167, 69, 0.15); /* Soft Green Glass */
+  color: #69db7c;
+  border-color: rgba(40, 167, 69, 0.3);
+}
+
+.auto-refresh-btn.active:hover {
+  background: rgba(40, 167, 69, 0.3);
+  box-shadow: 0 0 15px rgba(40, 167, 69, 0.2); /* Green Glow */
+  border-color: #69db7c;
 }
