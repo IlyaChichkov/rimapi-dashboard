@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ThreeEvent } from '@react-three/fiber';
 import { Cylinder } from '@react-three/drei';
 import * as THREE from 'three';
@@ -15,44 +15,76 @@ interface HexTileProps {
 const HexTile: React.FC<HexTileProps> = ({ tile, onHover, centerLat, centerLon }) => {
     const [hovered, setHovered] = useState(false);
 
-    // --- COORDINATE MAPPING ---
-    // We map Lat/Lon to a 2D plane (X, Z) relative to the center tile.
-    // 1 deg Lat approx 1.0 unit. 1 deg Lon approx 1.0 unit * cos(lat).
-    const latDiff = tile.lat - centerLat;
-    const lonDiff = tile.lon - centerLon;
+    // --- SPHERICAL CONFIG ---
+    const PLANET_RADIUS = 100;
 
-    // Hex grid offset logic (every other row is offset) is complex with pure Lat/Lon.
-    // However, RimWorld's lat/lon is spherical. For a small patch, a simple projection works well enough visually.
-    const x = lonDiff * 1.5;
-    const z = -latDiff * 1.5;
+    const { position, rotation } = useMemo(() => {
+        // 1. Convert to Relative Coordinates
+        // We multiply by a small factor if we want to "spread" them visually, 
+        // but standard math usually looks best if the tile size is correct.
+        const latRad = (tile.lat - centerLat) * (Math.PI / 180);
+        const lonRad = (tile.lon - centerLon) * (Math.PI / 180);
 
-    const height = getElevationHeight(tile.elevation);
+        // 2. Spherical Coordinate Math
+        // Standard mapping: Y is Up (North), Z is Forward, X is Right
+        // x = R * cos(lat) * sin(lon)
+        // y = R * sin(lat)
+        // z = R * cos(lat) * cos(lon)
+        const x = PLANET_RADIUS * Math.cos(latRad) * Math.sin(lonRad);
+        const y = PLANET_RADIUS * Math.sin(latRad);
+        const z = PLANET_RADIUS * Math.cos(latRad) * Math.cos(lonRad);
+
+        const pos = new THREE.Vector3(x, y, z);
+
+        // 3. Calculate Rotation
+        const dummy = new THREE.Object3D();
+        dummy.position.copy(pos);
+        dummy.lookAt(0, 0, 0); // Face the core
+
+        // Adjust for Cylinder orientation
+        dummy.rotateX(Math.PI / 2);
+        dummy.rotateY(Math.PI / 6); // Pointy top alignment
+
+        return { position: pos, rotation: dummy.rotation };
+    }, [tile.lat, tile.lon, centerLat, centerLon]);
+
+    // Visual Height logic
+    const baseHeight = 0.4;
+    const elevationScale = getElevationHeight(tile.elevation) * 0.5;
+    const totalHeight = baseHeight + elevationScale;
+
     const color = getBiomeColor(tile.biome);
 
     return (
-        <group position={[x, height / 2, z]}>
+        <group position={position} rotation={rotation}>
             <Cylinder
-                args={[0.6, 0.6, height, 6]} // TopRadius, BottomRadius, Height, RadialSegments (6 = Hexagon)
+                // --- FIX: Reduced Radius from 0.95 to 0.65 to fix overlap ---
+                args={[0.295, 0.295, totalHeight, 6]}
+                position={[0, totalHeight / 2, 0]}
                 onPointerOver={(e: ThreeEvent<PointerEvent>) => {
                     e.stopPropagation();
                     setHovered(true);
-                    onHover(tile, new THREE.Vector3(x, height, z));
+                    onHover(tile, position);
                 }}
-                onPointerOut={(e) => {
+                onPointerOut={() => {
                     setHovered(false);
                     onHover(null);
                 }}
             >
                 <meshStandardMaterial
                     color={hovered ? '#ff4081' : color}
-                    roughness={0.8}
+                    roughness={0.7}
+                    flatShading={true}
                 />
             </Cylinder>
 
-            {/* Mountain Snow Cap logic */}
+            {/* Snow Cap */}
             {tile.elevation > 1200 && (
-                <Cylinder args={[0.3, 0.5, 0.2, 6]} position={[0, height / 2 + 0.1, 0]}>
-                    <meshStandardMaterial color="#fff" />
+                <Cylinder
+                    args={[0.35, 0.5, 0.1, 6]} // Scaled down cap too
+                    position={[0, totalHeight + 0.05, 0]}
+                >
+                    <meshBasicMaterial color="#ffffff" />
                 </Cylinder>
             )}
         </group>

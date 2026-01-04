@@ -36,7 +36,7 @@ const CaravanDetailModal: React.FC<CaravanModalProps> = ({ caravan, onClose }) =
                     <div className="modal-stats-grid">
                         <div className="modal-stat-box">
                             <span className="label">Location</span>
-                            <span className="value">Tile {caravan.tile}</span>
+                            <span className="value">Tile {caravan.tile_id}</span>
                         </div>
                         <div className="modal-stat-box">
                             <span className="label">Visibility</span>
@@ -176,7 +176,7 @@ const CaravanListCard: React.FC = () => {
                                 <div className="caravan-title-row">
                                     <span className="caravan-icon">🐫</span>
                                     <span className="caravan-name">{caravan.name}</span>
-                                    <span className="caravan-tile">Tile: {caravan.tile}</span>
+                                    <span className="caravan-tile">Tile: {caravan.tile_id}</span>
                                 </div>
 
                                 <div className="caravan-stats-row">

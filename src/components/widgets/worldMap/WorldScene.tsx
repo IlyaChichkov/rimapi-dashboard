@@ -1,3 +1,4 @@
+// src/widgets/WorldMap/WorldScene.tsx
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
@@ -15,63 +16,76 @@ interface WorldSceneProps {
 const WorldScene: React.FC<WorldSceneProps> = ({ tiles, settlements, caravans, centerTileId }) => {
     const [tooltipData, setTooltipData] = React.useState<{ tile: WorldTile, pos: THREE.Vector3 } | null>(null);
 
-    // Find center coords for relative positioning
     const centerTile = tiles.find(t => t.id === centerTileId) || tiles[0];
     const centerLat = centerTile?.lat || 0;
     const centerLon = centerTile?.lon || 0;
 
     return (
-        <Canvas camera={{ position: [0, 8, 8], fov: 45 }}>
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1} />
-            <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+        <Canvas camera={{ position: [0, 0, 140], fov: 35, near: 0.1, far: 1000 }}>
+            <color attach="background" args={['#0d1117']} />
 
-            <group>
-                {tiles.map((tile) => (
-                    <HexTile
-                        key={tile.id}
-                        tile={tile}
-                        centerLat={centerLat}
-                        centerLon={centerLon}
-                        onHover={(t, pos) => {
-                            if (t && pos) setTooltipData({ tile: t, pos });
-                            else setTooltipData(null);
-                        }}
-                    />
-                ))}
+            <ambientLight intensity={0.6} />
+            <pointLight position={[50, 50, 150]} intensity={1} />
 
-                {/* Settlement Markers would go here, calculating pos similarly to HexTile */}
-            </group>
+            {/* Render Tiles directly. They calculate their own sphere position relative to center */}
+            {tiles.map((tile) => (
+                <HexTile
+                    key={tile.id}
+                    tile={tile}
+                    centerLat={centerLat}
+                    centerLon={centerLon}
+                    onHover={(t, pos) => {
+                        // Pass simple position for tooltip. 
+                        // Note: 'pos' here is on the sphere surface.
+                        if (t && pos) setTooltipData({ tile: t, pos });
+                        else setTooltipData(null);
+                    }}
+                />
+            ))}
 
             {/* Tooltip Overlay */}
             {tooltipData && (
-                <Html position={[tooltipData.pos.x, tooltipData.pos.y + 1, tooltipData.pos.z]}>
+                <Html position={tooltipData.pos} style={{ pointerEvents: 'none' }}>
                     <div style={{
-                        background: 'rgba(0,0,0,0.8)',
+                        background: 'rgba(20, 20, 30, 0.95)',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
                         color: 'white',
-                        padding: '5px 10px',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        pointerEvents: 'none',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        fontSize: '0.75rem',
+                        // Shift tooltip up so it doesn't cover the tile
+                        transform: 'translate3d(-50%, -150%, 0)',
                         whiteSpace: 'nowrap',
-                        transform: 'translate3d(-50%, -100%, 0)'
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.5)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 100
                     }}>
-                        <strong>{tooltipData.tile.biome}</strong><br />
-                        {tooltipData.tile.elevation}m | {tooltipData.tile.temperature}°C<br />
-                        {/* Find settlement on this tile */}
-                        {settlements.find(s => s.tile === tooltipData.tile.id)?.name && (
-                            <span style={{ color: '#4dabf7' }}>🏠 {settlements.find(s => s.tile === tooltipData.tile.id)?.name}</span>
+                        <div style={{ fontWeight: 'bold', marginBottom: '2px', color: '#a5d8ff' }}>
+                            {tooltipData.tile.biome}
+                        </div>
+                        <div>Ele: {tooltipData.tile.elevation}m</div>
+                        <div>Tmp: {tooltipData.tile.temperature.toFixed(1)}°C</div>
+
+                        {settlements.find(s => s.tile_id === tooltipData.tile.id) && (
+                            <div style={{ marginTop: '4px', paddingTop: '4px', borderTop: '1px solid rgba(255,255,255,0.1)', color: '#ffd43b' }}>
+                                🏠 {settlements.find(s => s.tile_id === tooltipData.tile.id)?.name}
+                            </div>
+                        )}
+                        {caravans.find(c => c.tile_id === tooltipData.tile.id) && (
+                            <div style={{ marginTop: '2px', color: '#69db7c' }}>
+                                🐫 {caravans.find(c => c.tile_id === tooltipData.tile.id)?.name}
+                            </div>
                         )}
                     </div>
                 </Html>
             )}
 
             <OrbitControls
-                enablePan={true}
+                enableRotate={false}
                 enableZoom={true}
-                minDistance={5}
-                maxDistance={20}
-                maxPolarAngle={Math.PI / 2.2} // Don't allow going below ground
+                enablePan={true}
+                minDistance={105} // Don't clip into surface (R=100)
+                maxDistance={180}
             />
         </Canvas>
     );

@@ -85,7 +85,7 @@ async function request<T>(endpoint: string, init: RequestInit = {}): Promise<T |
       return response.data;
     }
 
-    return undefined as T;
+    return null;
   } finally {
     cancel();
   }
@@ -580,7 +580,7 @@ export const rimworldApi = {
     return getJson<WorldCaravan[]>('/world/caravans');
   },
 
-  async getWorldGridArea(centerTileId: number, radius: number = 15): Promise<WorldTile[] | null> {
-    return getJson<WorldTile[]>(`/world/grid/area?tileId=${centerTileId}&radius=${radius}`);
+  async getWorldGridArea(centerTileId: number, radius: number = 7): Promise<WorldTile[] | null> {
+    return getJson<WorldTile[]>(`/world/grid/area?tile_id=${centerTileId}&radius=${radius}`);
   },
 };

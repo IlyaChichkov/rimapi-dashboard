@@ -11,53 +11,73 @@ export const useWorldMapData = (refreshInterval = 10000) => {
     const [error, setError] = useState<string | null>(null);
     const [centerTileId, setCenterTileId] = useState<number | null>(null);
 
-    const fetchMapData = async () => {
-        try {
-            // 1. Get Player Settlements to find "Home"
-            // We cache the centerTileId so we don't re-fetch it constantly if it hasn't changed
-            let currentCenter = centerTileId;
-            
-            if (currentCenter === null) {
-                const mySettlements = await rimworldApi.getWorldPlayerSettlements();
-                if (mySettlements == null) return;
-                if (mySettlements.length > 0) {
-                    currentCenter = mySettlements[0].tile;
-                    setCenterTileId(currentCenter);
-                } else {
-                    // Fallback if no settlement (e.g., nomad run), pick arbitrary tile or fail
-                    setError("No player settlement found.");
-                    setLoading(false);
-                    return;
-                }
-            }
-
-            // 2. Parallel Fetch: Grid Area + All Settlements + Caravans
-            const [gridData, allSettlements, allCaravans] = await Promise.all([
-                rimworldApi.getWorldGridArea(currentCenter, 12), // Radius 12 is ~450 tiles, good for performance
-                rimworldApi.getWorldSettlements(),
-                rimworldApi.getWorldCaravans()
-            ]);
-
-            if (gridData == null) return;
-            if (allSettlements == null) return;
-            if (allCaravans == null) return;
-            setTiles(gridData);
-            setSettlements(allSettlements);
-            setCaravans(allCaravans);
-            setError(null);
-        } catch (err) {
-            console.error(err);
-            setError("Failed to load world map.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
     useEffect(() => {
-        fetchMapData();
-        const interval = setInterval(fetchMapData, refreshInterval);
-        return () => clearInterval(interval);
-    }, [refreshInterval]); // eslint-disable-line
+        let isMounted = true;
+
+        const fetchAndSetData = async () => {
+            try {
+                let currentCenter = centerTileId;
+
+                // Step 1: Find center tile if we don't have it
+                if (currentCenter === null) {
+                    const mySettlements = await rimworldApi.getWorldPlayerSettlements();
+                    if (!isMounted) return;
+
+                    if (mySettlements && mySettlements.length > 0 && typeof mySettlements[0].tile_id === 'number') {
+                        currentCenter = mySettlements[0].tile_id;
+                        // This state update will trigger a re-run of the effect, which will
+                        // clear the current interval and set up a new one with the updated centerTileId.
+                        setCenterTileId(currentCenter);
+                    } else {
+                        if (isMounted) {
+                            setError("No player settlement found to center the map.");
+                            setLoading(false);
+                        }
+                        return;
+                    }
+                }
+                
+                // If we just found the center, the state won't be updated in *this* run of the effect.
+                // However, the `currentCenter` local variable *is* updated, so we can proceed.
+                // When the effect re-runs due to the state change, the 'if' block will be skipped.
+
+                // Step 2: Fetch all grid/world data in parallel
+                const [gridData, allSettlements, allCaravans] = await Promise.all([
+                    rimworldApi.getWorldGridArea(currentCenter, 12),
+                    rimworldApi.getWorldSettlements(),
+                    rimworldApi.getWorldCaravans()
+                ]);
+
+                if (!isMounted) return;
+
+                if (gridData == null || allSettlements == null || allCaravans == null) {
+                     if (isMounted) setError("Failed to load partial map data.");
+                     return;
+                }
+                
+                if (isMounted) {
+                    setTiles(gridData);
+                    setSettlements(allSettlements);
+                    setCaravans(allCaravans);
+                    setError(null);
+                }
+
+            } catch (err) {
+                console.error(err);
+                if (isMounted) setError("Failed to load world map data.");
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchAndSetData();
+        const interval = setInterval(fetchAndSetData, refreshInterval);
+
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, [centerTileId, refreshInterval]); // Re-run effect if centerTileId changes
 
     return { tiles, settlements, caravans, loading, error, centerTileId };
 };

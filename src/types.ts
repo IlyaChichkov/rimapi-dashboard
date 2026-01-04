@@ -358,7 +358,7 @@ export interface Caravan {
   id: number;
   name: string;
   is_player_controlled: boolean;
-  tile: number;
+  tile_id: number;
   pawns: CaravanPawn[];
   items: CaravanItem[];
   mass_usage: number;

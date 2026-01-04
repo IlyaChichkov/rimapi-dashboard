@@ -27,7 +27,7 @@ export interface FactionInfo {
 export interface WorldSettlement {
     id: number;
     name: string;
-    tile: number;
+    tile_id: number;
     faction: FactionInfo;
 }
 
@@ -35,7 +35,7 @@ export interface WorldCaravan {
     id: number;
     name: string;
     is_player_controlled: boolean;
-    tile: number;
+    tile_id: number;
     pawns: { id: number; name: string }[];
 }
 
