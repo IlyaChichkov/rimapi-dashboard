@@ -1,4 +1,5 @@
 // src/services/rimworldApi.ts
+import { WorldCaravan, WorldSettlement, WorldTile } from "@/types/worldTypes";
 import {
   RimWorldData,
   GameState,
@@ -565,5 +566,21 @@ export const rimworldApi = {
 
   async fetchResearchProgress(): Promise<ResearchProgress | null> {
     return getJson<ResearchProgress>('/research/progress');
+  },
+
+  async getWorldPlayerSettlements(): Promise<WorldSettlement[] | null> {
+    return getJson<WorldSettlement[]>('/world/player/settlements');
+  },
+
+  async getWorldSettlements(): Promise<WorldSettlement[] | null> {
+    return getJson<WorldSettlement[]>('/world/settlements');
+  },
+
+  async getWorldCaravans(): Promise<WorldCaravan[] | null> {
+    return getJson<WorldCaravan[]>('/world/caravans');
+  },
+
+  async getWorldGridArea(centerTileId: number, radius: number = 15): Promise<WorldTile[] | null> {
+    return getJson<WorldTile[]>(`/world/grid/area?tileId=${centerTileId}&radius=${radius}`);
   },
 };

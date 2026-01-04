@@ -51,6 +51,7 @@ const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'colonist', title: 'Single Colonist', description: 'Detailed inspector for a specific pawn.', icon: '👤' },
   { id: 'colonySummary', title: 'Colony Summary', description: 'Text-based stats like total wealth.', icon: '📝' },
   { id: 'caravanList', title: 'Caravans', description: 'Active world map caravans.', icon: '🐫' },
+  { id: 'globalMap', title: 'World Map', description: 'World map.', icon: '🌍' },
   // { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
 ];
 

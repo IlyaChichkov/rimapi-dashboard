@@ -14,6 +14,7 @@ import MessageFeedCard from '../MessageFeedCard';
 import FactionRelationsCard from '../FactionRelationsCard';
 import DashboardCard from './DashboardCard';
 import { GameInfoCard } from '../GameInfoCard';
+import WorldMapCard from '../worldMap/WorldMapCard';
 
 interface CardRegistryProps {
     item: Layout[number];
@@ -150,6 +151,11 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
                     weather={data?.weather || {}}
                     gameState={data?.gameState || {}}
                 />
+            );
+
+        case 'globalMap':
+            return (
+                <WorldMapCard />
             );
 
         case 'factionRelations':
