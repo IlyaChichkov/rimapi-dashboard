@@ -3,6 +3,8 @@ import WorldScene from './WorldScene';
 import './WorldMapCard.css';
 import DashboardCard from '../common/DashboardCard';
 import { useWorldMapData } from '@/hooks/useWorldMapData';
+import WorldMap2D from './WorldMap2D'; // Import the new 2D component
+import './WorldMapCard.css';
 
 const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
     const { tiles, settlements, caravans, loading, error, centerTileId } = useWorldMapData();
@@ -17,17 +19,12 @@ const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
 
     return (
         <div className="wm-scene-container">
-            <WorldScene
+            <WorldMap2D
                 tiles={tiles}
                 settlements={settlements}
                 caravans={caravans}
                 centerTileId={centerTileId}
             />
-
-            <div className="wm-overlay-info">
-                <span className="wm-badge">{tiles.length} Tiles Scanned</span>
-                <span className="wm-badge">{settlements.length} Settlements</span>
-            </div>
         </div>
     );
 };

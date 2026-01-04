@@ -21,7 +21,7 @@ const WorldScene: React.FC<WorldSceneProps> = ({ tiles, settlements, caravans, c
     const centerLon = centerTile?.lon || 0;
 
     return (
-        <Canvas camera={{ position: [0, 0, 140], fov: 35, near: 0.1, far: 1000 }}>
+        <Canvas camera={{ position: [0, 0, 40], fov: 35, near: 0.1, far: 1000 }}>
             <color attach="background" args={['#0d1117']} />
 
             <ambientLight intensity={0.6} />
