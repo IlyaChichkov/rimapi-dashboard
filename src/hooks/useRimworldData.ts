@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { fetchRimWorldData, setApiBaseUrl } from '../services/rimworldApi';
 import { RimWorldData, Colonist } from '../types';
 
@@ -9,6 +9,8 @@ export const useRimWorldData = (apiUrl: string, onGameStateChange: () => void) =
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
 
+  const hasLoadedDataOnce = useRef(false);
+
   // Set API Base URL whenever prop changes
   useEffect(() => {
     setApiBaseUrl(apiUrl);
@@ -17,7 +19,7 @@ export const useRimWorldData = (apiUrl: string, onGameStateChange: () => void) =
   const loadData = useCallback(async () => {
     try {
       // Don't set loading to true on background refreshes to avoid UI flicker
-      if (!data) setLoading(true); 
+      if (!hasLoadedDataOnce.current) setLoading(true); 
       
       const rimWorldData = await fetchRimWorldData();
       
@@ -27,6 +29,7 @@ export const useRimWorldData = (apiUrl: string, onGameStateChange: () => void) =
         return;
       }
 
+      hasLoadedDataOnce.current = true;
       setData(rimWorldData);
       setLastUpdated(new Date());
       setError(null);
@@ -36,7 +39,7 @@ export const useRimWorldData = (apiUrl: string, onGameStateChange: () => void) =
     } finally {
       setLoading(false);
     }
-  }, [onGameStateChange, data]);
+  }, [onGameStateChange]);
 
   // Initial Load
   useEffect(() => {
