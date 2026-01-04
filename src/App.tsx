@@ -1,13 +1,13 @@
 // src/App.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import RimWorldDashboard from './components/RimWorldDashboard';
-import ApiConfig from './components/ApiConfig';
-import StartGameScreen from './components/StartGameScreen';
-import LoadingScreen from './components/LoadingScreen';
+import RimWorldDashboard from './features/dashboard/Dashboard';
+import ApiConfig from './features/api-config/ApiConfig';
+import StartGameScreen from './features/api-config/StartGameScreen';
+import LoadingScreen from './components/common/LoadingScreen';
 import './App.css';
-import { ToastContainer } from './components/ToastContainer';
-import { ToastProvider } from './components/ToastContext';
-import { ImageCacheProvider } from './components/ImageCacheContext';
+import { ToastContainer } from './components/feedback/ToastContainer';
+import { ToastProvider } from './components/feedback/ToastContext';
+import { ImageCacheProvider } from './components/context/ImageCacheContext';
 import { sseService } from './services/sseService';
 import { rimworldApi, setApiBaseUrl } from './services/rimworldApi';
 

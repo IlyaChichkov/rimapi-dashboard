@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Layout } from 'react-grid-layout';
-import { useToast } from '../components/ToastContext';
+import { useToast } from '../components/feedback/ToastContext';
 import { DashboardPreset, CardSettings } from '../types/dashboardTypes';
-import { ColonySummarySettings } from '../components/ColonySummary';
+import { ColonySummarySettings } from '../components/widgets/ColonySummary';
 
 const INITIAL_LAYOUT: Layout = [
   { i: 'colonists', x: 0, y: 0, w: 6, h: 2, isBounded: true },
