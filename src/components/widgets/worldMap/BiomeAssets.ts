@@ -1,23 +1,44 @@
 // src/widgets/WorldMap/BiomeAssets.ts
 
-// Map the RimWorld biome names (from API) to your image paths
+// 1. Import all images from the src/assets folder
+// Note: The relative path "../../assets" assumes this file is in "src/widgets/WorldMap"
+import OceanImg from '../../../assets/biomes/Ocean.png';
+import TundraImg from '../../../assets/biomes/Tundra.png';
+import IceSheetImg from '../../../assets/biomes/IceSheet.png';
+import IceSheetOceanImg from '../../../assets/biomes/IceSheetOcean.png'; // Using this for SeaIce
+import BorealForestImg from '../../../assets/biomes/BorealForest.png';
+import TemperateForestImg from '../../../assets/biomes/TemperateForest.png';
+import TropicalRainforestImg from '../../../assets/biomes/TropicalRainforest.png';
+import AridShrublandImg from '../../../assets/biomes/AridShrubland.png';
+import DesertImg from '../../../assets/biomes/Desert.png';
+import ExtremeDesertImg from '../../../assets/biomes/ExtremeDesert.png';
+import TemperateSwampImg from '../../../assets/biomes/TemperateSwamp.png';
+import TropicalSwampImg from '../../../assets/biomes/TropicalSwamp.png';
+import ColdBogImg from '../../../assets/biomes/ColdBog.png';
+
+// 2. Map Biome Names to the Imported Image Objects
 export const BIOME_TEXTURES: Record<string, string> = {
-    'Ocean': '/assets/biomes/ocean.png',
-    'DeepOcean': '/assets/biomes/ocean_deep.png',
-    'Tundra': '/assets/biomes/tundra.png',
-    'IceSheet': '/assets/biomes/ice_sheet.png',
-    'SeaIce': '/assets/biomes/sea_ice.png',
-    'BorealForest': '/assets/biomes/boreal_forest.png',
-    'TemperateForest': '/assets/biomes/temperate_forest.png',
-    'TropicalRainforest': '/assets/biomes/tropical_rainforest.png',
-    'AridShrubland': '/assets/biomes/arid_shrubland.png',
-    'Desert': '/assets/biomes/desert.png',
-    'ExtremeDesert': '/assets/biomes/extreme_desert.png',
-    // Fallbacks
-    'Lake': '/assets/biomes/ocean.png',
+    // Exact Matches
+    'Ocean': OceanImg,
+    'Tundra': TundraImg,
+    'IceSheet': IceSheetImg,
+    'BorealForest': BorealForestImg,
+    'TemperateForest': TemperateForestImg,
+    'TropicalRainforest': TropicalRainforestImg,
+    'AridShrubland': AridShrublandImg,
+    'Desert': DesertImg,
+    'ExtremeDesert': ExtremeDesertImg,
+    'TemperateSwamp': TemperateSwampImg,
+    'TropicalSwamp': TropicalSwampImg,
+    'ColdBog': ColdBogImg,
+
+    // Mappings for missing/alternate biomes
+    'DeepOcean': OceanImg,       // Reuse Ocean
+    'SeaIce': IceSheetOceanImg,  // Use the specific file you have
+    'Lake': OceanImg,
+    'Water': OceanImg,
 };
 
-// Keep your color fallback just in case a texture fails to load or isn't defined
 export const getBiomeColor = (biome: string): string => {
     switch (biome) {
         case 'Ocean': return '#1a3c6e';

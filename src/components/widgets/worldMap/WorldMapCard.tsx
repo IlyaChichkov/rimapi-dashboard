@@ -1,7 +1,5 @@
 import React from 'react';
-import WorldScene from './WorldScene';
 import './WorldMapCard.css';
-import DashboardCard from '../common/DashboardCard';
 import { useWorldMapData } from '@/hooks/useWorldMapData';
 import WorldMap2D from './WorldMap2D'; // Import the new 2D component
 import './WorldMapCard.css';

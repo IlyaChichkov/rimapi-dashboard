@@ -1,22 +1,22 @@
 // src/widgets/WorldMap/WorldMap2D.tsx
 import React, { useState, useMemo, useRef } from 'react';
 import { WorldTile, WorldSettlement, WorldCaravan } from '../../../types/worldTypes';
-import { getBiomeColor } from './BiomeColors';
+import { BIOME_TEXTURES, getBiomeColor } from './BiomeAssets';
 import { Delaunay } from 'd3-delaunay';
+import HomeSvg from '../../../assets/map/home.svg';
 interface WorldMap2DProps {
     tiles: WorldTile[];
     settlements: WorldSettlement[];
     caravans: WorldCaravan[];
     centerTileId: number;
 }
-import { BIOME_TEXTURES } from './BiomeAssets'; // Import the new mapping
 
 const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId }) => {
     const [tooltip, setTooltip] = useState<{ x: number, y: number, tile: WorldTile } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const { renderTiles, vbX, vbY, vbWidth, vbHeight } = useMemo(() => {
-        if (tiles.length === 0) return { renderTiles: [], vbX: 0, vbY: 0, vbWidth: 100, vbHeight: 100 };
+    const { renderTiles, vbX, vbY, vbWidth, vbHeight, activeBiomes } = useMemo(() => {
+        if (tiles.length === 0) return { renderTiles: [], vbX: 0, vbY: 0, vbWidth: 100, vbHeight: 100, activeBiomes: [] };
 
         const centerTile = tiles.find(t => t.id === centerTileId) || tiles[0];
         const cLat = centerTile.lat;
@@ -65,18 +65,18 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
 
         // 4. CALCULATE VIEWBOX (ZOOM)
         const centerPx = points.find(p => p.tile.id === centerTileId) || points[0];
-
-        // Visual Radius: How many "pixels" of map to show?
-        // 60px approx 1 tile width. 
-        // 400px = approx 6-7 tiles radius.
         const VIEW_SIZE = 200;
+
+        // 5. Get Unique Biomes (To generate only necessary patterns)
+        const uniqueBiomes = Array.from(new Set(tiles.map(t => t.biome)));
 
         return {
             renderTiles: processedTiles,
             vbX: centerPx.x - (VIEW_SIZE / 2),
             vbY: centerPx.y - (VIEW_SIZE / 2),
             vbWidth: VIEW_SIZE,
-            vbHeight: VIEW_SIZE
+            vbHeight: VIEW_SIZE,
+            activeBiomes: uniqueBiomes
         };
 
     }, [tiles, centerTileId]);
@@ -90,12 +90,38 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                 preserveAspectRatio="xMidYMid meet"
                 style={{ overflow: 'visible' }}
             >
+                <defs>
+                    {/* GENERATE TEXTURE PATTERNS */}
+                    {activeBiomes.map(biome => {
+                        const textureUrl = BIOME_TEXTURES[biome];
+                        if (!textureUrl) return null; // Skip if no texture defined
+
+                        return (
+                            <pattern
+                                key={biome}
+                                id={`pat-${biome}`}
+                                patternUnits="userSpaceOnUse"
+                                width="64" height="64" // Size of the repeating pattern in grid pixels
+                            >
+                                <image
+                                    href={textureUrl}
+                                    x="0" y="0"
+                                    width="64" height="64"
+                                    preserveAspectRatio="xMidYMid slice"
+                                />
+                            </pattern>
+                        );
+                    })}
+                </defs>
 
                 {renderTiles.map(tile => {
                     const settlement = settlements.find(s => s.tile_id === tile.id);
                     const caravan = caravans.find(c => c.tile_id === tile.id);
                     const isCenter = tile.id === centerTileId;
-                    const color = getBiomeColor(tile.biome);
+
+                    // Logic: Use Texture if available, else Fallback Color
+                    const hasTexture = BIOME_TEXTURES[tile.biome];
+                    const fill = hasTexture ? `url(#pat-${tile.biome})` : getBiomeColor(tile.biome);
 
                     return (
                         <g
@@ -104,36 +130,26 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                             onMouseLeave={() => setTooltip(null)}
                             style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                         >
-                            {/* VORONOI CELL PATH */}
                             <path
                                 d={tile.path}
-                                fill={color}
-                                stroke={isCenter ? 'rgba(0,0,0,0.15)' : 'rgba(0,0,0,0.15)'}
+                                fill={fill}
+                                stroke={isCenter ? '#fff' : 'rgba(55, 49, 56, 0.3)'}
                                 strokeWidth={isCenter ? 3 : 1}
-                                opacity={0.9}
+                            // Add a subtle filter or opacity if textures are too bright
+                            // opacity={0.9} 
                             />
 
-                            {/* Icons - Centered on the tile's point */}
-                            {/* Note: We use tile.x/y directly because the path is absolute, no group transform needed */}
+                            {/* Icons */}
                             {settlement && (
-                                <text
-                                    x={tile.x}
-                                    y={tile.y + 5}
-                                    fontSize={14}
-                                    textAnchor="middle"
-                                    style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
-                                >
-                                    {settlement.faction.is_player ? '🏠' : '🛖'}
-                                </text>
+                                <image
+                                    href={HomeSvg}
+                                    x="-5" y="-4"
+                                    width="10" height="8"
+                                    preserveAspectRatio="xMidYMid slice"
+                                />
                             )}
                             {caravan && !settlement && (
-                                <text
-                                    x={tile.x}
-                                    y={tile.y + 5}
-                                    fontSize={14}
-                                    textAnchor="middle"
-                                    style={{ pointerEvents: 'none', textShadow: '0 1px 3px rgba(0,0,0,0.8)' }}
-                                >
+                                <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ pointerEvents: 'none', textShadow: '0 1px 4px black' }}>
                                     🐫
                                 </text>
                             )}
