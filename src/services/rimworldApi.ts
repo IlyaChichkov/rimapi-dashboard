@@ -346,8 +346,8 @@ async function uploadItemTextureFile(
     name: itemName,
     image: base64,
     direction: direction,
-    ThingType: opts?.kind,
-    UpdateItemIndex: opts?.imageIndex,
+    thing_type: opts?.kind,
+    update_item_index: opts?.imageIndex,
   });
 
   opts?.onProgress?.(100, total, total, idx);
@@ -528,12 +528,12 @@ export const rimworldApi = {
   },
 
   async fetchMaterialsAtlas(): Promise<{ materials: string[] }> {
-    const data = await getJson('/materials-atlas') as { materials: string[] };
+    const data = await getJson('/dev/materials-atlas') as { materials: string[] };
     return (data ?? {materials: []})
   },
 
   async clearMaterialsAtlas(): Promise<void> {
-    await postJson('/materials-atlas/clear', {});
+    await postJson('/dev/materials-atlas/clear', {});
   },
 
   async fetchGameState(): Promise<any | null> {
