@@ -113,7 +113,7 @@ const ColonistsSkillsDashboard: React.FC<ColonistsSkillsDashboardProps> = ({
             const passionsRecord: Record<string, number> = {};
             const xpRecords: Record<string, { currentXP: number; xpForNextLevel: number }> = {};
 
-            colonist.colonist_work_info.skills.forEach(skill => {
+            colonist.colonist_work_info?.skills.forEach(skill => {
                 skillsRecord[skill.name] = skill.level;
                 passionsRecord[skill.name] = skill.passion;
                 xpRecords[skill.name] = {

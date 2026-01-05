@@ -125,8 +125,65 @@ const validateColonists = (data: unknown): Colonist[] => {
 };
 
 const validateColonistsDetailed = (data: unknown): ColonistDetailed[] => {
-  const arr = ensureArray<ColonistDetailed>(data);
-  return arr.filter((c: any) => c && c.colonist && c.colonist_medical_info);
+  const d = ensureArray<ColonistDetailed>(data);
+  
+  // Validate and clean each colonist
+  return d.map((colonist: any) => ({
+    body_size: Number(colonist.body_size) || 0,
+    sleep: Number(colonist.sleep) || 0,
+    comfort: Number(colonist.comfort) || 0,
+    beauty: Number(colonist.beauty) || 0,
+    joy: Number(colonist.joy) || 0,
+    energy: Number(colonist.energy) || 0,
+    drugsDesire: Number(colonist.drugsDesire) || 0,
+    surrounding_beauty: Number(colonist.surrounding_beauty) || 0,
+    fresh_air: Number(colonist.fresh_air) || 0,
+    colonist: {
+      id: Number(colonist.colonist?.id) || 0,
+      name: String(colonist.colonist?.name || 'Unknown'),
+      gender: String(colonist.colonist?.gender || 'Unknown'),
+      age: Number(colonist.colonist?.age) || 0,
+      health: Number(colonist.colonist?.health) || 0,
+      mood: Number(colonist.colonist?.mood) || 0,
+      hunger: Number(colonist.colonist?.hunger) || 0,
+    },
+    colonist_work_info: {
+      skills: Array.isArray(colonist.colonist_work_info?.skills) 
+        ? colonist.colonist_work_info.skills.map((skill: any) => ({
+            name: String(skill?.name || 'Unknown'),
+            level: Number(skill?.level) || 0,
+          }))
+        : [],
+      current_job: String(colonist.colonist_work_info?.current_job || ''),
+      traits: Array.isArray(colonist.colonist_work_info?.traits)
+        ? colonist.colonist_work_info.traits.map((trait: any) => ({
+            name: String(trait?.name || 'Unknown'),
+            label: String(trait?.label || trait?.name || 'Unknown'),
+          }))
+        : [],
+      work_priorities: Array.isArray(colonist.colonist_work_info?.work_priorities)
+        ? colonist.colonist_work_info.work_priorities.map((work: any) => ({
+            work_type: String(work?.work_type || ''),
+            priority: Number(work?.priority) || 0,
+          }))
+        : [],
+    },
+    colonist_medical_info: {
+      health: Number(colonist.colonist_medical_info?.health) || 0,
+      hediffs: Array.isArray(colonist.colonist_medical_info?.hediffs)
+        ? colonist.colonist_medical_info.hediffs.map((hediff: any) => ({
+            name: String(hediff?.name || 'Unknown'),
+            severity: Number(hediff?.severity) || 0,
+          }))
+        : [],
+      medical_policy_id: Number(colonist.colonist_medical_info?.medical_policy_id) || 0,
+      is_self_tend_allowed: Boolean(colonist.colonist_medical_info?.is_self_tend_allowed),
+      blood_pumping: Number(colonist.colonist_medical_info?.blood_pumping) || undefined,
+      breathing: Number(colonist.colonist_medical_info?.breathing) || undefined,
+      consciousness: Number(colonist.colonist_medical_info?.consciousness) || undefined,
+      blood_loss: Number(colonist.colonist_medical_info?.blood_loss) || undefined,
+    },
+  }));
 };
 
 const validateModsInfo = (data: unknown): ModInfo[] => {

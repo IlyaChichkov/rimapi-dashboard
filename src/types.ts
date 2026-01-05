@@ -165,6 +165,7 @@ export interface ColonistMedicalInfo {
 }
 
 export interface ColonistDetailed {
+  body_size: number;
   sleep: number;
   comfort: number;
   beauty: number;
