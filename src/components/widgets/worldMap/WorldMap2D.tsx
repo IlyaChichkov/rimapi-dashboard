@@ -12,7 +12,7 @@ interface WorldMap2DProps {
     centerTileId: number;
 }
 
-// Helper to determine line style based on def name
+// ... (getRoadStyle and getRiverStyle helper functions remain the same) ...
 const getRoadStyle = (defName: string) => {
     switch (defName) {
         case 'AncientAsphaltRoad': return { color: '#333', width: 4, dash: '' };
@@ -77,22 +77,18 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
         // 4. Process Connections (Roads & Rivers)
         const processedRoads: any[] = [];
         const processedRivers: any[] = [];
-        const processedConnections = new Set<string>(); // To avoid drawing A->B and B->A twice
+        const processedConnections = new Set<string>();
 
         processedTiles.forEach(tile => {
-            // Helper to parse "ID:Type" strings
             const addConnection = (list: string[], targetArray: any[], type: 'road' | 'river') => {
                 if (!list) return;
-
                 list.forEach(entry => {
                     const [neighborIdStr, defName] = entry.split(':');
                     const neighborId = parseInt(neighborIdStr);
                     const neighborPos = tileLookup.get(neighborId);
 
-                    // Skip if the neighbor isn't in our loaded area (grid/area only returns local patch)
                     if (!neighborPos) return;
 
-                    // Deduplicate: Create a sorted key "minID-maxID"
                     const key = tile.id < neighborId ? `${tile.id}-${neighborId}-${defName}` : `${neighborId}-${tile.id}-${defName}`;
                     if (processedConnections.has(key)) return;
                     processedConnections.add(key);
@@ -151,9 +147,8 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     })}
                 </defs>
 
-                {/* 1. DRAW TILES (Ground Layer) */}
+                {/* 1. DRAW TILES */}
                 {renderTiles.map(tile => {
-                    const isCenter = tile.id === centerTileId;
                     const hasTexture = BIOME_TEXTURES[tile.biome];
                     const fill = hasTexture ? `url(#pat-${tile.biome})` : getBiomeColor(tile.biome);
 
@@ -162,8 +157,8 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                             key={`tile-${tile.id}`}
                             d={tile.path}
                             fill={fill}
-                            stroke={'rgba(0,0,0,0.15)'}
-                            strokeWidth={isCenter ? 3 : 1}
+                            stroke="rgba(0,0,0,0.15)"
+                            strokeWidth={1}
                             onMouseEnter={() => setTooltip({ x: tile.x, y: tile.y, tile })}
                             onMouseLeave={() => setTooltip(null)}
                             style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
@@ -171,7 +166,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     );
                 })}
 
-                {/* 2. DRAW RIVERS (Above ground) */}
+                {/* 2. DRAW RIVERS */}
                 {rivers.map((river, i) => (
                     <line
                         key={`riv-${i}`}
@@ -185,7 +180,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     />
                 ))}
 
-                {/* 3. DRAW ROADS (Above Rivers) */}
+                {/* 3. DRAW ROADS */}
                 {roads.map((road, i) => (
                     <line
                         key={`rd-${i}`}
@@ -199,7 +194,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     />
                 ))}
 
-                {/* 4. DRAW ICONS (Top Layer) */}
+                {/* 4. DRAW ICONS (Player Home + Other Settlements) */}
                 {renderTiles.map(tile => {
                     const settlement = settlements.find(s => s.tile_id === tile.id);
                     const caravan = caravans.find(c => c.tile_id === tile.id);
@@ -209,13 +204,35 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     return (
                         <g key={`icon-${tile.id}`} style={{ pointerEvents: 'none' }}>
                             {settlement && (
-                                <image
-                                    href={HomeSvg}
-                                    x="-5" y="-4"
-                                    width="10" height="8"
-                                    preserveAspectRatio="xMidYMid slice"
-                                />
+                                <>
+                                    {/* Player Settlement */}
+                                    {settlement.faction.is_player ? (
+                                        <image
+                                            href={HomeSvg}
+                                            x={tile.x - 5}
+                                            y={tile.y - 4}
+                                            width="10" height="8"
+                                            preserveAspectRatio="xMidYMid slice"
+                                        />
+                                    ) : (
+                                        /* Other Faction Settlement */
+                                        <text
+                                            x={tile.x}
+                                            y={tile.y + 5}
+                                            fontSize={14}
+                                            textAnchor="middle"
+                                            style={{ textShadow: '0 1px 4px black' }}
+                                        >
+                                            {/* You can swap this for a specific faction icon if you have one, 
+                                                or map settlement.faction.def_name to different emojis 
+                                                (e.g., Tribe='⛺', Empire='🏰', Pirate='☠️') */}
+                                            ☠️
+                                        </text>
+                                    )}
+                                </>
                             )}
+
+                            {/* Caravans */}
                             {caravan && !settlement && (
                                 <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
                                     🐫
@@ -226,6 +243,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                 })}
             </svg>
 
+            {/* Tooltip */}
             {tooltip && (
                 <div style={{
                     position: 'absolute',
@@ -241,17 +259,28 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
                         Ele: {tooltip.tile.elevation}m • Temp: {tooltip.tile.temperature.toFixed(1)}°C
                     </div>
-                    {/* Road/River Info in Tooltip */}
+
                     {(tooltip.tile.roads?.length || 0) > 0 && (
                         <div style={{ fontSize: '0.7rem', color: '#ccc', marginTop: '2px' }}>
                             🛣️ {tooltip.tile.roads?.length} Roads
                         </div>
                     )}
-                    {settlements.find(s => s.tile_id === tooltip.tile.id) && (
-                        <div style={{ color: '#ffd43b', marginTop: '4px', borderTop: '1px solid #444', paddingTop: '4px' }}>
-                            {settlements.find(s => s.tile_id === tooltip.tile.id)?.name}
-                        </div>
-                    )}
+
+                    {/* Settlement Tooltip Info */}
+                    {settlements.find(s => s.tile_id === tooltip.tile.id) && (() => {
+                        const s = settlements.find(s => s.tile_id === tooltip.tile.id)!;
+                        const isPlayer = s.faction.is_player;
+                        const factionColor = isPlayer ? '#ffd43b' : '#ff6b6b'; // Gold for player, Reddish for others (or dynamic)
+
+                        return (
+                            <div style={{ color: factionColor, marginTop: '4px', borderTop: '1px solid #444', paddingTop: '4px' }}>
+                                <strong>{s.name}</strong>
+                                <div style={{ fontSize: '0.7rem', color: '#aaa' }}>
+                                    {s.faction.name}
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             )}
         </div>
