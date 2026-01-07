@@ -165,14 +165,11 @@ export interface ColonistMedicalInfo {
 }
 
 export interface FactionIconResponse {
-    success: boolean;
-    data: {
-        image: {
-            result: string;
-            image_base64: string;
-        };
-        color: string;
+    image: {
+        result: string;
+        image_base64: string;
     };
+    color: string;
 }
 
 export interface ColonistDetailed {

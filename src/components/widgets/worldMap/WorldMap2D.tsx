@@ -1,4 +1,3 @@
-// src/widgets/WorldMap/WorldMap2D.tsx
 import React, { useState, useMemo, useRef } from 'react';
 import { Delaunay } from 'd3-delaunay';
 import HomeSvg from '../../../assets/map/home.svg';
@@ -10,9 +9,9 @@ interface WorldMap2DProps {
     settlements: WorldSettlement[];
     caravans: WorldCaravan[];
     centerTileId: number;
+    factionIcons: Record<number, string>;
 }
 
-// ... (getRoadStyle and getRiverStyle remain the same) ...
 const getRoadStyle = (defName: string) => {
     switch (defName) {
         case 'AncientAsphaltRoad': return { color: '#333', width: 4, dash: '' };
@@ -35,33 +34,24 @@ const getRiverStyle = (defName: string) => {
 
 const isWaterBiome = (biome?: string) => biome === 'Ocean' || biome === 'DeepOcean';
 
-// --- NEW HELPER: Calculate Overlay based on Elevation ---
 const getElevationOverlay = (elevation: number) => {
-    // Neutral zone where textures look normal (e.g., sea level to low hills)
     const NEUTRAL_LOW = 0;
     const NEUTRAL_HIGH = 400;
 
     if (elevation < NEUTRAL_LOW) {
-        // Darken deeper water/valleys
-        // Max depth approx -1000m. Cap opacity at 0.5
         const intensity = Math.min(0.5, Math.abs(elevation) / 1200);
         return { color: '#0000002a', opacity: intensity };
     } else if (elevation > NEUTRAL_HIGH) {
-        // Lighten higher altitudes
-        // Max height approx 2500m. Cap opacity at 0.4
         const intensity = Math.min(0.4, (elevation - NEUTRAL_HIGH) / 2000);
         return { color: '#ffffff31', opacity: intensity };
     }
-    // No overlay for neutral terrain
     return { color: 'transparent', opacity: 0 };
 };
 
-
-const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId }) => {
+const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId, factionIcons }) => {
     const [tooltip, setTooltip] = useState<{ x: number, y: number, tile: WorldTile } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // ... (useMemo hook for calculating renderTiles, roads, rivers remains exactly the same) ...
     const { renderTiles, roads, rivers, vbX, vbY, vbWidth, vbHeight, activeBiomes } = useMemo(() => {
         if (tiles.length === 0) return { renderTiles: [], roads: [], rivers: [], vbX: 0, vbY: 0, vbWidth: 100, vbHeight: 100, activeBiomes: [] };
 
@@ -181,16 +171,12 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     <path id="shape-LargeHills" d="M0,-2 L-6,8 L6,8 Z M-4,2 L-8,8 L0,8 Z" fill="#555" stroke="#333" strokeWidth="0.5" />
                     <path id="shape-Mountainous" d="M0,-5 L-7,8 L7,8 Z M-5,0 L-10,8 L0,8 Z M5,1 L0,8 L10,8 Z" fill="#444" stroke="#222" strokeWidth="0.5" />
                     <path id="shape-Impassable" d="M0,-6 L-8,8 L8,8 Z M-4,-2 L-10,8 L2,8 Z M4,-1 L-2,8 L10,8 Z" fill="#333" stroke="#111" strokeWidth="0.5" />
-
-                    {/* REMOVED: Filter definitions for drop-shadows */}
                 </defs>
 
                 {/* 1. DRAW TILES (Ground Layer + Elevation Overlay) */}
                 {renderTiles.map(tile => {
                     const hasTexture = BIOME_TEXTURES[tile.biome];
                     const fill = hasTexture ? `url(#pat-${tile.biome})` : getBiomeColor(tile.biome);
-
-                    // Calculate Elevation Tint
                     const overlay = getElevationOverlay(tile.elevation);
 
                     return (
@@ -199,13 +185,11 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                             onMouseLeave={() => setTooltip(null)}
                             style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
                         >
-                            {/* Base Texture Layer */}
                             <path
                                 d={tile.path}
                                 fill={fill}
                                 stroke="rgba(0,0,0,0.15)"
                                 strokeWidth={1}
-                            // REMOVED: filter prop
                             />
                             {/* Elevation Tint Overlay Layer */}
                             {overlay.opacity > 0 && (
@@ -213,7 +197,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                                     d={tile.path}
                                     fill={overlay.color}
                                     opacity={overlay.opacity}
-                                    style={{ pointerEvents: 'none' }} // Let clicks pass through to base layer
+                                    style={{ pointerEvents: 'none' }}
                                 />
                             )}
                         </g>
@@ -251,7 +235,6 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                 {/* 4. DRAW HILLS / MOUNTAINS OVERLAY */}
                 {renderTiles.map(tile => {
                     let shapeId = null;
-                    // Only show hill shapes on land, not water
                     if (isWaterBiome(tile.biome)) return null;
 
                     if (tile.hilliness === 'SmallHills') shapeId = '#shape-SmallHills';
@@ -267,13 +250,12 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                             href={shapeId}
                             x={tile.x}
                             y={tile.y}
-                            // Added a small drop shadow to the hill shapes themselves for pop
                             style={{ pointerEvents: 'none', filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.3))' }}
                         />
                     );
                 })}
 
-                {/* 5. DRAW ICONS */}
+                {/* 5. DRAW ICONS (Updated for Dynamic Faction Icons) */}
                 {renderTiles.map(tile => {
                     const settlement = settlements.find(s => s.tile_id === tile.id);
                     const caravan = caravans.find(c => c.tile_id === tile.id);
@@ -282,25 +264,51 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
 
                     return (
                         <g key={`icon-${tile.id}`} style={{ pointerEvents: 'none' }}>
-                            {settlement && (
-                                <>
-                                    {settlement.faction.is_player ? (
-                                        <image
-                                            href={HomeSvg}
-                                            x={tile.x - 5}
-                                            y={tile.y - 4}
-                                            width="10" height="8"
-                                            preserveAspectRatio="xMidYMid slice"
-                                            // Make home icon pop a bit
-                                            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
-                                        />
-                                    ) : (
-                                        <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
-                                            🛖
-                                        </text>
-                                    )}
-                                </>
-                            )}
+                            {settlement && (() => {
+                                // Try to lookup the tinted icon for this faction
+                                const iconUrl = factionIcons[settlement.faction.load_id];
+
+                                return (
+                                    <>
+                                        {iconUrl ? (
+                                            // 1. API Fetched Icon (Tinted)
+                                            <image
+                                                href={iconUrl}
+                                                x={tile.x - 8}
+                                                y={tile.y - 8}
+                                                width="16"
+                                                height="16"
+                                                preserveAspectRatio="xMidYMid slice"
+                                                style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}
+                                            />
+                                        ) : (
+                                            // 2. Fallback Icons
+                                            settlement.faction.is_player ? (
+                                                <image
+                                                    href={HomeSvg}
+                                                    x={tile.x - 5}
+                                                    y={tile.y - 4}
+                                                    width="10"
+                                                    height="8"
+                                                    preserveAspectRatio="xMidYMid slice"
+                                                    style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
+                                                />
+                                            ) : (
+                                                <text
+                                                    x={tile.x}
+                                                    y={tile.y + 5}
+                                                    fontSize={14}
+                                                    textAnchor="middle"
+                                                    style={{ textShadow: '0 1px 4px black' }}
+                                                >
+                                                    n
+                                                </text>
+                                            )
+                                        )}
+                                    </>
+                                );
+                            })()}
+
                             {caravan && !settlement && (
                                 <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
                                     🐫
@@ -311,7 +319,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                 })}
             </svg>
 
-            {/* Tooltip (remains the same) */}
+            {/* Tooltip */}
             {tooltip && (
                 <div style={{
                     position: 'absolute',

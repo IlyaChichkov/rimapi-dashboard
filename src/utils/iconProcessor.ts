@@ -1,13 +1,8 @@
 // src/utils/iconProcessor.ts
 
-interface FactionIconData {
-    image: {
-        image_base64: string;
-    };
-    color: string; // "RGBA(0.415, 0.659, 0.979, 1.000)"
-}
+import { FactionIconResponse } from "@/types";
 
-export const processFactionIcon = async (data: FactionIconData): Promise<string | null> => {
+export const processFactionIcon = async (data: FactionIconResponse): Promise<string | null> => {
     try {
         // 1. Parse RGBA string
         const colorMatch = data.color.match(/[\d.]+/g);
