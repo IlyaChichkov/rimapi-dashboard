@@ -18,6 +18,12 @@ const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
 
     return (
         <div className="wm-scene-container">
+            <div className="card-header">
+                <div className="header-left">
+                    <h3>World Map</h3>
+                </div>
+            </div>
+
             <WorldMap2D
                 tiles={tiles}
                 settlements={settlements}

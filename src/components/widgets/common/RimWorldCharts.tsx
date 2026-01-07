@@ -210,6 +210,8 @@ interface PowerChartProps {
 }
 
 export const PowerChart: React.FC<PowerChartProps> = ({ power }) => {
+
+  // Combine stored with consumed displaying above as same color bar with stripes 
   const data = {
     labels: ['Generated', 'Consumed', 'Stored'],
     datasets: [

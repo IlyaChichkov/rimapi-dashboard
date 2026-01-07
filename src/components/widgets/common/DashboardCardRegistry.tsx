@@ -155,7 +155,10 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
 
         case 'globalMap':
             return (
-                <WorldMapCard />
+                <div className="chart-card-content">
+                    <div className="chart-header"><h3>World Map</h3></div>
+                    <WorldMapCard />
+                </div>
             );
 
         case 'factionRelations':
