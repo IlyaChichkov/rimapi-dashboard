@@ -164,6 +164,17 @@ export interface ColonistMedicalInfo {
   blood_loss?: number;
 }
 
+export interface FactionIconResponse {
+    success: boolean;
+    data: {
+        image: {
+            result: string;
+            image_base64: string;
+        };
+        color: string;
+    };
+}
+
 export interface ColonistDetailed {
   body_size: number;
   sleep: number;

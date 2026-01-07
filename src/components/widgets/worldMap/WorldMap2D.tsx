@@ -12,14 +12,14 @@ interface WorldMap2DProps {
     centerTileId: number;
 }
 
-// ... (getRoadStyle and getRiverStyle helper functions remain the same) ...
+// ... (getRoadStyle and getRiverStyle remain the same) ...
 const getRoadStyle = (defName: string) => {
     switch (defName) {
         case 'AncientAsphaltRoad': return { color: '#333', width: 4, dash: '' };
         case 'AncientAsphaltHighway': return { color: '#222', width: 5, dash: '' };
         case 'StoneRoad': return { color: '#554', width: 3, dash: '' };
         case 'DirtRoad': return { color: '#765', width: 2, dash: '4,2' };
-        default: return { color: '#654', width: 1, dash: '2,2' }; // Pathways
+        default: return { color: '#654', width: 1, dash: '2,2' };
     }
 };
 
@@ -33,10 +33,35 @@ const getRiverStyle = (defName: string) => {
     }
 };
 
+const isWaterBiome = (biome?: string) => biome === 'Ocean' || biome === 'DeepOcean';
+
+// --- NEW HELPER: Calculate Overlay based on Elevation ---
+const getElevationOverlay = (elevation: number) => {
+    // Neutral zone where textures look normal (e.g., sea level to low hills)
+    const NEUTRAL_LOW = 0;
+    const NEUTRAL_HIGH = 400;
+
+    if (elevation < NEUTRAL_LOW) {
+        // Darken deeper water/valleys
+        // Max depth approx -1000m. Cap opacity at 0.5
+        const intensity = Math.min(0.5, Math.abs(elevation) / 1200);
+        return { color: '#0000002a', opacity: intensity };
+    } else if (elevation > NEUTRAL_HIGH) {
+        // Lighten higher altitudes
+        // Max height approx 2500m. Cap opacity at 0.4
+        const intensity = Math.min(0.4, (elevation - NEUTRAL_HIGH) / 2000);
+        return { color: '#ffffff31', opacity: intensity };
+    }
+    // No overlay for neutral terrain
+    return { color: 'transparent', opacity: 0 };
+};
+
+
 const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId }) => {
     const [tooltip, setTooltip] = useState<{ x: number, y: number, tile: WorldTile } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // ... (useMemo hook for calculating renderTiles, roads, rivers remains exactly the same) ...
     const { renderTiles, roads, rivers, vbX, vbY, vbWidth, vbHeight, activeBiomes } = useMemo(() => {
         if (tiles.length === 0) return { renderTiles: [], roads: [], rivers: [], vbX: 0, vbY: 0, vbWidth: 100, vbHeight: 100, activeBiomes: [] };
 
@@ -47,7 +72,6 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
         const GLOBAL_SCALE = 60;
         const latCorrection = Math.cos(cLat * D2R);
 
-        // 1. Calculate Points
         const points = tiles.map(tile => {
             const dLat = tile.lat - cLat;
             const dLon = tile.lon - cLon;
@@ -56,16 +80,17 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
             return { x, y, tile };
         });
 
-        // 2. Generate Voronoi
         const pointList = points.map(p => [p.x, p.y] as [number, number]);
         const delaunay = Delaunay.from(pointList);
         const bounds = [-10000, -10000, 10000, 10000];
         const voronoi = delaunay.voronoi(bounds as [number, number, number, number]);
 
-        // 3. Map Tiles & Create Lookup Map for Connections
         const tileLookup = new Map<number, { x: number, y: number }>();
+        const biomeLookup = new Map<number, string>();
+
         const processedTiles = points.map((p, i) => {
             tileLookup.set(p.tile.id, { x: p.x, y: p.y });
+            biomeLookup.set(p.tile.id, p.tile.biome);
             return {
                 ...p.tile,
                 x: p.x,
@@ -74,7 +99,6 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
             };
         });
 
-        // 4. Process Connections (Roads & Rivers)
         const processedRoads: any[] = [];
         const processedRivers: any[] = [];
         const processedConnections = new Set<string>();
@@ -88,6 +112,13 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     const neighborPos = tileLookup.get(neighborId);
 
                     if (!neighborPos) return;
+
+                    if (type === 'river') {
+                        const neighborBiome = biomeLookup.get(neighborId);
+                        if (isWaterBiome(tile.biome) || isWaterBiome(neighborBiome)) {
+                            return;
+                        }
+                    }
 
                     const key = tile.id < neighborId ? `${tile.id}-${neighborId}-${defName}` : `${neighborId}-${tile.id}-${defName}`;
                     if (processedConnections.has(key)) return;
@@ -108,7 +139,6 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
             addConnection(tile.rivers || [], processedRivers, 'river');
         });
 
-        // 5. ViewBox
         const centerPx = points.find(p => p.tile.id === centerTileId) || points[0];
         const VIEW_SIZE = 200;
         const uniqueBiomes = Array.from(new Set(tiles.map(t => t.biome)));
@@ -145,24 +175,48 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                             </pattern>
                         );
                     })}
+
+                    {/* --- HILL / MOUNTAIN SHAPES --- */}
+                    <path id="shape-SmallHills" d="M0,0 L-4,6 L4,6 Z" fill="#666" stroke="#444" strokeWidth="0.5" />
+                    <path id="shape-LargeHills" d="M0,-2 L-6,8 L6,8 Z M-4,2 L-8,8 L0,8 Z" fill="#555" stroke="#333" strokeWidth="0.5" />
+                    <path id="shape-Mountainous" d="M0,-5 L-7,8 L7,8 Z M-5,0 L-10,8 L0,8 Z M5,1 L0,8 L10,8 Z" fill="#444" stroke="#222" strokeWidth="0.5" />
+                    <path id="shape-Impassable" d="M0,-6 L-8,8 L8,8 Z M-4,-2 L-10,8 L2,8 Z M4,-1 L-2,8 L10,8 Z" fill="#333" stroke="#111" strokeWidth="0.5" />
+
+                    {/* REMOVED: Filter definitions for drop-shadows */}
                 </defs>
 
-                {/* 1. DRAW TILES */}
+                {/* 1. DRAW TILES (Ground Layer + Elevation Overlay) */}
                 {renderTiles.map(tile => {
                     const hasTexture = BIOME_TEXTURES[tile.biome];
                     const fill = hasTexture ? `url(#pat-${tile.biome})` : getBiomeColor(tile.biome);
 
+                    // Calculate Elevation Tint
+                    const overlay = getElevationOverlay(tile.elevation);
+
                     return (
-                        <path
-                            key={`tile-${tile.id}`}
-                            d={tile.path}
-                            fill={fill}
-                            stroke="rgba(0,0,0,0.15)"
-                            strokeWidth={1}
+                        <g key={`tile-group-${tile.id}`}
                             onMouseEnter={() => setTooltip({ x: tile.x, y: tile.y, tile })}
                             onMouseLeave={() => setTooltip(null)}
                             style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                        />
+                        >
+                            {/* Base Texture Layer */}
+                            <path
+                                d={tile.path}
+                                fill={fill}
+                                stroke="rgba(0,0,0,0.15)"
+                                strokeWidth={1}
+                            // REMOVED: filter prop
+                            />
+                            {/* Elevation Tint Overlay Layer */}
+                            {overlay.opacity > 0 && (
+                                <path
+                                    d={tile.path}
+                                    fill={overlay.color}
+                                    opacity={overlay.opacity}
+                                    style={{ pointerEvents: 'none' }} // Let clicks pass through to base layer
+                                />
+                            )}
+                        </g>
                     );
                 })}
 
@@ -194,7 +248,32 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                     />
                 ))}
 
-                {/* 4. DRAW ICONS (Player Home + Other Settlements) */}
+                {/* 4. DRAW HILLS / MOUNTAINS OVERLAY */}
+                {renderTiles.map(tile => {
+                    let shapeId = null;
+                    // Only show hill shapes on land, not water
+                    if (isWaterBiome(tile.biome)) return null;
+
+                    if (tile.hilliness === 'SmallHills') shapeId = '#shape-SmallHills';
+                    else if (tile.hilliness === 'LargeHills') shapeId = '#shape-LargeHills';
+                    else if (tile.hilliness === 'Mountainous') shapeId = '#shape-Mountainous';
+                    else if (tile.hilliness === 'Impassable') shapeId = '#shape-Impassable';
+
+                    if (!shapeId) return null;
+
+                    return (
+                        <use
+                            key={`hill-${tile.id}`}
+                            href={shapeId}
+                            x={tile.x}
+                            y={tile.y}
+                            // Added a small drop shadow to the hill shapes themselves for pop
+                            style={{ pointerEvents: 'none', filter: 'drop-shadow(1px 1px 1px rgba(0,0,0,0.3))' }}
+                        />
+                    );
+                })}
+
+                {/* 5. DRAW ICONS */}
                 {renderTiles.map(tile => {
                     const settlement = settlements.find(s => s.tile_id === tile.id);
                     const caravan = caravans.find(c => c.tile_id === tile.id);
@@ -205,7 +284,6 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                         <g key={`icon-${tile.id}`} style={{ pointerEvents: 'none' }}>
                             {settlement && (
                                 <>
-                                    {/* Player Settlement */}
                                     {settlement.faction.is_player ? (
                                         <image
                                             href={HomeSvg}
@@ -213,26 +291,16 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                                             y={tile.y - 4}
                                             width="10" height="8"
                                             preserveAspectRatio="xMidYMid slice"
+                                            // Make home icon pop a bit
+                                            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
                                         />
                                     ) : (
-                                        /* Other Faction Settlement */
-                                        <text
-                                            x={tile.x}
-                                            y={tile.y + 5}
-                                            fontSize={14}
-                                            textAnchor="middle"
-                                            style={{ textShadow: '0 1px 4px black' }}
-                                        >
-                                            {/* You can swap this for a specific faction icon if you have one, 
-                                                or map settlement.faction.def_name to different emojis 
-                                                (e.g., Tribe='⛺', Empire='🏰', Pirate='☠️') */}
-                                            ☠️
+                                        <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
+                                            🛖
                                         </text>
                                     )}
                                 </>
                             )}
-
-                            {/* Caravans */}
                             {caravan && !settlement && (
                                 <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
                                     🐫
@@ -243,7 +311,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                 })}
             </svg>
 
-            {/* Tooltip */}
+            {/* Tooltip (remains the same) */}
             {tooltip && (
                 <div style={{
                     position: 'absolute',
@@ -257,7 +325,10 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                         {tooltip.tile.biome}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#aaa' }}>
-                        Ele: {tooltip.tile.elevation}m • Temp: {tooltip.tile.temperature.toFixed(1)}°C
+                        Ele: {tooltip.tile.elevation}m • {tooltip.tile.hilliness}
+                    </div>
+                    <div style={{ fontSize: '0.7rem', color: '#888' }}>
+                        Temp: {tooltip.tile.temperature.toFixed(1)}°C
                     </div>
 
                     {(tooltip.tile.roads?.length || 0) > 0 && (
@@ -266,12 +337,10 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                         </div>
                     )}
 
-                    {/* Settlement Tooltip Info */}
                     {settlements.find(s => s.tile_id === tooltip.tile.id) && (() => {
                         const s = settlements.find(s => s.tile_id === tooltip.tile.id)!;
                         const isPlayer = s.faction.is_player;
-                        const factionColor = isPlayer ? '#ffd43b' : '#ff6b6b'; // Gold for player, Reddish for others (or dynamic)
-
+                        const factionColor = isPlayer ? '#ffd43b' : '#ff6b6b';
                         return (
                             <div style={{ color: factionColor, marginTop: '4px', borderTop: '1px solid #444', paddingTop: '4px' }}>
                                 <strong>{s.name}</strong>

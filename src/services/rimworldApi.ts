@@ -21,6 +21,7 @@ import {
   PlayerFaction,
   FactionRelations,
   Caravan,
+  FactionIconResponse,
 } from "../types";
 
 // -----------------------------
@@ -639,5 +640,9 @@ export const rimworldApi = {
 
   async getWorldGridArea(centerTileId: number, radius: number = 7): Promise<WorldTile[] | null> {
     return getJson<WorldTile[]>(`/world/grid/area?tile_id=${centerTileId}&radius=${radius}`);
+  },
+
+  async getFactionIcon(factionId: number): Promise<FactionIconResponse | null> {
+    return getJson<FactionIconResponse>(`/faction/icon?id=${factionId}`);
   },
 };
