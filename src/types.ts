@@ -172,6 +172,16 @@ export interface FactionIconResponse {
     color: string;
 }
 
+export interface CaravanPathData {
+    id: number;
+    moving: boolean;
+    current_tile: number;
+    next_tile: number;
+    progress: number;
+    destination_tile: number;
+    path: number[];
+}
+
 export interface ColonistDetailed {
   body_size: number;
   sleep: number;
@@ -374,4 +384,5 @@ export interface Caravan {
   mass_capacity: number;
   forageability: string;
   visibility: string;
+  days_to_arrive: number;
 }

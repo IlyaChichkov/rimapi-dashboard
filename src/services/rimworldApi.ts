@@ -1,5 +1,5 @@
 // src/services/rimworldApi.ts
-import { WorldCaravan, WorldSettlement, WorldTile } from "@/types/worldTypes";
+import { WorldSettlement, WorldTile } from "@/types/worldTypes";
 import {
   RimWorldData,
   GameState,
@@ -22,6 +22,7 @@ import {
   FactionRelations,
   Caravan,
   FactionIconResponse,
+  CaravanPathData,
 } from "../types";
 
 // -----------------------------
@@ -634,8 +635,8 @@ export const rimworldApi = {
     return getJson<WorldSettlement[]>('/world/settlements');
   },
 
-  async getWorldCaravans(): Promise<WorldCaravan[] | null> {
-    return getJson<WorldCaravan[]>('/world/caravans');
+  async getCaravans(): Promise<Caravan[] | null> {
+    return getJson<Caravan[]>('/world/caravans');
   },
 
   async getWorldGridArea(centerTileId: number, radius: number = 7): Promise<WorldTile[] | null> {
@@ -644,5 +645,9 @@ export const rimworldApi = {
 
   async getFactionIcon(factionId: number): Promise<FactionIconResponse | null> {
     return getJson<FactionIconResponse>(`/faction/icon?id=${factionId}`);
+  },
+  
+  async getCaravanPath(caravanId: number): Promise<CaravanPathData | null> {
+    return getJson<CaravanPathData>(`/world/caravan/path?id=${caravanId}`);
   },
 };

@@ -6,7 +6,7 @@ import WorldMap2D from './WorldMap2D'; // Import the new 2D component
 import './WorldMapCard.css';
 
 const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
-    const { tiles, settlements, caravans, factionIcons, loading, error, centerTileId } = useWorldMapData();
+    const { tiles, settlements, caravans, factionIcons, loading, error, centerTileId, caravanPaths } = useWorldMapData();
 
     if (loading) return (
         <div className="wm-loading">Scanning planetary data...</div>
@@ -24,6 +24,7 @@ const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
                 caravans={caravans}
                 centerTileId={centerTileId}
                 factionIcons={factionIcons}
+                caravanPaths={caravanPaths}
             />
         </div>
     );

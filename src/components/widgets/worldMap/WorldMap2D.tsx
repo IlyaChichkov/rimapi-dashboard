@@ -1,15 +1,16 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { Delaunay } from 'd3-delaunay';
 import HomeSvg from '../../../assets/map/home.svg';
-import { WorldTile, WorldSettlement, WorldCaravan } from '../../../types/worldTypes';
+import { WorldTile, WorldSettlement } from '../../../types/worldTypes';
 import { BIOME_TEXTURES, getBiomeColor } from './BiomeAssets';
+import { Caravan, CaravanPathData } from '@/types';
 
 interface WorldMap2DProps {
     tiles: WorldTile[];
     settlements: WorldSettlement[];
-    caravans: WorldCaravan[];
+    caravans: Caravan[];
     centerTileId: number;
-    factionIcons: Record<number, string>;
+    factionIcons: Record<number, string>; caravanPaths: Record<number, CaravanPathData>;
 }
 
 const getRoadStyle = (defName: string) => {
@@ -48,11 +49,11 @@ const getElevationOverlay = (elevation: number) => {
     return { color: 'transparent', opacity: 0 };
 };
 
-const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId, factionIcons }) => {
+const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, centerTileId, factionIcons, caravanPaths }) => {
     const [tooltip, setTooltip] = useState<{ x: number, y: number, tile: WorldTile } | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    const { renderTiles, roads, rivers, vbX, vbY, vbWidth, vbHeight, activeBiomes } = useMemo(() => {
+    const { renderTiles, roads, rivers, vbX, vbY, vbWidth, vbHeight, activeBiomes, tileLookup } = useMemo(() => {
         if (tiles.length === 0) return { renderTiles: [], roads: [], rivers: [], vbX: 0, vbY: 0, vbWidth: 100, vbHeight: 100, activeBiomes: [] };
 
         const centerTile = tiles.find(t => t.id === centerTileId) || tiles[0];
@@ -129,7 +130,7 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
             addConnection(tile.rivers || [], processedRivers, 'river');
         });
 
-        const centerPx = points.find(p => p.tile.id === centerTileId) || points[0];
+        const centerPx = tileLookup.get(centerTileId) || points[0];
         const VIEW_SIZE = 200;
         const uniqueBiomes = Array.from(new Set(tiles.map(t => t.biome)));
 
@@ -141,10 +142,27 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
             vbY: centerPx.y - (VIEW_SIZE / 2),
             vbWidth: VIEW_SIZE,
             vbHeight: VIEW_SIZE,
-            activeBiomes: uniqueBiomes
+            activeBiomes: uniqueBiomes,
+            tileLookup
         };
 
     }, [tiles, centerTileId]);
+
+    const destinationGroups = useMemo(() => {
+        const groups = new Map<number, number[]>(); // DestinationTileID -> CaravanID[]
+
+        caravans.forEach(c => {
+            const path = caravanPaths[c.id];
+            // Only group if moving and we know the destination
+            if (path && path.moving && path.destination_tile && path.path && path.path.length > 0) {
+                if (!groups.has(path.destination_tile)) {
+                    groups.set(path.destination_tile, []);
+                }
+                groups.get(path.destination_tile)!.push(c.id);
+            }
+        });
+        return groups;
+    }, [caravans, caravanPaths]);
 
     return (
         <div ref={containerRef} style={{ width: '100%', height: '100%', position: 'relative', background: '#0d1117' }}>
@@ -264,44 +282,38 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
 
                     return (
                         <g key={`icon-${tile.id}`} style={{ pointerEvents: 'none' }}>
+                            {/* RENDER SETTLEMENT (Top Position) */}
                             {settlement && (() => {
-                                // Try to lookup the tinted icon for this faction
                                 const iconUrl = factionIcons[settlement.faction.load_id];
+                                // If a caravan is ALSO here, move settlement up slightly to make room
+                                const yOffset = caravan ? -8 : -4;
 
                                 return (
                                     <>
                                         {iconUrl ? (
-                                            // 1. API Fetched Icon (Tinted)
                                             <image
                                                 href={iconUrl}
-                                                x={tile.x - 8}
-                                                y={tile.y - 8}
-                                                width="16"
-                                                height="16"
+                                                x={tile.x - 8} y={tile.y + yOffset - 4}
+                                                width="16" height="16"
                                                 preserveAspectRatio="xMidYMid slice"
                                                 style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }}
                                             />
                                         ) : (
-                                            // 2. Fallback Icons
                                             settlement.faction.is_player ? (
                                                 <image
                                                     href={HomeSvg}
-                                                    x={tile.x - 5}
-                                                    y={tile.y - 4}
-                                                    width="10"
-                                                    height="8"
+                                                    x={tile.x - 5} y={tile.y + yOffset}
+                                                    width="10" height="8"
                                                     preserveAspectRatio="xMidYMid slice"
                                                     style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }}
                                                 />
                                             ) : (
                                                 <text
-                                                    x={tile.x}
-                                                    y={tile.y + 5}
-                                                    fontSize={14}
-                                                    textAnchor="middle"
+                                                    x={tile.x} y={tile.y + yOffset + 9}
+                                                    fontSize={14} textAnchor="middle"
                                                     style={{ textShadow: '0 1px 4px black' }}
                                                 >
-                                                    n
+                                                    🛖
                                                 </text>
                                             )
                                         )}
@@ -309,11 +321,190 @@ const WorldMap2D: React.FC<WorldMap2DProps> = ({ tiles, settlements, caravans, c
                                 );
                             })()}
 
-                            {caravan && !settlement && (
-                                <text x={tile.x} y={tile.y + 5} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>
+                            {/* RENDER CARAVAN (Bottom Position) */}
+                            {caravan && (
+                                <text
+                                    // If settlement exists, push caravan down. If alone, center it.
+                                    x={tile.x}
+                                    y={tile.y + (settlement ? 12 : 5)}
+                                    fontSize={14}
+                                    textAnchor="middle"
+                                    style={{
+                                        textShadow: '0 1px 4px black',
+                                        // Add a generic bounce animation or color to make it distinct
+                                        filter: 'drop-shadow(0 0 2px gold)'
+                                    }}
+                                >
                                     🐫
                                 </text>
                             )}
+                        </g>
+                    );
+                })}
+
+                {/* 6. CARAVANS (Path & Position) */}
+                {caravans.map(c => {
+                    const pathData = caravanPaths[c.id];
+                    const startNode = tileLookup?.get(pathData ? pathData.current_tile : c.tile_id);
+
+                    // If we don't know where the caravan is (tile not loaded), skip
+                    if (!startNode) return null;
+
+                    let renderX = startNode.x;
+                    let renderY = startNode.y;
+
+                    // A. Interpolate Current Position
+                    // We only interpolate if moving AND we have the next tile coordinates
+                    if (pathData && pathData.moving && pathData.next_tile) {
+                        const nextNode = tileLookup?.get(pathData.next_tile);
+                        // If next_tile is same as current (API edge case) or undefined, stay at start
+                        if (nextNode && pathData.next_tile !== pathData.current_tile) {
+                            renderX = startNode.x + (nextNode.x - startNode.x) * pathData.progress;
+                            renderY = startNode.y + (nextNode.y - startNode.y) * pathData.progress;
+                        }
+                    }
+
+                    // B. Y-Offset Calculation (Avoid overlap with settlements)
+                    const isAtSettlement = settlements.some(s => s.tile_id === (pathData ? pathData.current_tile : c.tile_id));
+                    // If moving significantly (>10%), snap to road. Otherwise offset.
+                    const shouldOffset = isAtSettlement && (!pathData || !pathData.moving || pathData.progress < 0.1);
+                    const yOffset = shouldOffset ? 8 : 0;
+
+                    return (
+                        <g key={`caravan-${c.id}`} style={{ pointerEvents: 'none', transition: 'all 0.2s linear' }}>
+
+                            {/* C. DRAW PATH LINE */}
+                            {pathData && pathData.path && pathData.path.length > 0 && (() => {
+                                // 1. Find index of next_tile in the path to start drawing from
+                                // If current==next, start from index 1. If different, start from index of next_tile.
+                                let startIndex = pathData.path.indexOf(pathData.next_tile);
+                                if (startIndex === -1) startIndex = 0; // Fallback
+
+                                // 2. Build array of points to connect
+                                const pointsToDraw: { x: number, y: number }[] = [];
+
+                                // Start with Caravan Position
+                                pointsToDraw.push({ x: renderX, y: renderY + yOffset });
+
+                                // Add subsequent visible tiles from the path
+                                for (let i = startIndex; i < pathData.path.length; i++) {
+                                    const tileId = pathData.path[i];
+                                    // We only draw if the tile is loaded in our local grid
+                                    const pos = tileLookup?.get(tileId);
+                                    if (pos) {
+                                        pointsToDraw.push(pos);
+                                    } else {
+                                        // If path goes off-screen, stop drawing lines
+                                        break;
+                                    }
+                                }
+
+                                // 3. Render Polyline
+                                if (pointsToDraw.length > 1) {
+                                    const pathString = pointsToDraw.map((p, idx) =>
+                                        `${idx === 0 ? 'M' : 'L'} ${p.x} ${p.y}`
+                                    ).join(' ');
+
+                                    return (
+                                        <path
+                                            d={pathString}
+                                            fill="none"
+                                            stroke="white"
+                                            strokeWidth="1.5"
+                                            strokeDasharray="4,3"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            opacity="0.6"
+                                            style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,1))' }}
+                                        />
+                                    );
+                                }
+                                return null;
+                            })()}
+
+                            {/* D. Yellow Token */}
+                            <circle
+                                cx={renderX}
+                                cy={renderY + yOffset}
+                                r={4.5}
+                                fill="#ffd43b"
+                                stroke="#111"
+                                strokeWidth="1"
+                                style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.8))' }}
+                            />
+                        </g>
+                    );
+                })}
+
+                {/* 7. DESTINATION LABELS (Grouped by Destination) */}
+                {Array.from(destinationGroups.entries()).map(([destId, caravanIds]) => {
+                    const destPos = tileLookup?.get(destId);
+                    // If destination is off-screen, don't draw the label
+                    if (!destPos) return null;
+
+                    // Constants for layout
+                    const ROW_HEIGHT = 14;
+                    const BOX_PADDING = 6;
+                    const BOX_WIDTH = 70;
+                    const boxHeight = (caravanIds.length * ROW_HEIGHT) + (BOX_PADDING * 2);
+
+                    // Position label above the destination tile
+                    const boxX = destPos.x - (BOX_WIDTH / 2);
+                    const boxY = destPos.y - boxHeight - 8; // 8px gap above tile
+
+                    return (
+                        <g key={`dest-label-${destId}`} style={{ pointerEvents: 'none' }}>
+                            {/* Connecting Triangle/Line */}
+                            <path
+                                d={`M${destPos.x},${destPos.y - 2} L${destPos.x - 4},${destPos.y - 8} L${destPos.x + 4},${destPos.y - 8} Z`}
+                                fill="rgba(0, 0, 0, 0.8)"
+                            />
+
+                            {/* Background Box */}
+                            <rect
+                                x={boxX}
+                                y={boxY}
+                                width={BOX_WIDTH}
+                                height={boxHeight}
+                                rx="4"
+                                fill="rgba(0, 0, 0, 0.85)"
+                                stroke="rgba(255, 255, 255, 0.2)"
+                                strokeWidth="1"
+                            />
+
+                            {/* Text Rows */}
+                            {caravanIds.map((cId, index) => {
+                                const path = caravanPaths[cId];
+                                const caravan = caravans.find(c => c.id === cId);
+
+                                if (!path || !path.path) return null;
+
+                                // Calculate remaining tiles
+                                const currentIndex = path.path.indexOf(path.next_tile);
+                                const safeIndex = currentIndex === -1 ? 0 : currentIndex;
+                                const tilesRemaining = Math.max(0, path.path.length - safeIndex);
+
+                                // Text Logic
+                                // If you add 'estimated_days' to API later, swap 'tilesRemaining' logic here
+                                const labelText = `${tilesRemaining} tiles`;
+                                const caravanName = caravan ? (caravan.name || `Caravan ${cId}`) : `#${cId}`;
+                                // You can truncate caravanName if needed
+
+                                return (
+                                    <text
+                                        key={`txt-${cId}`}
+                                        x={destPos.x}
+                                        y={boxY + BOX_PADDING + (index * ROW_HEIGHT) + 10}
+                                        fill="#ddd"
+                                        fontSize="10"
+                                        textAnchor="middle"
+                                        fontFamily="sans-serif"
+                                    >
+                                        {/* Display: "12 tiles" (Compact) or "C1: 12 tiles" */}
+                                        {caravanIds.length > 1 ? `C${cId}: ${labelText}` : labelText}
+                                    </text>
+                                );
+                            })}
                         </g>
                     );
                 })}
