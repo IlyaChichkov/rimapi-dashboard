@@ -271,11 +271,7 @@ const WorldMapContent = React.memo(({
                                     {iconUrl ? (
                                         <image href={iconUrl} x={tile.x - 8} y={tile.y + yOffset - 4} width="16" height="16" preserveAspectRatio="xMidYMid slice" style={{ filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.8))' }} />
                                     ) : (
-                                        settlement.faction.is_player ? (
-                                            <image href={HomeSvg} x={tile.x - 5} y={tile.y + yOffset} width="10" height="8" preserveAspectRatio="xMidYMid slice" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
-                                        ) : (
-                                            <text x={tile.x} y={tile.y + yOffset + 9} fontSize={14} textAnchor="middle" style={{ textShadow: '0 1px 4px black' }}>🛖</text>
-                                        )
+                                        <image href={HomeSvg} x={tile.x - 5} y={tile.y + yOffset} width="10" height="8" preserveAspectRatio="xMidYMid slice" style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))' }} />
                                     )}
                                 </>
                             );

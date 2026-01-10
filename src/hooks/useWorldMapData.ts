@@ -5,14 +5,11 @@ import { processFactionIcon } from '@/utils/iconProcessor';
 import { WorldTile, WorldSettlement } from '@/types/worldTypes';
 import { Caravan, CaravanPathData } from '@/types';
 
-export const useWorldMapData = (refreshInterval = 5000) => { // Reduced interval for smoother updates
+export const useWorldMapData = (refreshInterval = 5000) => {
     const [tiles, setTiles] = useState<WorldTile[]>([]);
     const [settlements, setSettlements] = useState<WorldSettlement[]>([]);
     const [caravans, setCaravans] = useState<Caravan[]>([]);
-    
-    // New State: Map[CaravanID -> PathData]
     const [caravanPaths, setCaravanPaths] = useState<Record<number, CaravanPathData>>({});
-    
     const [factionIcons, setFactionIcons] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -27,7 +24,7 @@ export const useWorldMapData = (refreshInterval = 5000) => { // Reduced interval
             try {
                 let currentCenter = centerTileId;
 
-                // 1. Find Center
+                // 1. Find Center if needed
                 if (currentCenter === null) {
                     const mySettlements = await rimworldApi.getWorldPlayerSettlements();
                     if (!isMounted) return;
@@ -40,7 +37,7 @@ export const useWorldMapData = (refreshInterval = 5000) => { // Reduced interval
                     }
                 }
 
-                // 2. Fetch Base Data
+                // 2. Fetch Map Geometry & Objects
                 const [gridData, allSettlements, allCaravans, allFactions] = await Promise.all([
                     rimworldApi.getWorldGridArea(currentCenter, 12),
                     rimworldApi.getWorldSettlements(),
@@ -55,48 +52,57 @@ export const useWorldMapData = (refreshInterval = 5000) => { // Reduced interval
                     setSettlements(allSettlements);
                     setCaravans(allCaravans);
                     setError(null);
+                    
+                    // CRITICAL: Set loading to false HERE so map renders immediately
+                    // while icons and paths load in background
+                    setLoading(false); 
 
-                    // 3. FETCH CARAVAN PATHS (New Logic)
+                    // 3. Background Fetch: Caravan Paths
                     if (allCaravans.length > 0) {
-                        const newPaths: Record<number, CaravanPathData> = {};
-                        // Fetch path for every caravan in parallel
-                        await Promise.all(allCaravans.map(async (c) => {
+                        // We do this async without awaiting the whole block to block UI
+                        Promise.all(allCaravans.map(async (c) => {
                             try {
                                 const path = await rimworldApi.getCaravanPath(c.id);
-                                if (path) newPaths[c.id] = path;
-                            } catch (e) {
-                                console.warn(`Failed to fetch path for caravan ${c.id}`);
-                            }
-                        }));
-                        if (isMounted) setCaravanPaths(newPaths);
+                                return path ? { id: c.id, path } : null;
+                            } catch { return null; }
+                        })).then((results) => {
+                            if (!isMounted) return;
+                            const newPaths: Record<number, CaravanPathData> = {};
+                            results.forEach(r => { if(r) newPaths[r.id] = r.path; });
+                            setCaravanPaths(prev => ({ ...prev, ...newPaths }));
+                        });
                     }
 
-                    // 4. Process Faction Icons (Existing Logic)
+                    // 4. Background Fetch: Faction Icons (Sequential to be nice to server)
                     if (allFactions) {
                         const factionsToFetch = allFactions.filter(f => !processedFactionIds.current.has(f.load_id));
                         if (factionsToFetch.length > 0) {
                             factionsToFetch.forEach(f => processedFactionIds.current.add(f.load_id));
-                            for (const faction of factionsToFetch) {
-                                if (!isMounted) break;
-                                try {
-                                    const iconResponse = await rimworldApi.getFactionIcon(faction.load_id);
-                                    if (iconResponse) {
-                                        const processedUrl = await processFactionIcon(iconResponse);
-                                        if (processedUrl && isMounted) {
-                                            setFactionIcons(prev => ({ ...prev, [faction.load_id]: processedUrl }));
+                            
+                            // Fire and forget this async loop
+                            (async () => {
+                                for (const faction of factionsToFetch) {
+                                    if (!isMounted) break;
+                                    try {
+                                        const iconResponse = await rimworldApi.getFactionIcon(faction.load_id);
+                                        if (iconResponse) {
+                                            const processedUrl = await processFactionIcon(iconResponse);
+                                            if (processedUrl && isMounted) {
+                                                setFactionIcons(prev => ({ ...prev, [faction.load_id]: processedUrl }));
+                                            }
                                         }
-                                    }
-                                } catch (e) { console.error(e); }
-                                if (isMounted) await new Promise(resolve => setTimeout(resolve, 300));
-                            }
+                                    } catch (e) { console.error(e); }
+                                    // Small delay to prevent UI stutter
+                                    if (isMounted) await new Promise(resolve => setTimeout(resolve, 100));
+                                }
+                            })();
                         }
                     }
                 }
             } catch (err) {
                 console.error(err);
                 if (isMounted) setError("Failed to load map data.");
-            } finally {
-                if (isMounted) setLoading(false);
+                setLoading(false); // Ensure loading stops on error
             }
         };
 
