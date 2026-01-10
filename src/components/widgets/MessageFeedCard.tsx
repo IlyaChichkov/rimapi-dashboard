@@ -44,9 +44,24 @@ const MessageFeedCard: React.FC = () => {
     };
 
     const getSeverityClass = (tags: string[]): string => {
-        if (tags.includes('NegativeEvent')) return 'severity-negative';
+        // 1. Critical Priority
+        if (tags.includes('ThreatBig')) return 'severity-threat-big';
+        if (tags.includes('Death')) return 'severity-death';
+        if (tags.includes('GameEnded')) return 'severity-death'; // Treat Game Over like Death
+
+        // 2. High Priority
+        if (tags.includes('ThreatSmall')) return 'severity-threat-small';
+
+        // 3. Specific Positive/Neutral Variants
+        if (tags.includes('AcceptVisitors') || tags.includes('AcceptJoiner')) return 'severity-positive';
+        if (tags.includes('RitualOutcomePositive')) return 'severity-gold';
+
+        // 4. Standard Categories
+        if (tags.includes('NegativeEvent') || tags.includes('RitualOutcomeNegative')) return 'severity-negative';
         if (tags.includes('PositiveEvent')) return 'severity-positive';
         if (tags.includes('NeutralEvent')) return 'severity-neutral';
+
+        // 5. Fallback
         return '';
     };
 
