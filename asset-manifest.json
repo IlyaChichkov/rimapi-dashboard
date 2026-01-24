@@ -1,16 +1,30 @@
 {
   "files": {
-    "main.css": "/rimapi-dashboard/static/css/main.fbc625e9.css",
-    "main.js": "/rimapi-dashboard/static/js/main.b29d5e95.js",
-    "static/js/453.a15dd84e.chunk.js": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js",
+    "main.css": "/rimapi-dashboard/static/css/main.61c6662f.css",
+    "main.js": "/rimapi-dashboard/static/js/main.5cbc0783.js",
+    "static/js/453.ae937046.chunk.js": "/rimapi-dashboard/static/js/453.ae937046.chunk.js",
     "static/media/defaultBackground.jpg": "/rimapi-dashboard/static/media/defaultBackground.c44fc59048124c880ec8.jpg",
+    "static/media/TemperateSwamp.png": "/rimapi-dashboard/static/media/TemperateSwamp.cdbb08629cb9acfcf4b4.png",
+    "static/media/ColdBog.png": "/rimapi-dashboard/static/media/ColdBog.0d66adde8899e839e229.png",
+    "static/media/TropicalSwamp.png": "/rimapi-dashboard/static/media/TropicalSwamp.b81c74a21a1701ca5d7d.png",
+    "static/media/TemperateForest.png": "/rimapi-dashboard/static/media/TemperateForest.e1f71da43e24f1f62ff3.png",
+    "static/media/AridShrubland.png": "/rimapi-dashboard/static/media/AridShrubland.ac9e43d3dc248be104b7.png",
+    "static/media/Desert.png": "/rimapi-dashboard/static/media/Desert.e293e77093ac718b4c44.png",
+    "static/media/ExtremeDesert.png": "/rimapi-dashboard/static/media/ExtremeDesert.c763e23fd68fc230fcf4.png",
+    "static/media/Tundra.png": "/rimapi-dashboard/static/media/Tundra.7da31c609b8426f4b0df.png",
+    "static/media/TropicalRainforest.png": "/rimapi-dashboard/static/media/TropicalRainforest.602d8bae71ee0c8ce86d.png",
+    "static/media/BorealForest.png": "/rimapi-dashboard/static/media/BorealForest.58e73be36ac4c0166b82.png",
+    "static/media/IceSheet.png": "/rimapi-dashboard/static/media/IceSheet.f143bb61d79d9f8feb17.png",
+    "static/media/Ocean.png": "/rimapi-dashboard/static/media/Ocean.89319f37c56e6ba86f95.png",
+    "static/media/IceSheetOcean.png": "/rimapi-dashboard/static/media/IceSheetOcean.ce7a8043d671d6de0c58.png",
     "index.html": "/rimapi-dashboard/index.html",
-    "main.fbc625e9.css.map": "/rimapi-dashboard/static/css/main.fbc625e9.css.map",
-    "main.b29d5e95.js.map": "/rimapi-dashboard/static/js/main.b29d5e95.js.map",
-    "453.a15dd84e.chunk.js.map": "/rimapi-dashboard/static/js/453.a15dd84e.chunk.js.map"
+    "static/media/home.svg": "/rimapi-dashboard/static/media/home.f981ee9d6dcfecf8c081d9efc60e5d95.svg",
+    "main.61c6662f.css.map": "/rimapi-dashboard/static/css/main.61c6662f.css.map",
+    "main.5cbc0783.js.map": "/rimapi-dashboard/static/js/main.5cbc0783.js.map",
+    "453.ae937046.chunk.js.map": "/rimapi-dashboard/static/js/453.ae937046.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.fbc625e9.css",
-    "static/js/main.b29d5e95.js"
+    "static/css/main.61c6662f.css",
+    "static/js/main.5cbc0783.js"
   ]
 }
