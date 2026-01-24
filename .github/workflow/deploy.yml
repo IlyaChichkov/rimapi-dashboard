@@ -6,9 +6,28 @@ on:
   pull_request:
     branches: [ main, master ]
 
+concurrency:
+  group: "pages-${{ github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   build-and-deploy:
+    # Add timeout to prevent stuck jobs
+    timeout-minutes: 15
+    
     runs-on: ubuntu-latest
+    
+    # Only deploy from main/master, not PRs
+    if: github.event_name == 'push'
+    
+    # Add permissions for GitHub Pages
+    permissions:
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
     - name: Checkout
@@ -26,13 +45,13 @@ jobs:
       run: bun run build
     
     - name: Setup Pages
-      uses: actions/configure-pages@v2
+      uses: actions/configure-pages@v3  # Updated to v3
     
     - name: Upload artifact
-      uses: actions/upload-pages-artifact@v1
+      uses: actions/upload-pages-artifact@v2  # Updated to v2
       with:
         path: ./build
     
     - name: Deploy to GitHub Pages
       id: deployment
-      uses: actions/deploy-pages@v1
+      uses: actions/deploy-pages@v2  # Updated to v2
