@@ -1,0 +1,96 @@
+.top-incidents-content {
+    height: 100%;
+    overflow-y: auto;
+    padding-right: 5px; /* Space for scrollbar */
+}
+
+/* Custom Scrollbar */
+.top-incidents-content::-webkit-scrollbar {
+    width: 6px;
+}
+.top-incidents-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+.incidents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.incident-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.incident-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex: 1;
+    margin-right: 15px;
+}
+
+.incident-label {
+    font-weight: 500;
+    color: #e0e0e0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: capitalize;
+}
+
+.incident-category {
+    font-size: 0.75em;
+    color: #888;
+    margin-top: 2px;
+}
+
+/* Right side: Number + Bar */
+.incident-value-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    width: 80px; /* Fixed width for alignment */
+}
+
+.incident-weight {
+    font-weight: 700;
+    color: #4dabf7;
+    font-size: 0.95em;
+}
+
+.weight-bar-bg {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.weight-bar-fill {
+    height: 100%;
+    background: #4dabf7;
+    border-radius: 2px;
+    transition: width 0.5s ease-out;
+}
+
+.error-msg {
+    color: #ff6b6b;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.empty-msg {
+    color: #888;
+    text-align: center;
+    margin-top: 20px;
+    font-style: italic;
+}

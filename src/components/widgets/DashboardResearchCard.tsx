@@ -1,8 +1,8 @@
-// src/components/DashboardResearchCard.tsx
 import React, { useState, useEffect } from 'react';
 import { ResearchProgress } from '@/types';
 import { rimworldApi } from '@/services/rimworldApi';
 import './DashboardResearchCard.css';
+import { useAutoRefresh } from '@/components/context/AutoRefreshContext'; // <--- IMPORT
 
 const formatResearchName = (name: string) => {
     if (!name || name === 'None') return 'None';
@@ -10,19 +10,22 @@ const formatResearchName = (name: string) => {
 };
 
 const DashboardResearchCard: React.FC = () => {
+    // 1. Consume Context
+    const { isAutoRefreshEnabled, refreshSignal } = useAutoRefresh();
+
     const [research, setResearch] = useState<ResearchProgress | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     const fetchResearch = async () => {
         try {
-            // Only set loading on first load to prevent flickering
+            // Only set loading if no data exists yet (prevents flickering)
             if (!research) setLoading(true);
 
             const data = await rimworldApi.fetchResearchProgress();
 
-            // --- FIX: Handle empty/null data as "Idle" state ---
-            if (!data || !data.name) {
+            if (!data || !data.name || data.name === 'None') {
+                // Fallback for idle state
                 setResearch({
                     name: 'None',
                     label: 'None',
@@ -41,20 +44,34 @@ const DashboardResearchCard: React.FC = () => {
             setError(null);
         } catch (err) {
             console.error("Research fetch error:", err);
-            // If it fails, keep existing data if possible, or show error
             setError('Failed to load research');
         } finally {
             setLoading(false);
         }
     };
 
+    // 2. Initial Load
     useEffect(() => {
         fetchResearch();
-        const interval = setInterval(fetchResearch, 5000);
-        return () => clearInterval(interval);
     }, []);
 
-    // Allow rendering if we have research data (even if it's the "None" object we created)
+    // 3. Auto Refresh Logic
+    useEffect(() => {
+        if (!isAutoRefreshEnabled) return;
+        const interval = setInterval(fetchResearch, 5000);
+        return () => clearInterval(interval);
+    }, [isAutoRefreshEnabled]);
+
+    // 4. Manual Refresh Logic
+    useEffect(() => {
+        if (refreshSignal > 0) {
+            setLoading(true);
+            fetchResearch();
+        }
+    }, [refreshSignal]);
+
+    // ... (Rendering logic remains mostly unchanged) ...
+
     if (error && !research) return <div className="dash-research-card error">{error}</div>;
     if (!research) return <div className="dash-research-card error">Processing...</div>;
 
@@ -73,7 +90,7 @@ const DashboardResearchCard: React.FC = () => {
 
     return (
         <div className={`dash-research-card ${getStatusColor()}`}>
-            {/* Standard Header */}
+            {/* ... Rest of your JSX (Header, Progress Bar, etc.) ... */}
             <div className="card-header standard-header">
                 <h3>Current Research</h3>
                 <span className={`status-badge ${getStatusColor()}`}>
@@ -84,7 +101,6 @@ const DashboardResearchCard: React.FC = () => {
             <div className="research-body">
                 {hasActiveResearch || isFinished ? (
                     <div className="active-project-container">
-                        {/* Compact Header */}
                         <div className="compact-header">
                             <span className="compact-title">Research</span>
                             <span className={`compact-badge ${getStatusColor()}`}>{statusText}</span>
@@ -127,7 +143,6 @@ const DashboardResearchCard: React.FC = () => {
                     </div>
                 ) : (
                     <div className="empty-state-research">
-                        {/* Compact Header for empty state */}
                         <div className="compact-header">
                             <span className="compact-title">Research</span>
                         </div>

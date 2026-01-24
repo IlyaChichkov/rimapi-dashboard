@@ -4,6 +4,7 @@ import { ResponsiveGridLayout } from 'react-grid-layout';
 import { Faction } from '../../types';
 import { rimworldApi } from '../../services/rimworldApi';
 import './FactionRelationsCard.css';
+import DashboardCard from './common/DashboardCard';
 
 interface FactionLayoutItem {
   i: string;
@@ -344,9 +345,9 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
   if (error) return <div className="faction-card-error">{error}</div>;
 
   return (
-    <div className="faction-relations-card" ref={containerRef}>
-      <div className="faction-header">
-        <h2>Faction Relations</h2>
+    <DashboardCard
+      title="Faction Relations"
+      headerAction={
         <div>
           <span className="faction-count">({sortedFactions.length})</span>
           <button
@@ -358,9 +359,9 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
             <span className="sort-text">Sort</span>
           </button>
         </div>
-      </div>
-
-      <div className="faction-grid-wrapper">
+      }
+    >
+      <div className="faction-grid-wrapper layout-drag-ignore" ref={containerRef}>
         {containerWidth > 0 && currentLayout.length > 0 && sortedFactions.length > 0 && (
           <ResponsiveGridLayout
             className={`faction-inner-grid breakpoint-${breakpoint}`}
@@ -415,7 +416,8 @@ const FactionRelationsCard: React.FC<FactionRelationsCardProps> = ({
           </ResponsiveGridLayout>
         )}
       </div>
-    </div>
+    </DashboardCard>
+
   );
 };
 

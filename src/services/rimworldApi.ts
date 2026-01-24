@@ -23,6 +23,11 @@ import {
   Caravan,
   FactionIconResponse,
   CaravanPathData,
+  FogResponse,
+  MapOresResponse,
+  MapOresData,
+  FogData,
+  IncidentDef,
 } from "../types";
 
 // -----------------------------
@@ -650,4 +655,38 @@ export const rimworldApi = {
   async getCaravanPath(caravanId: number): Promise<CaravanPathData | null> {
     return getJson<CaravanPathData>(`/world/caravan/path?id=${caravanId}`);
   },
+  
+  async getTopIncidents(limit: number = 10): Promise<IncidentDef[]> {
+    const data = await getJson<IncidentDef[]>(`/incidents/top?limit=${limit}`);
+    return data || [];
+  },
+
+async getMapOres(mapId: number = 0): Promise<MapOresResponse | null> {
+        // 1. Use the INNER data type for the generic
+        const data = await getJson<MapOresData>(`/map/ore?map_id=${mapId}`);
+        
+        if (!data) return null;
+
+        // 2. Re-construct the response wrapper because components expect 'success' and 'data' properties
+        return {
+            success: true,
+            data: data,
+        };
+    },
+
+  async getFogGrid(mapId: number = 0): Promise<FogResponse | null> {
+    
+    // 1. Get the raw data (FogData)
+        const data = await getJson<FogData>(`/map/fog-grid?map_id=${mapId}`);
+        
+        if (!data) return null;
+
+        // 2. Wrap it
+        return {
+            success: true,
+            data: data,
+        };
+        
+  }
+
 };

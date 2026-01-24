@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { messageStore, Message } from '../../services/messageStore';
 import './MessageFeedCard.css';
+import DashboardCard from './common/DashboardCard';
 
 const MessageFeedCard: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>(messageStore.getMessages());
@@ -128,19 +129,18 @@ const MessageFeedCard: React.FC = () => {
     };
 
     return (
-        <div className="message-feed-card">
-            <div className="card-header">
-                <div className="header-left">
-                    <h3>Message Feed</h3>
-                    <span className="message-count">({messages.length})</span>
+        <DashboardCard
+            title="Message Feed"
+            headerAction={
+                <div>
+                    {messages.length > 0 && (
+                        <button className="clear-btn" onClick={clearAllMessages}>
+                            Clear
+                        </button>
+                    )}
                 </div>
-                {messages.length > 0 && (
-                    <button className="clear-btn" onClick={clearAllMessages}>
-                        Clear
-                    </button>
-                )}
-            </div>
-
+            }
+        >
             <div className="message-list">
                 {messages.length === 0 ? (
                     <div className="empty-state">
@@ -182,7 +182,7 @@ const MessageFeedCard: React.FC = () => {
                 )}
             </div>
             {renderTooltip()}
-        </div>
+        </DashboardCard>
     );
 };
 

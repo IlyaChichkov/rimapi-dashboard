@@ -386,3 +386,38 @@ export interface Caravan {
   visibility: string;
   days_to_arrive: number;
 }
+
+export interface OreGroup {
+    maxHp: number;
+    cells: number[]; // Flattened indices
+    hp: number[];    // Current HP per cell
+}
+
+export interface MapOresData {
+    mapWidth: number;
+    ores: Record<string, OreGroup>; // Key is defName e.g., "MineableSteel"
+}
+
+export interface MapOresResponse {
+    success: boolean;
+    data: MapOresData;
+}
+
+export interface FogData {
+    mapId: number;
+    width: number;
+    height: number;
+    fog_data: string; // Base64 RLE
+}
+
+export interface FogResponse {
+    success: boolean;
+    data: FogData;
+}
+
+export interface IncidentDef {
+  def_name: string;
+  label: string;
+  category: string;
+  current_weight: number;
+}

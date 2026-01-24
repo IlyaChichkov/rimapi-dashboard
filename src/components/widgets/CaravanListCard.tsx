@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom';
 import { Caravan, CaravanPawn, CaravanItem } from '../../types';
 import { rimworldApi } from '../../services/rimworldApi';
 import './CaravanListCard.css';
+import { useAutoRefresh } from '../context/AutoRefreshContext';
+import DashboardCard from './common/DashboardCard';
 
 // --- Helper Components ---
 
@@ -110,19 +112,20 @@ const CaravanDetailModal: React.FC<CaravanModalProps> = ({ caravan, onClose }) =
     );
 };
 
-// --- Main Component ---
-
 const CaravanListCard: React.FC = () => {
+    // 1. Consume Context
+    const { isAutoRefreshEnabled, refreshSignal } = useAutoRefresh();
+
     const [caravans, setCaravans] = useState<Caravan[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-
-    // New state for selected modal
     const [selectedCaravan, setSelectedCaravan] = useState<Caravan | null>(null);
 
     const fetchCaravans = async () => {
         try {
+            // Only set loading on first load or manual refresh
             if (caravans.length === 0) setLoading(true);
+
             const data = await rimworldApi.fetchCaravans();
             if (data) {
                 setCaravans(data.filter((c: Caravan) => c.is_player_controlled));
@@ -137,13 +140,28 @@ const CaravanListCard: React.FC = () => {
         }
     };
 
+    // 2. Initial Load
     useEffect(() => {
         fetchCaravans();
-        const interval = setInterval(fetchCaravans, 10000);
-        return () => clearInterval(interval);
     }, []);
 
+    // 3. Auto Refresh Logic
+    useEffect(() => {
+        if (!isAutoRefreshEnabled) return;
+        const interval = setInterval(fetchCaravans, 10000);
+        return () => clearInterval(interval);
+    }, [isAutoRefreshEnabled]);
+
+    // 4. Manual Refresh Logic
+    useEffect(() => {
+        if (refreshSignal > 0) {
+            setLoading(true);
+            fetchCaravans();
+        }
+    }, [refreshSignal]);
+
     if (error) {
+        // ... existing error render
         return (
             <div className="caravan-card">
                 <div className="card-header"><h3>Active Caravans</h3></div>
@@ -153,61 +171,59 @@ const CaravanListCard: React.FC = () => {
     }
 
     return (
-        <div className="caravan-card">
-            <div className="card-header">
-                <h3>Active Caravans</h3>
-                <span className="caravan-count">({caravans.length})</span>
-            </div>
-
-            <div className="caravan-list">
-                {caravans.length === 0 ? (
-                    <div className="empty-state">
-                        <span className="empty-icon">🐫</span>
-                        <p>No active caravans</p>
-                    </div>
-                ) : (
-                    caravans.map((caravan) => (
-                        <div
-                            key={caravan.id}
-                            className={`caravan-item ${selectedCaravan?.id === caravan.id ? 'active' : ''} layout-drag-ignore`}
-                            onClick={() => setSelectedCaravan(caravan)}
-                        >
-                            <div className="caravan-item-header">
-                                <div className="caravan-title-row">
-                                    <span className="caravan-icon">🐫</span>
-                                    <span className="caravan-name">{caravan.name}</span>
-                                    <span className="caravan-tile">Tile: {caravan.tile_id}</span>
-                                </div>
-
-                                <div className="caravan-stats-row">
-                                    <div className="stat-badge">
-                                        👥 {caravan.pawns.length}
+        <DashboardCard
+            title="Active Caravans"
+        >
+            <div>
+                <div className="caravan-list">
+                    {caravans.length === 0 ? (
+                        <div className="empty-state">
+                            <span className="empty-icon">🐫</span>
+                            <p>No active caravans</p>
+                        </div>
+                    ) : (
+                        caravans.map((caravan) => (
+                            <div
+                                key={caravan.id}
+                                className={`caravan-item ${selectedCaravan?.id === caravan.id ? 'active' : ''} layout-drag-ignore`}
+                                onClick={() => setSelectedCaravan(caravan)}
+                            >
+                                <div className="caravan-item-header">
+                                    <div className="caravan-title-row">
+                                        <span className="caravan-icon">🐫</span>
+                                        <span className="caravan-name">{caravan.name}</span>
+                                        <span className="caravan-tile">Tile: {caravan.tile_id}</span>
                                     </div>
-                                    <div className="stat-badge">
-                                        📦 {caravan.items.length}
-                                    </div>
-                                    <div className="mass-bar-container">
-                                        <div
-                                            className="mass-bar-fill"
-                                            style={{ width: `${Math.min((caravan.mass_usage / caravan.mass_capacity) * 100, 100)}%` }}
-                                        />
-                                        <span className="mass-text">{caravan.mass_usage.toFixed(0)}kg</span>
+
+                                    <div className="caravan-stats-row">
+                                        <div className="stat-badge">
+                                            👥 {caravan.pawns.length}
+                                        </div>
+                                        <div className="stat-badge">
+                                            📦 {caravan.items.length}
+                                        </div>
+                                        <div className="mass-bar-container">
+                                            <div
+                                                className="mass-bar-fill"
+                                                style={{ width: `${Math.min((caravan.mass_usage / caravan.mass_capacity) * 100, 100)}%` }}
+                                            />
+                                            <span className="mass-text">{caravan.mass_usage.toFixed(0)}kg</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    ))
+                        ))
+                    )}
+                </div>
+
+                {selectedCaravan && (
+                    <CaravanDetailModal
+                        caravan={selectedCaravan}
+                        onClose={() => setSelectedCaravan(null)}
+                    />
                 )}
             </div>
-
-            {/* Render Modal if selected */}
-            {selectedCaravan && (
-                <CaravanDetailModal
-                    caravan={selectedCaravan}
-                    onClose={() => setSelectedCaravan(null)}
-                />
-            )}
-        </div>
+        </DashboardCard>
     );
 };
 
