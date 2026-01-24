@@ -164,7 +164,26 @@ export interface ColonistMedicalInfo {
   blood_loss?: number;
 }
 
+export interface FactionIconResponse {
+    image: {
+        result: string;
+        image_base64: string;
+    };
+    color: string;
+}
+
+export interface CaravanPathData {
+    id: number;
+    moving: boolean;
+    current_tile: number;
+    next_tile: number;
+    progress: number;
+    destination_tile: number;
+    path: number[];
+}
+
 export interface ColonistDetailed {
+  body_size: number;
   sleep: number;
   comfort: number;
   beauty: number;
@@ -358,11 +377,47 @@ export interface Caravan {
   id: number;
   name: string;
   is_player_controlled: boolean;
-  tile: number;
+  tile_id: number;
   pawns: CaravanPawn[];
   items: CaravanItem[];
   mass_usage: number;
   mass_capacity: number;
   forageability: string;
   visibility: string;
+  days_to_arrive: number;
+}
+
+export interface OreGroup {
+    maxHp: number;
+    cells: number[]; // Flattened indices
+    hp: number[];    // Current HP per cell
+}
+
+export interface MapOresData {
+    mapWidth: number;
+    ores: Record<string, OreGroup>; // Key is defName e.g., "MineableSteel"
+}
+
+export interface MapOresResponse {
+    success: boolean;
+    data: MapOresData;
+}
+
+export interface FogData {
+    mapId: number;
+    width: number;
+    height: number;
+    fog_data: string; // Base64 RLE
+}
+
+export interface FogResponse {
+    success: boolean;
+    data: FogData;
+}
+
+export interface IncidentDef {
+  def_name: string;
+  label: string;
+  category: string;
+  current_weight: number;
 }

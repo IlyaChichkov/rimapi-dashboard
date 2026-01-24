@@ -1,16 +1,20 @@
 /* src/components/DashboardCard.css */
 
 .dashboard-card {
-    background: rgba(30, 30, 30, 0.6); /* Dark semi-transparent background */
-    backdrop-filter: blur(12px);         /* Glass blur effect */
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease;
+    box-sizing: border-box;
+
+    height: 100%; 
+    width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    overflow: hidden; 
+    box-sizing: border-box;
 }
 
 .dashboard-card:hover {
@@ -18,17 +22,17 @@
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Header */
+/* HEADER: Fixed height, never shrinks */
 .dashboard-card-header {
+    flex: 0 0 auto; /* Grow: 0, Shrink: 0, Basis: Auto */
     padding: 10px 15px;
     background: rgba(255, 255, 255, 0.03);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    /* This makes the header draggable in ReactGridLayout if you set drag-handle class here,
-       but usually RGL handles the whole item. */
-    cursor: grab; 
+    cursor: grab;
+    min-height: 42px;
 }
 
 .dashboard-card-header:active {
@@ -47,42 +51,68 @@
     text-transform: uppercase;
 }
 
-/* Actions (Settings Icon) */
 .dashboard-card-actions {
     display: flex;
     gap: 8px;
     align-items: center;
 }
 
-.card-settings-btn {
-    background: transparent;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 2px;
-    border-radius: 4px;
-    line-height: 1;
-    transition: all 0.2s;
-    opacity: 0.6;
-}
-
-.card-settings-btn:hover {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-    opacity: 1;
-    transform: rotate(45deg); /* Nice little rotation effect */
-}
-
-/* Body */
+/* BODY: Grows to fill remaining space */
 .dashboard-card-body {
-    flex: 1;
-    overflow: hidden; /* Important for charts to stay contained */
+    flex: 1 1 auto;      /* Grow: 1, Shrink: 1, Basis: Auto */
+    display: flex;       /* Be a flex container for children */
+    flex-direction: column;
     position: relative;
-    padding: 0; /* Let children handle padding if needed, or set padding: 10px here */
+    min-height: 0;       /* CRITICAL: Allows Flex children to scroll! */
+    width: 100%;
+    padding: 0;
+    overflow: hidden;    /* Prevent body itself from scrolling, child handles it */
 }
 
-/* Drag handle style specifically if used */
-.drag-handle {
-    cursor: grab;
+/* CONTENT WRAPPER: The scrollable area */
+.dashboard-card-content-wrapper {
+    flex: 1 1 auto;      /* Grow to fill body */
+    width: 100%;
+    height: 100%;        /* Explicit height helps some browsers */
+    overflow-y: auto;    /* Enable vertical scroll */
+    overflow-x: hidden;
+    padding: 10px 14px;  /* Internal padding */
+    box-sizing: border-box;
+}
+
+/* SCROLLBAR STYLING (Webkit) */
+.dashboard-card-content-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+.dashboard-card-content-wrapper::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+}
+.dashboard-card-content-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+.dashboard-card-content-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+
+/* CHART & MAP CONTAINERS (No padding, no scroll) */
+.dashboard-card-chart-container,
+.dashboard-card-map-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-card-chart-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+    padding: 10px; /* Optional internal padding for the chart */
+    box-sizing: border-box;
 }

@@ -56,7 +56,9 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
     const availableTraits = React.useMemo(() => {
         const traits = new Set<string>();
         colonistsDetailed.forEach((colonist: ColonistDetailed) => {
-            colonist.colonist_work_info.traits.forEach((trait) => {
+            // Add safe navigation with optional chaining
+            const colonistTraits = colonist.colonist_work_info?.traits || [];
+            colonistTraits.forEach((trait) => {
                 traits.add(trait.label || trait.name);
             });
         });
@@ -132,27 +134,28 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         if (!colonistsDetailed.length) return [];
 
         return colonistsDetailed.filter((colonist: ColonistDetailed) => {
-            // Trait filter
+            // Trait filter - with safe navigation
             if (traitFilter.length > 0) {
-                const colonistTraits = colonist.colonist_work_info.traits;
+                const colonistTraits = colonist.colonist_work_info?.traits || [];
                 const hasMatchingTrait = traitFilter.some((needle) =>
                     colonistTraits.some((t) => t.label === needle || t.name === needle)
                 );
                 if (!hasMatchingTrait) return false;
             }
 
-            // Job filter
+            // Job filter - with safe navigation
             if (jobFilter.length > 0) {
-                const currentJob = colonist.colonist_work_info.current_job;
-                const hasWorkPriority = colonist.colonist_work_info.work_priorities.some(
+                const currentJob = colonist.colonist_work_info?.current_job || '';
+                const workPriorities = colonist.colonist_work_info?.work_priorities || [];
+                const hasWorkPriority = workPriorities.some(
                     wp => jobFilter.includes(wp.work_type) && wp.priority > 0
                 );
                 if (!jobFilter.includes(currentJob) && !hasWorkPriority) return false;
             }
 
-            // Skill filter - range based
+            // Skill filter - range based with safe navigation
             if (skillFilters.length > 0) {
-                const colonistSkills = colonist.colonist_work_info.skills;
+                const colonistSkills = colonist.colonist_work_info?.skills || [];
                 const passesAllSkillFilters = skillFilters.every(skillFilter => {
                     const skill = colonistSkills.find(s => s.name === skillFilter.name);
                     if (!skill) return false; // Colonist doesn't have this skill
@@ -165,7 +168,6 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
         });
     }, [colonistsDetailed, traitFilter, skillFilters, jobFilter]);
 
-
     // Define columns for the table
     const columns = React.useMemo<ColumnDef<ColonistDetailed>[]>(
         () => [
@@ -174,7 +176,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 header: 'Colonist',
                 cell: ({ row }) => {
                     const colonist = row.original.colonist;
-                    const traits = row.original.colonist_work_info.traits;
+                    const traits = row.original.colonist_work_info?.traits || [];
                     const imageUrl = imageCache[colonist.id];
 
                     return (
@@ -222,9 +224,8 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 accessorKey: 'status',
                 header: 'Status',
                 cell: ({ row }) => {
-                    const colonist = row.original.colonist;
-                    const currentJob = row.original.colonist_work_info.current_job;
-                    const hasMedicalIssues = row.original.colonist_medical_info.hediffs.length > 0;
+                    const currentJob = row.original.colonist_work_info?.current_job || '';
+                    const hasMedicalIssues = row.original.colonist_medical_info?.hediffs.length > 0 || false;
 
                     return (
                         <div className="status-cell">
@@ -260,7 +261,7 @@ const ColonistsOverviewTab: React.FC<ColonistsOverviewProps> = ({
                 accessorKey: 'skills',
                 header: 'Skills',
                 cell: ({ row }) => {
-                    const skills = row.original.colonist_work_info.skills;
+                    const skills = row.original.colonist_work_info?.skills || [];
                     // Get top 4 highest level skills
                     const topSkills = skills
                         .filter(skill => skill.level > 0)

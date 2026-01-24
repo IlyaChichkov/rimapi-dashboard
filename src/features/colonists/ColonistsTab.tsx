@@ -23,6 +23,9 @@ const ColonistsTab: React.FC<ColonistsTabProps> = (props) => {
     const [selectedColonist, setSelectedColonist] = React.useState<ColonistDetailed | undefined>();
 
     const renderSubTabContent = () => {
+        console.log(`ColonistsTab data`)
+        console.log(props.colonistsDetailed)
+
         switch (activeSubTab) {
             case 'work':
                 return (

@@ -1,4 +1,3 @@
-// src/components/DashboardSettingsModal.tsx
 import React, { useState, useEffect } from 'react';
 import './DashboardSettingsModal.css';
 
@@ -7,8 +6,9 @@ interface DashboardSettingsModalProps {
     onClose: () => void;
     currentBgUrl: string;
     currentBlur: number;
+    currentOverlay: number; // New Prop: -100 (Black) to 100 (White)
     defaultBgUrl: string;
-    onSave: (url: string, blur: number) => void;
+    onSave: (url: string, blur: number, overlay: number) => void;
 }
 
 const BG_PRESETS = [
@@ -23,27 +23,44 @@ const BG_PRESETS = [
 ];
 
 const DashboardSettingsModal: React.FC<DashboardSettingsModalProps> = ({
-    isOpen, onClose, currentBgUrl, currentBlur, defaultBgUrl, onSave
+    isOpen, onClose, currentBgUrl, currentBlur, currentOverlay, defaultBgUrl, onSave
 }) => {
     const [bgUrl, setBgUrl] = useState(currentBgUrl);
     const [blur, setBlur] = useState(currentBlur);
+    const [overlay, setOverlay] = useState(currentOverlay || 0);
 
     useEffect(() => {
         setBgUrl(currentBgUrl);
         setBlur(currentBlur);
-    }, [currentBgUrl]);
+        setOverlay(currentOverlay || 0);
+    }, [currentBgUrl, currentBlur, currentOverlay, isOpen]);
 
     if (!isOpen) return null;
 
     const handleSave = () => {
-        onSave(bgUrl, blur);
+        onSave(bgUrl, blur, overlay);
         onClose();
     };
 
     const handleReset = () => {
         setBgUrl(defaultBgUrl);
         setBlur(0);
-        onSave(defaultBgUrl, blur);
+        setOverlay(0);
+        onSave(defaultBgUrl, 0, 0);
+    };
+
+    // Helper to visualize overlay in the preview box
+    const getPreviewStyle = () => {
+        let overlayString = '';
+        if (overlay !== 0) {
+            const opacity = Math.abs(overlay) / 100;
+            const color = overlay < 0 ? `rgba(0,0,0,${opacity})` : `rgba(255,255,255,${opacity})`;
+            overlayString = `linear-gradient(${color}, ${color}), `;
+        }
+        return {
+            backgroundImage: `${overlayString}url(${bgUrl})`,
+            filter: `blur(${blur / 4}px)` // Reduced blur for small preview
+        };
     };
 
     return (
@@ -72,11 +89,6 @@ const DashboardSettingsModal: React.FC<DashboardSettingsModalProps> = ({
                                 </button>
                             ))}
                         </div>
-
-                        {/* --- CREDITS --- */}
-                        <p className="settings-hint credits">
-                            Backgrounds from <a href="https://github.com/aRandomKiwi/RimThemes" target="_blank" rel="noopener noreferrer">RimThemes</a> repo, author: aRandomKiwi.
-                        </p>
                     </div>
 
                     <div className="settings-divider"></div>
@@ -84,8 +96,6 @@ const DashboardSettingsModal: React.FC<DashboardSettingsModalProps> = ({
                     {/* --- CUSTOM URL SECTION --- */}
                     <div className="settings-section">
                         <h3>Custom URL</h3>
-                        <p className="settings-hint">Or paste a custom image URL:</p>
-
                         <div className="settings-input-group">
                             <input
                                 type="text"
@@ -97,33 +107,63 @@ const DashboardSettingsModal: React.FC<DashboardSettingsModalProps> = ({
                         </div>
 
                         <div className="settings-preview">
-                            <label>Current Preview:</label>
-                            <div
-                                className="bg-preview-box"
-                                style={{ backgroundImage: `url(${bgUrl})` }}
-                            />
+                            <label>Preview:</label>
+                            <div className="bg-preview-box" style={getPreviewStyle()} />
                         </div>
                     </div>
-                    {/* BLUR SLIDER */}
-                    <div className="settings-slider-group">
-                        <div className="slider-header">
-                            <label className="settings-label">Background Blur</label>
-                            <span className="slider-value">{blur}px</span>
+
+                    <div className="settings-divider"></div>
+
+                    {/* --- SLIDERS SECTION --- */}
+                    <div className="settings-section">
+                        <h3>Appearance</h3>
+
+                        {/* BLUR SLIDER */}
+                        <div className="settings-slider-group">
+                            <div className="slider-header">
+                                <label className="settings-label">Blur</label>
+                                <span className="slider-value">{blur}px</span>
+                            </div>
+                            <input
+                                type="range"
+                                min="0"
+                                max="20"
+                                step="1"
+                                value={blur}
+                                onChange={(e) => setBlur(parseInt(e.target.value))}
+                                className="settings-slider"
+                            />
                         </div>
-                        <input
-                            type="range"
-                            min="0"
-                            max="20"
-                            step="1"
-                            value={blur}
-                            onChange={(e) => setBlur(parseInt(e.target.value))}
-                            className="settings-slider"
-                        />
+
+                        {/* OVERLAY SLIDER */}
+                        <div className="settings-slider-group">
+                            <div className="slider-header">
+                                <label className="settings-label">Tint (Dark ↔ Light)</label>
+                                <span className="slider-value">{overlay > 0 ? `+${overlay}` : overlay}%</span>
+                            </div>
+                            <div className="slider-container-dual">
+                                <span className="slider-icon">🌑</span>
+                                <input
+                                    type="range"
+                                    min="-90"
+                                    max="90"
+                                    step="5"
+                                    value={overlay}
+                                    onChange={(e) => setOverlay(parseInt(e.target.value))}
+                                    className="settings-slider"
+                                    style={{ margin: '0 10px' }}
+                                />
+                                <span className="slider-icon">☀️</span>
+                            </div>
+                            <p className="settings-hint" style={{ marginTop: '5px', fontSize: '0.8rem' }}>
+                                Negative values darken the background, positive values lighten it.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="settings-actions">
                         <button className="settings-btn secondary" onClick={handleReset}>
-                            Reset to Default
+                            Reset
                         </button>
                         <button className="settings-btn primary" onClick={handleSave}>
                             Save Changes

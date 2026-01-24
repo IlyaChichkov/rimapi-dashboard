@@ -8,12 +8,16 @@ import { ColonistStatsChart, ResourcesChart, PowerChart, PopulationChart } from 
 import CaravanListCard from '../CaravanListCard';
 import ColonySummary from '../ColonySummary';
 import ColonistCard from '../ColonistCard';
+import IncidentChanceCard from '../TopIncidentsCard';
 import SseStatusCard from '../SseStatusCard';
 import DashboardResearchCard from '../DashboardResearchCard';
 import MessageFeedCard from '../MessageFeedCard';
 import FactionRelationsCard from '../FactionRelationsCard';
 import DashboardCard from './DashboardCard';
 import { GameInfoCard } from '../GameInfoCard';
+import WorldMapCard from '../worldMap/WorldMapCard';
+import OreListCard from '../map/OreListCard';
+import TopIncidentsCard from '../TopIncidentsCard';
 
 interface CardRegistryProps {
     item: Layout[number];
@@ -49,9 +53,9 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
 
         case 'colonists':
             return (
-                <div className="chart-card-content">
-                    <div className="chart-header">
-                        <h3>Mood</h3>
+                <DashboardCard
+                    title="Colonist Mood"
+                    headerAction={
                         <div className="chart-corner-container">
                             <div className="colonist-count-badge">{colonists.length} Colonists</div>
                             <div className="sort-controls">
@@ -62,58 +66,65 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
                                 </select>
                             </div>
                         </div>
-                    </div>
+                    }
+                >
                     <div className="chart-container">
                         {colonists.length > 0 ?
                             <ColonistStatsChart colonists={getSortedColonists(colonists, sortBy)} />
                             : <div className="no-data">No colonist data available</div>
                         }
                     </div>
-                </div>
+                </DashboardCard>
             );
 
         case 'resources':
             return (
-                <div className="chart-card-content">
-                    <div className="chart-header">
-                        <h3>Resource Distribution</h3>
-                        <div className="resource-total">Total: {resources.total_items || 0} items</div>
+                <DashboardCard
+                    title="Storages"
+                    headerAction={<div className="resource-total">Total: {resources.total_items || 0} items</div>}>
+                    <div className="chart-card-content">
+                        <div className="chart-container">
+                            {resources.categories?.length > 0 ?
+                                <ResourcesChart resources={resources} /> :
+                                <div className="no-data">No resource data available</div>
+                            }
+                        </div>
                     </div>
-                    <div className="chart-container">
-                        {resources.categories?.length > 0 ?
-                            <ResourcesChart resources={resources} /> :
-                            <div className="no-data">No resource data available</div>
-                        }
-                    </div>
-                </div>
+                </DashboardCard>
+            );
+
+        case 'topIncidents':
+            return (
+                <TopIncidentsCard
+                    autoRefresh={autoRefresh}
+                />
             );
 
         case 'power':
             return (
-                <div className="chart-card-content">
-                    <div className="chart-header">
-                        <div className="chart-header-top">
-                            <h3>Power Management</h3>
-                            <div className="power-header-controls">
-                                <div className="power-status">
-                                    Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
-                                    {(power.total_consumption || 0) > (power.current_power || 0) && (
-                                        <span className="power-warning-icon" title="Power consumption exceeds production!">⚠️</span>
-                                    )}
-                                </div>
+                <DashboardCard
+                    title="Power Management"
+                    headerAction={
+                        <div className="power-header-controls">
+                            <div className="power-status">
+                                Net: {(power.current_power || 0) - (power.total_consumption || 0)}W
+                                {(power.total_consumption || 0) > (power.current_power || 0) && (
+                                    <span className="power-warning-icon" title="Power consumption exceeds production!">⚠️</span>
+                                )}
                             </div>
                         </div>
-                    </div>
+                    }
+                >
                     <div className="chart-container"><PowerChart power={power} /></div>
-                </div>
+                </DashboardCard>
             );
 
         case 'population':
             return (
-                <div className="chart-card-content">
-                    <div className="chart-header"><h3>Population Overview</h3></div>
+                <DashboardCard
+                    title="Population Overview">
                     <div className="chart-container"><PopulationChart creatures={creatures} /></div>
-                </div>
+                </DashboardCard>
             );
 
         case 'colonySummary':
@@ -129,39 +140,52 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
 
         case 'colonist':
             return (
-                <div className="colonist-card-wrapper">
+                <div style={{ height: '100%', width: '100%' }}> {/* Simple container, no style */}
                     <ColonistCard
                         colonistId={settings.colonistId || 0}
                         size={{ w: item.w, h: item.h }}
                         onSelectColonist={(id) => onSettingsChange(item.i, { ...settings, colonistId: id })}
                         autoRefresh={autoRefresh}
-                        lastUpdated={new Date()} // Passed from parent ideally
+                        lastUpdated={new Date()}
                     />
-                </div>
-            );
+                </div>);
 
         case 'sseStatus': return <SseStatusCard />;
-        case 'currentResearch': return <DashboardResearchCard />;
+        case 'currentResearch': return (
+            <DashboardCard>
+                <DashboardResearchCard />
+            </DashboardCard>);
         case 'messageFeed': return <MessageFeedCard />;
         case 'gameInfo':
             return (
-                <GameInfoCard
-                    map_datetime={data?.map_datetime || {}}
-                    weather={data?.weather || {}}
-                    gameState={data?.gameState || {}}
-                />
+                <DashboardCard>
+                    <GameInfoCard
+                        map_datetime={data?.map_datetime || {}}
+                        weather={data?.weather || {}}
+                        gameState={data?.gameState || {}}
+                    />
+                </DashboardCard>
             );
+
+        case 'globalMap':
+            return (
+                <DashboardCard
+                    title="World Map"
+                >
+                    <WorldMapCard />
+                </DashboardCard>
+            );
+        case 'oreScanner':
+            return <OreListCard />;
 
         case 'factionRelations':
             return (
-                <div className="faction-card-wrapper">
-                    <FactionRelationsCard
-                        settings={settings}
-                        onSettingsChange={(newS) => onSettingsChange(item.i, newS)}
-                        autoRefresh={autoRefresh}
-                        lastUpdated={new Date()}
-                    />
-                </div>
+                <FactionRelationsCard
+                    settings={settings}
+                    onSettingsChange={(newS) => onSettingsChange(item.i, newS)}
+                    autoRefresh={autoRefresh}
+                    lastUpdated={new Date()}
+                />
             );
 
         default:

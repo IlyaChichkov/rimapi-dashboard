@@ -1,0 +1,42 @@
+.world-map-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.wm-scene-container {
+    width: 100%;
+    height: 100%;
+    background: #0d1117; /* Space/Dark background */
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+.wm-loading, .wm-error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #888;
+    font-size: 0.9rem;
+}
+
+.wm-error { color: #ff6b6b; }
+
+.wm-overlay-info {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    display: flex;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.wm-badge {
+    background: rgba(0,0,0,0.6);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #aaa;
+    border: 1px solid rgba(255,255,255,0.1);
+}

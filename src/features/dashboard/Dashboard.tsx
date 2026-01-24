@@ -31,6 +31,7 @@ import DevTab from '@/features/developers/DevTab';
 import ColonySummarySettingsModal from '@/features/dashboard/modals/ColonySummarySettingsModal';
 import PresetsModal from '@/features/dashboard/modals/PresetsModal';
 import DashboardSettingsModal from '@/features/dashboard/modals/DashboardSettingsModal';
+import { useAutoRefresh } from '@/components/context/AutoRefreshContext';
 
 interface RimWorldDashboardProps {
   apiUrl: string;
@@ -38,7 +39,7 @@ interface RimWorldDashboardProps {
   onGameStateChange: () => void;
 }
 
-// --- DEFINE CARD METADATA ---
+// --- DEFINE CARD METADATA ---=
 const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'gameInfo', title: 'Game Info', description: 'Date, weather, storyteller, and sync status.', icon: '🌍' },
   { id: 'colonists', title: 'Colonist Charts', description: 'Charts for mood, health, and needs overview.', icon: '📊' },
@@ -51,16 +52,23 @@ const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'colonist', title: 'Single Colonist', description: 'Detailed inspector for a specific pawn.', icon: '👤' },
   { id: 'colonySummary', title: 'Colony Summary', description: 'Text-based stats like total wealth.', icon: '📝' },
   { id: 'caravanList', title: 'Caravans', description: 'Active world map caravans.', icon: '🐫' },
+  { id: 'globalMap', title: 'World Map', description: 'World map.', icon: '🗺️' },
+  { id: 'oreScanner', title: 'Ore Scanner', description: 'Scan for valuable resources.', icon: '💎' },
+  { id: 'topIncidents', title: 'Top Incidents', description: 'List of events with highest probability of occurring next.', icon: '🎲' },
   // { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
 ];
 
 const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   apiUrl, onResetConfig, onGameStateChange
 }) => {
-  // 1. Data Hook
+  // 1. Get Global Refresh Settings
+  const { isAutoRefreshEnabled, toggleAutoRefresh, triggerManualRefresh, refreshSignal } = useAutoRefresh();
+
+  // 2. Data Hook (Pass these values into your hook so it knows when to update!)
+  // Note: You will need to slightly update useRimWorldData to accept these props or use the context inside it.
   const {
-    data, loading, error, lastUpdated, autoRefresh, setAutoRefresh, refresh, getSortedColonists
-  } = useRimWorldData(apiUrl, onGameStateChange);
+    data, loading, error, refresh, getSortedColonists
+  } = useRimWorldData(apiUrl, onGameStateChange, isAutoRefreshEnabled, refreshSignal);
 
   // 2. Layout Hook
   const {
@@ -88,6 +96,11 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
 
   const [backgroundBlur, setBackgroundBlur] = useState<number>(() => {
     const saved = localStorage.getItem('dashboard_bg_blur');
+    return saved ? parseInt(saved) : 0;
+  });
+
+  const [backgroundOverlay, setBackgroundOverlay] = useState<number>(() => {
+    const saved = localStorage.getItem('dashboard_bg_overlay');
     return saved ? parseInt(saved) : 0;
   });
 
@@ -119,17 +132,37 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   }, [targetBgImage, visibleBgImage]);
 
   // Helper to settings
-  const handleSaveSettings = (newUrl: string, newBlur: number) => {
-    // 1. Update visual state (Current View)
+  const handleSaveSettings = (newUrl: string, newBlur: number, newOverlay: number) => {
     setTargetBgImage(newUrl);
     setBackgroundBlur(newBlur);
+    setBackgroundOverlay(newOverlay);
+
     localStorage.setItem('dashboard_bg', newUrl);
     localStorage.setItem('dashboard_bg_blur', newBlur.toString());
+    localStorage.setItem('dashboard_bg_overlay', newOverlay.toString());
 
     if (selectedPreset) {
       savePreset(selectedPreset, newUrl, newBlur);
       addToast({ type: 'success', title: `Settings saved to preset "${selectedPreset}"` });
     }
+  };
+
+  const getBackgroundStyle = () => {
+    const style: React.CSSProperties = {
+      filter: `blur(${backgroundBlur}px)`,
+    };
+
+    if (backgroundOverlay === 0) {
+      style.backgroundImage = `url(${visibleBgImage})`;
+    } else {
+      // Create a linear gradient overlay
+      const opacity = Math.abs(backgroundOverlay) / 100;
+      // Negative = Black, Positive = White
+      const color = backgroundOverlay < 0 ? `rgba(0,0,0,${opacity})` : `rgba(255,255,255,${opacity})`;
+      style.backgroundImage = `linear-gradient(${color}, ${color}), url(${visibleBgImage})`;
+    }
+
+    return style;
   };
 
   // React Grid Layout Sizing
@@ -257,7 +290,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                   onDrag={onDrag as any}
                   dragConfig={{
                     enabled: true,
-                    cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle)'
+                    cancel: '.layout-drag-ignore, .faction-item:not(.drag-handle) .dashboard-card-body button, .dashboard-card-body input, .dashboard-card-body select, .dashboard-card-body textarea'
                   }}
                 >
                   {layout.map(item => (
@@ -274,7 +307,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
                           power={power}
                           creatures={creatures}
                           getSortedColonists={getSortedColonists}
-                          autoRefresh={autoRefresh}
+                          autoRefresh={isAutoRefreshEnabled}
                         />
                       </div>
                       <div className="react-resizable-handle" />
@@ -303,10 +336,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
     <div className="rimworld-dashboard">
       <div
         className="dashboard-background"
-        style={{
-          backgroundImage: `url(${visibleBgImage})`,
-          filter: `blur(${backgroundBlur}px)`
-        }}
+        style={getBackgroundStyle()}
       />
 
       {/* --- UNIFIED NAVBAR --- */}
@@ -333,14 +363,14 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         {/* Right: Controls */}
         <div className="nav-controls">
           <button
-            onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`nav-ctrl-btn auto ${autoRefresh ? 'active' : ''}`}
+            onClick={toggleAutoRefresh}
+            className={`nav-ctrl-btn auto ${isAutoRefreshEnabled ? 'active' : ''}`}
             title="Toggle Auto-Refresh"
           >
-            {autoRefresh ? '⚡ On' : '⏸️ Off'}
+            {isAutoRefreshEnabled ? '⚡ On' : '⏸️ Off'}
           </button>
 
-          <button onClick={refresh} className="nav-ctrl-btn primary" title="Force Refresh">
+          <button onClick={triggerManualRefresh} className="nav-ctrl-btn primary" title="Force Refresh">
             🔄 Refresh
           </button>
 
@@ -397,7 +427,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         {renderTabContent()}
       </div>
 
-      {autoRefresh && <div className="auto-refresh-indicator"><div className="refresh-pulse"></div>Auto-refreshing...</div>}
+      {isAutoRefreshEnabled && <div className="auto-refresh-indicator"><div className="refresh-pulse"></div>Auto-refreshing...</div>}
 
       <div className='footer-spacer'></div>
       <Footer />
@@ -407,7 +437,12 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         <ColonySummarySettingsModal
           isOpen={!!editingCardId}
           onClose={() => setEditingCardId(null)}
-          settings={cardSettings[editingCardId]}
+          settings={cardSettings[editingCardId] || {
+            showColonists: true,
+            showAnimals: true,
+            showItems: true,
+            showWealth: true
+          }}
           onSettingsChange={(newS) => handleCardSettingsChange(editingCardId, newS)}
         />
       )}
@@ -460,6 +495,7 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
         currentBgUrl={targetBgImage}
         defaultBgUrl={defaultBgImage}
         currentBlur={backgroundBlur}
+        currentOverlay={backgroundOverlay}
         onSave={handleSaveSettings}
       />
 

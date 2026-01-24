@@ -335,31 +335,67 @@
 
 /* --- TAG BASED STYLES --- */
 
-/* Negative Event (Red) */
+/* --- SEVERITY VARIANTS --- */
+
+/* 1. CRITICAL THREATS (Big Raids, Infestations) */
+.message-item.severity-threat-big {
+    border-left-color: #ff0000; /* Bright Red */
+    background: linear-gradient(90deg, rgba(255, 0, 0, 0.15) 0%, rgba(30, 30, 30, 0.8) 100%);
+    box-shadow: inset 0 0 20px rgba(255, 0, 0, 0.05);
+    animation: pulse-border 2s infinite;
+}
+.message-item.severity-threat-big .message-label { color: #ff4d4d; font-weight: bold; }
+
+/* 2. MINOR THREATS (Manhunters, Small Raids) */
+.message-item.severity-threat-small {
+    border-left-color: #ff922b; /* Orange */
+    background: linear-gradient(90deg, rgba(255, 146, 43, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+.message-item.severity-threat-small .message-label { color: #ff922b; }
+
+/* 3. NEGATIVE EVENTS (Zzzzt, Breakdowns) */
 .message-item.severity-negative {
-    border-left-color: #ff6b6b;
-    background: linear-gradient(90deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-left-color: #ff6b6b; /* Soft Red */
+    background: linear-gradient(90deg, rgba(255, 107, 107, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
-.message-item.severity-negative .message-label {
-    color: #ff6b6b;
-}
+.message-item.severity-negative .message-label { color: #ff6b6b; }
 
-/* Positive Event (Green/Gold) */
+/* 4. DEATH (Grim Grey) */
+.message-item.severity-death {
+    border-left-color: #868e96; /* Grey */
+    background: #212529;
+    border: 1px solid #343a40;
+    border-left-width: 4px;
+    opacity: 0.9;
+}
+.message-item.severity-death .message-label { color: #adb5bd; text-decoration: line-through; }
+
+/* 5. POSITIVE (Parties, Joins, Quests) */
 .message-item.severity-positive {
-    border-left-color: #51cf66; /* Or #fcc419 for Gold */
-    background: linear-gradient(90deg, rgba(81, 207, 102, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-left-color: #51cf66; /* Green */
+    background: linear-gradient(90deg, rgba(81, 207, 102, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
-.message-item.severity-positive .message-label {
-    color: #51cf66;
-}
+.message-item.severity-positive .message-label { color: #51cf66; }
 
-/* Neutral Event (Blue/Gray) */
+/* 6. NEUTRAL / VISITORS (Blue) */
 .message-item.severity-neutral {
-    border-left-color: #4dabf7;
-    background: linear-gradient(90deg, rgba(77, 171, 247, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-left-color: #4dabf7; /* Blue */
+    background: linear-gradient(90deg, rgba(77, 171, 247, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
 }
-.message-item.severity-neutral .message-label {
-    color: #4dabf7;
+.message-item.severity-neutral .message-label { color: #4dabf7; }
+
+/* 7. GOLDEN (Rituals, Rare Items) */
+.message-item.severity-gold {
+    border-left-color: #ffd43b; /* Gold */
+    background: linear-gradient(90deg, rgba(255, 212, 59, 0.1) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+.message-item.severity-gold .message-label { color: #ffd43b; }
+
+/* Animation for Big Threats */
+@keyframes pulse-border {
+    0% { border-left-color: #ff0000; }
+    50% { border-left-color: #800000; }
+    100% { border-left-color: #ff0000; }
 }
 
 /* Default/Unknown (Dark Gray) */

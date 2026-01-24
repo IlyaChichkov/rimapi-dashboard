@@ -1,0 +1,208 @@
+/* src/features/dashboard/components/map/OreListCard.css */
+
+/* Re-use Button Styles (Unchanged) */
+.ore-scanner-toggle-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #888;
+    padding: 4px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+    outline: none;
+}
+.ore-scanner-toggle-btn:hover { background: rgba(255, 255, 255, 0.15); color: #ddd; }
+.ore-scanner-toggle-btn.active { background: rgba(255, 215, 0, 0.15); border-color: #ffd700; color: #ffd700; }
+.ore-scanner-toggle-btn.disabled { opacity: 0.5; cursor: not-allowed; background: rgba(255, 100, 100, 0.1); border-color: rgba(255, 100, 100, 0.3); color: #ff8888; }
+
+.ore-list-state {
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    font-style: italic;
+}
+
+/* --- DUAL CHART LAYOUT --- */
+
+.ore-charts-row {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.chart-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0; /* Important for flex child shrinking */
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 5px;
+}
+
+.chart-label-top {
+    margin: 0 0 5px 0;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.chart-wrapper {
+    flex: 1;
+    width: 100%;
+    position: relative; /* Anchor for absolute center text */
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* FIXED CENTER TEXT */
+.chart-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Perfect centering */
+    text-align: center;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.chart-center-text strong {
+    font-size: 1rem;
+    color: white;
+    display: block;
+    line-height: 1;
+}
+
+/* On very small cards, stack them vertically */
+@container (max-width: 300px) {
+    .ore-charts-row {
+        flex-direction: column;
+    }
+}
+
+/* src/features/dashboard/components/map/OreListCard.css */
+
+/* 1. Define the Container Context */
+/* This tells CSS to monitor the size of this specific element */
+.dashboard-card-chart-container {
+    container-type: size; 
+    width: 100%;
+    height: 100%;
+}
+
+/* 2. Default Layout (Row / Side-by-Side) */
+.ore-charts-row {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    flex-direction: row; /* Default: Side by Side */
+}
+
+.chart-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 0; 
+    min-height: 0; /* Critical for flex resizing */
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 8px;
+    padding: 5px;
+    overflow: hidden;
+}
+
+/* --- CONTAINER QUERY MAGIC --- */
+
+/* Trigger: When the card is TALLER than it is WIDE (Portrait/Column shape) */
+@container (aspect-ratio < 1/1) {
+    .ore-charts-row {
+        flex-direction: column; /* Switch to Vertical Stack */
+    }
+}
+
+/* Trigger: When the card is very narrow (e.g., 1 grid column wide) */
+@container (max-width: 250px) {
+    .ore-charts-row {
+        flex-direction: column;
+    }
+    
+    .chart-label-top {
+        font-size: 0.7rem; /* Shrink text for tiny cards */
+    }
+}
+
+/* --- REST OF STYLES (Unchanged) --- */
+
+.chart-label-top {
+    margin: 0 0 5px 0;
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.chart-wrapper {
+    flex: 1;
+    width: 100%;
+    position: relative;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.chart-center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.chart-center-text strong {
+    font-size: 1rem;
+    color: white;
+    display: block;
+    line-height: 1;
+}
+
+.chart-wrapper {
+    flex: 1;
+    width: 100%;
+    position: relative;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* Ensure tooltips don't get clipped */
+    overflow: visible; 
+}
+
+/* Ensure tooltips appear above center text */
+.chart-center-text {
+    /* ... existing styles ... */
+    z-index: 0; 
+}
+
+canvas {
+    z-index: 1; /* Chart above text */
+}

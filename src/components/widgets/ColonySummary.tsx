@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './ColonySummary.css';
 import ColonySummarySettingsModal from '@/features/dashboard/modals/ColonySummarySettingsModal';
 import { RimWorldData } from '@/types';
+import DashboardCard from './common/DashboardCard';
 
 export interface ColonySummarySettings {
   showColonists: boolean;
@@ -23,11 +24,12 @@ const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChang
   const resources = data?.resources || { categories: [] };
 
   return (
-    <div className="colony-summary-card">
-      <div className="card-header">
-        <h3>Colony Summary</h3>
+    <DashboardCard
+      title="Colony Summary"
+      headerAction={
         <button className="settings-btn layout-drag-ignore" onClick={onOpenSettings}>⚙️</button>
-      </div>
+      }
+    >
       <div className="summary-stats-grid">
         {settings.showColonists && (
           <div className="summary-stat-item">
@@ -54,7 +56,7 @@ const ColonySummary: React.FC<ColonySummaryProps> = ({ settings, onSettingsChang
           </div>
         )}
       </div>
-    </div>
+    </DashboardCard>
   );
 };
 

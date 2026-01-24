@@ -1,0 +1,39 @@
+// src/widgets/WorldMap/WorldMapCard.tsx
+import React from 'react';
+import './WorldMapCard.css';
+import { useWorldMapData } from '@/hooks/useWorldMapData';
+import WorldMap2D from './WorldMap2D'; // Import the new 2D component
+import './WorldMapCard.css';
+
+const WorldMapCard: React.FC<{ onRemove?: () => void }> = ({ onRemove }) => {
+    const { tiles, settlements, caravans, factionIcons, loading, error, centerTileId, caravanPaths } = useWorldMapData();
+
+    if (loading) return (
+        <div className="wm-loading">Scanning planetary data...</div>
+    );
+
+    if (error || !centerTileId) return (
+        <div className="wm-error">{error || "No map data available"}</div>
+    );
+
+    return (
+        <div className="wm-scene-container">
+            <div className="card-header">
+                <div className="header-left">
+                    <h3>World Map</h3>
+                </div>
+            </div>
+
+            <WorldMap2D
+                tiles={tiles}
+                settlements={settlements}
+                caravans={caravans}
+                centerTileId={centerTileId}
+                factionIcons={factionIcons}
+                caravanPaths={caravanPaths}
+            />
+        </div>
+    );
+};
+
+export default WorldMapCard;

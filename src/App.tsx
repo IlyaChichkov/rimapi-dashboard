@@ -10,6 +10,7 @@ import { ToastProvider } from './components/feedback/ToastContext';
 import { ImageCacheProvider } from './components/context/ImageCacheContext';
 import { sseService } from './services/sseService';
 import { rimworldApi, setApiBaseUrl } from './services/rimworldApi';
+import { AutoRefreshProvider } from './components/context/AutoRefreshContext';
 
 type GameStatus = 'checking' | 'menu' | 'playing' | 'api_error';
 
@@ -135,7 +136,13 @@ function App() {
       case 'playing':
         return (
           <ToastProvider>
-            <RimWorldDashboard apiUrl={apiUrl} onResetConfig={handleResetConfig} onGameStateChange={checkGameState} />
+            <AutoRefreshProvider>
+              <RimWorldDashboard
+                apiUrl={apiUrl}
+                onResetConfig={handleResetConfig}
+                onGameStateChange={checkGameState}
+              />
+            </AutoRefreshProvider>
             <ToastContainer />
           </ToastProvider>
         );
