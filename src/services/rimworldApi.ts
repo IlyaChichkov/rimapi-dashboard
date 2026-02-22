@@ -687,6 +687,9 @@ async getMapOres(mapId: number = 0): Promise<MapOresResponse | null> {
             data: data,
         };
         
-  }
-
+  },
+  
+  async setGameSpeed(speed: number): Promise<void> {
+    await postNoBody(`/game/speed?speed=${speed}`);
+  },
 };

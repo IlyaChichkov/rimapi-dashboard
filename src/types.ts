@@ -16,11 +16,20 @@ export interface RimWorldData {
 }
 
 export interface GameState {
+  program_state: string;     // "Entry", "MapInitializing", "Playing", etc.
+  map_count: number;         // 0 when in menu, 1+ when in game
+  is_paused: boolean;
+  game_tick: number;
+  colony_wealth: number;
+  colonist_count: number;
+  current_view: string;
+  is_settings_open: boolean;
+  is_mod_settings_open: boolean;
+  storyteller?: string;
   game_time?: string;
   time_speed?: string;
   weather?: string;
   temperature?: number;
-  storyteller?: string;
   difficulty?: string;
 }
 

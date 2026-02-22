@@ -18,6 +18,7 @@ import { GameInfoCard } from '../GameInfoCard';
 import WorldMapCard from '../worldMap/WorldMapCard';
 import OreListCard from '../map/OreListCard';
 import TopIncidentsCard from '../TopIncidentsCard';
+import TimeControlsCard from '../controls/TimeControlsCard';
 
 interface CardRegistryProps {
     item: Layout[number];
@@ -177,6 +178,9 @@ export const DashboardCardRegistry: React.FC<CardRegistryProps> = ({
             );
         case 'oreScanner':
             return <OreListCard />;
+
+        case 'timeControls':
+            return <TimeControlsCard />;
 
         case 'factionRelations':
             return (

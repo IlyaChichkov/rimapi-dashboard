@@ -39,7 +39,7 @@ interface RimWorldDashboardProps {
   onGameStateChange: () => void;
 }
 
-// --- DEFINE CARD METADATA ---=
+// --- DEFINE CARD METADATA ---
 const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'gameInfo', title: 'Game Info', description: 'Date, weather, storyteller, and sync status.', icon: '🌍' },
   { id: 'colonists', title: 'Colonist Charts', description: 'Charts for mood, health, and needs overview.', icon: '📊' },
@@ -55,6 +55,7 @@ const CARD_DEFINITIONS: CardDefinition[] = [
   { id: 'globalMap', title: 'World Map', description: 'World map.', icon: '🗺️' },
   { id: 'oreScanner', title: 'Ore Scanner', description: 'Scan for valuable resources.', icon: '💎' },
   { id: 'topIncidents', title: 'Top Incidents', description: 'List of events with highest probability of occurring next.', icon: '🎲' },
+  { id: 'timeControls', title: 'Time Controls', description: 'Manage game speed and pause state.', icon: '⏱️' },
   // { id: 'sseStatus', title: 'Connection Status', description: 'Debug info for API connection.', icon: '🔌' },
 ];
 
@@ -262,9 +263,32 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const resources = data?.resources || { categories: [] };
   const power = data?.power || {};
   const creatures = data?.creatures || {};
-  const gameState = data?.gameState || {};
+  const gameState = data?.gameState;
   const weather = data?.weather || {};
   const map_datetime = data?.map_datetime || {};
+
+  if (gameState && gameState.program_state !== "Playing") {
+    return (
+      <div className="rimworld-dashboard">
+        <div className="dashboard-background" style={getBackgroundStyle()} />
+        <div className="server-waiting-screen" style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', height: '100vh', color: 'white', zIndex: 10, position: 'relative'
+        }}>
+          <h2>Server is currently at: {gameState.program_state}</h2>
+          <p>Waiting for the map to load or a player to start the simulation...</p>
+          <div className="refresh-pulse" style={{ marginTop: '20px' }}></div>
+          <button
+            onClick={refresh}
+            className="nav-ctrl-btn primary"
+            style={{ marginTop: '20px' }}
+          >
+            Check Status
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const renderTabContent = () => {
     switch (activeTab) {
