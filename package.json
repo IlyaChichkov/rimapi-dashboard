@@ -33,7 +33,8 @@
     "start": "bun run craco start",
     "build": "bun run craco build",
     "test": "bun run craco test",
-    "eject": "bun run react-scripts eject"
+    "eject": "bun run react-scripts eject",
+    "deploy": "gh-pages -d build"
   },
   "eslintConfig": {
     "extends": [

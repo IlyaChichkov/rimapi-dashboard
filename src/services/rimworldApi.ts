@@ -361,7 +361,7 @@ async function setItemTextureChunks({
     const piece = base64.slice(sent, next);
     const isFinal = next >= total;
 
-    await postJson('/item/image', {
+    await postJson('/item/change/image', {
       name: itemDefName,
       image: piece,
       final: isFinal
@@ -406,7 +406,7 @@ async function uploadItemTextureFile(
 
   const direction = opts?.direction === undefined ? "all" : opts?.direction; 
 
-  await postJson('/item/image', {
+  await postJson('/item/change/image', {
     name: itemName,
     image: base64,
     direction: direction,
@@ -687,6 +687,9 @@ async getMapOres(mapId: number = 0): Promise<MapOresResponse | null> {
             data: data,
         };
         
-  }
-
+  },
+  
+  async setGameSpeed(speed: number): Promise<void> {
+    await postNoBody(`/game/speed?speed=${speed}`);
+  },
 };
