@@ -36,14 +36,14 @@ function App() {
 
   // Check state via REST API
   const checkGameState = useCallback(async () => {
-    // Only show "checking" if we are in a disconnected/error state
-    // This prevents the screen from flashing "Checking..." if we are already in the menu or playing
     setGameStatus(prev => (prev === 'api_error' || prev === 'checking') ? 'checking' : prev);
 
     try {
       const state = await rimworldApi.fetchGameState();
       if (state) {
-        if (state.program_state === 'Playing' && state.colonist_count > 0) {
+        // Relax the rule. If the server is in ANY state other than "Entry",
+        // we should mount the Dashboard and let the Dashboard's own Gatekeeper handle the rest.
+        if (state.program_state !== 'Entry') {
           setGameStatus('playing');
         } else {
           setGameStatus('menu');
@@ -61,26 +61,36 @@ function App() {
   useEffect(() => {
     if (!isConfigured) return;
 
-    // 1. Handler for Named Events (standard SSE)
-    const handleNamedGameLoaded = (e: any) => {
-      console.log("App: Received Named 'game_loaded' Event", e);
-      setGameStatus('playing');
-    };
+    const handleGameStateEvent = (e: MessageEvent) => {
+      // console.log("App: Received SSE 'game_state' Event", e.data); // Optional: comment out to reduce spam
+      try {
+        const payload = JSON.parse(e.data);
 
-    const handleNamedExit = (e: any) => {
-      console.log("App: Received Named 'exit_to_menu' Event", e);
-      setGameStatus('menu');
-    };
+        // Extract program_state (handle if it's at the root or inside 'data')
+        const programState = payload.program_state || payload.data?.program_state;
 
+        // GATEKEEPER: If this event doesn't tell us the program state (like a volume change), ignore it!
+        if (!programState) return;
+
+        // Only switch state if we actually have a valid program state
+        if (programState !== 'Entry') {
+          setGameStatus('playing');
+        } else {
+          setGameStatus('menu');
+        }
+      } catch (err) {
+        console.error("Failed to parse SSE payload", err);
+      }
+    };
     // Listen to specific events
-    sseService.addEventListener('game_state', handleNamedGameLoaded);
+    sseService.addEventListener('game_state', handleGameStateEvent);
 
     // Initial connections
     checkGameState();
     sseService.connect();
 
     return () => {
-      sseService.removeEventListener('game_state', handleNamedGameLoaded);
+      sseService.removeEventListener('game_state', handleGameStateEvent);
     };
   }, [isConfigured, checkGameState]);
 

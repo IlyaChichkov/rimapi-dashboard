@@ -267,29 +267,6 @@ const RimWorldDashboard: React.FC<RimWorldDashboardProps> = ({
   const weather = data?.weather || {};
   const map_datetime = data?.map_datetime || {};
 
-  if (gameState && gameState.program_state !== "Playing") {
-    return (
-      <div className="rimworld-dashboard">
-        <div className="dashboard-background" style={getBackgroundStyle()} />
-        <div className="server-waiting-screen" style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          justifyContent: 'center', height: '100vh', color: 'white', zIndex: 10, position: 'relative'
-        }}>
-          <h2>Server is currently at: {gameState.program_state}</h2>
-          <p>Waiting for the map to load or a player to start the simulation...</p>
-          <div className="refresh-pulse" style={{ marginTop: '20px' }}></div>
-          <button
-            onClick={refresh}
-            className="nav-ctrl-btn primary"
-            style={{ marginTop: '20px' }}
-          >
-            Check Status
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'dashboard':
