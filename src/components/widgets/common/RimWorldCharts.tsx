@@ -26,6 +26,16 @@ ChartJS.register(
   Legend
 );
 
+// Guard against Chart.js resize crash when canvas is detached from DOM.
+// The crash: "Cannot read properties of null (reading 'ownerDocument')"
+// happens when Chart.js calls getComputedStyle on a canvas unmounted during
+// React's re-render cycle (triggered by 5s auto-refresh polling).
+const originalResize = ChartJS.prototype.resize;
+ChartJS.prototype.resize = function (...args: Parameters<typeof originalResize>) {
+  if (!this.canvas?.isConnected) return;
+  originalResize.apply(this, args);
+};
+
 const chartColors = {
   primary: {
     blue: 'rgba(86, 156, 214, 0.8)',
