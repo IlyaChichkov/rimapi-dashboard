@@ -30,6 +30,8 @@ ChartJS.register(
 // The crash: "Cannot read properties of null (reading 'ownerDocument')"
 // happens when Chart.js calls getComputedStyle on a canvas unmounted during
 // React's re-render cycle (triggered by 5s auto-refresh polling).
+ChartJS.defaults.responsive = true;
+ChartJS.defaults.maintainAspectRatio = false;
 const originalResize = ChartJS.prototype.resize;
 ChartJS.prototype.resize = function (...args: Parameters<typeof originalResize>) {
   if (!this.canvas?.isConnected) return;
